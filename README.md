@@ -47,18 +47,37 @@ NovaShop UI, arka plan servisleri hazır olmadığında otomatik olarak **in-mem
 ### Ön Koşullar
 - Docker yüklü bir sistem (Ubuntu 22.04+ önerilir)
 
-### 1. Starter Container'ı Çalıştırın
+### 1. NovaShop UI Starter İmajını İnşa Edin
+M01 aşamasında uyarlanan kurumsal marka kimliği, DevOps ürün kataloğu ve favicon'u içeren yerel container imajını oluşturun:
 ```bash
-docker run -d --name novashop-ui -p 8888:8080 public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2
+docker build -t novashop-ui:v0.1.0 src/ui
 ```
 
-### 2. Tarayıcıda Açın
+### 2. Starter Container'ı Çalıştırın
+```bash
+docker run -d --name novashop-ui -p 8888:8080 novashop-ui:v0.1.0
+```
+
+### 3. Sağlık ve Marka Doğrulaması (Smoke Test)
+Container'ın ayağa kalktığını ve NovaShop başlığının döndüğünü doğrulayın:
+```bash
+# Sağlık kontrolü
+curl -f http://localhost:8888/actuator/health
+
+# Marka kontrolü
+curl -s http://localhost:8888/ | grep -o "NovaShop DevOps Store"
+```
+*Beklenen Çıktı:* `{"status":"UP"}` ve `NovaShop DevOps Store`
+
+### 4. Tarayıcıda İnceleyin
 Tarayıcınızdan şu adrese gidin:
 ```text
 http://localhost:8888
 ```
 
-### 3. Durdurun ve Temizleyin
+*(İsteğe bağlı referans: Orijinal upstream imajı `public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2` adresindedir; ancak NovaShop markasını içermez.)*
+
+### 5. Durdurun ve Temizleyin
 ```bash
 docker stop novashop-ui && docker rm novashop-ui
 ```

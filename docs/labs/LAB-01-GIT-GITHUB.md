@@ -55,30 +55,30 @@ gitGraph
 
 ### Bölüm 1: Yerel Depoyu Başlatma ve İlk Commit
 
-#### 1.1 Git Kimlik Bilgilerini Yapılandırın
-```bash
-git config --global user.name "<STUDENT_NAME>"
-git config --global user.email "<STUDENT_EMAIL>"
-git config --global init.defaultBranch main
-```
-*Açıklama:* Git commit'lerinin hangi yazar tarafından oluşturulduğunu belirler.
-
-*Doğrulama:*
-```bash
-git config --get user.name
-git config --get user.email
-```
-
-#### 1.2 Depoyu Başlatın ve Durumu İnceleyin
+#### 1.1 Depoyu Başlatın ve Dizin Konumuna Geçin
 ```bash
 cd /Users/hakan/novashop-workspace/novashop
-git init
+git init -b main
 ```
-*Açıklama:* `novashop/` klasörünü bir Git deposu haline getirir.
+*Açıklama:* `novashop/` klasöründe varsayılan dalı `main` olan yerel bir Git deposu başlatır.
 
 *Beklenen Çıktı:*
 ```text
 Initialized empty Git repository in .../novashop/.git/
+```
+
+#### 1.2 Depoya Özel (Local) Git Kimlik Bilgilerini Yapılandırın
+Paylaşılan veya kişisel ortamdaki global Git ayarlarını bozmamak için kimlik ayarları yalnızca bu depoya özel (`--local`) olarak tanımlanır:
+```bash
+git config --local user.name "<STUDENT_NAME>"
+git config --local user.email "<STUDENT_EMAIL>"
+```
+*Açıklama:* Git commit'lerinin yazar bilgilerini yalnızca bu depo sınırlarında yapılandırır.
+
+*Doğrulama:*
+```bash
+git config --local --get user.name
+git config --local --get user.email
 ```
 
 #### 1.3 .gitignore Dosyasını Doğrulayın

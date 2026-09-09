@@ -82,11 +82,13 @@ http://localhost:8888
 docker stop novashop-ui && docker rm novashop-ui
 ```
 
-## 🏛️ Mimari ve Güvenlik Dokümantasyonu
+## 🏛️ Mimari, Ağ ve Güvenlik Dokümantasyonu
 
-- [Mimari Genel Bakış ve Ağ Topolojisi](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
+- [Mimari Genel Bakış](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
+- [Ağ Topolojisi ve Port Haritası](docs/architecture/NETWORKING.md) — Port listesi, AWS VPC CIDR planı ve Kubernetes CoreDNS.
 - [Güvenlik Temel İlkeleri (Security Baseline)](docs/architecture/SECURITY_BASELINE.md) — Secret yönetimi, non-root container ve anti-pattern yasakları.
 - [Çalıştırma Profilleri ve Kaynak Bütçesi](docs/architecture/PROFILES.md) — D-008 kaynak kuralları ve profil izolasyonu.
+- [Merkezi Sorun Giderme Kılavuzu](docs/troubleshooting/MASTER_TROUBLESHOOTING_GUIDE.md) — Git, AWS, Docker, Kubernetes ve CI/CD için arıza teşhis ve çözüm matrisi.
 
 ---
 

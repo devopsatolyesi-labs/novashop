@@ -256,16 +256,7 @@ terraform destroy -auto-approve
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
-1. `variables.tf` dosyasında yeni bir etiket değişkeni (`Owner = "Ogrenci-Adi"`) tanımlayın.
+1. `variables.tf` dosyasında yeni bir etiket değişkeni (`Owner = "DevOps-Engineer"`) tanımlayın.
 2. `terraform plan` çalıştırarak yalnızca tag güncellemelerinin tespit edildiğini doğrulayın.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Terraform modüler yapısı eksiksiz çalışıyor mu?
-- [ ] `cloud-init` betiği EC2 üzerinde Docker ve Nginx'i otomatik kurmuş mu?
-- [ ] İkinci `terraform plan` koşumunda `No changes` çıktısı alınıyor mu (Idempotency kanıtı)?
-- [ ] `terraform destroy` komutu tüm kaynakları temizleyip sıfır maliyet bırakıyor mu?

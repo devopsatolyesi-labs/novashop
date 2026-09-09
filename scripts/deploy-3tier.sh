@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# NovaShop — M04 AWS 3-Tier Otomatik Dağıtım ve Sağlık Doğrulama Betiği
+# NovaShop — AWS 3-Tier Otomatik Dağıtım ve Sağlık Doğrulama Betiği
 set -euo pipefail
 
 NEW_TAG="${1:-v0.1.0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-echo "=== [M04 3-Tier] Dağıtım Başlatılıyor (Hedef Etiket: ${NEW_TAG}) ==="
+echo "=== [NovaShop 3-Tier] Dağıtım Başlatılıyor (Hedef Etiket: ${NEW_TAG}) ==="
 
 cd "$REPO_ROOT"
 
@@ -58,7 +58,7 @@ done
 # 5. Başarı veya Otomatik Rollback Kararı
 if [ "$HEALTHY" = true ]; then
     echo "✅ Dağıtım Başarılı: NovaShop 3-Tier servisi UP durumunda!"
-    echo "=== [M04 3-Tier] Dağıtım Tamamlandı ==="
+    echo "=== [NovaShop 3-Tier] Dağıtım Tamamlandı ==="
     exit 0
 else
     echo "❌ HATA: Sağlık kontrolü zaman aşımına uğradı! Otomatik Rollback tetikleniyor..." >&2

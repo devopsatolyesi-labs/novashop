@@ -5,11 +5,54 @@ set -e
 TARGET_HOST="${1:-}"
 INSECURE_FLAG="${2:-}"
 
-if [ -z "$TARGET_HOST" ]; then
-    echo "Kullanım: $0 <HOST_VEYA_IP> [--insecure]"
-    echo "Örnek:   $0 3.120.45.67 --insecure"
-    echo "Örnek:   $0 novashop.example.com"
-    exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+if [ -z "$TARGET_HOST" ] || [ "$TARGET_HOST" = "--config-only" ]; then
+    echo "=== [LAB-04] Statik / Konfigürasyon Doğrulaması ==="
+
+    # 1. Nginx 3-Tier Konfigürasyon Kontrolü
+    NGINX_CONF="$REPO_ROOT/deploy/nginx/nginx-3tier.conf"
+    if [ ! -f "$NGINX_CONF" ]; then
+        echo "❌ HATA: deploy/nginx/nginx-3tier.conf bulunamadı!" >&2
+        exit 1
+    fi
+
+    if grep -q "301 https://" "$NGINX_CONF" && \
+       grep -q "ssl_certificate" "$NGINX_CONF" && \
+       grep -q "healthz" "$NGINX_CONF"; then
+        echo "✅ Nginx 3-Tier TLS ve yönlendirme kuralları doğrulandı."
+    else
+        echo "❌ HATA: Nginx 3-Tier konfigürasyonunda zorunlu TLS yönergeleri eksik!" >&2
+        exit 1
+    fi
+
+    # 2. 3-Tier Secure Compose Yapılandırma Kontrolü
+    COMPOSE_CONF="$REPO_ROOT/deploy/compose/3tier.secure.yml"
+    if [ ! -f "$COMPOSE_CONF" ]; then
+        echo "❌ HATA: deploy/compose/3tier.secure.yml bulunamadı!" >&2
+        exit 1
+    fi
+
+    if grep -q "novashop-tier-net" "$COMPOSE_CONF" && \
+       grep -q "read_only: true" "$COMPOSE_CONF"; then
+        echo "✅ 3-Tier Compose ağ izolasyonu ve güvenlik kısıtları doğrulandı."
+    else
+        echo "❌ HATA: 3-Tier Compose güvenlik tanımları eksik!" >&2
+        exit 1
+    fi
+
+    # 3. Dağıtım ve Geri Alma Betikleri Kontrolü
+    if [ -x "$REPO_ROOT/scripts/deploy-3tier.sh" ] && [ -x "$REPO_ROOT/scripts/rollback-3tier.sh" ]; then
+        echo "✅ 3-Tier dağıtım (deploy-3tier.sh) ve geri alma (rollback-3tier.sh) betikleri mevcut ve çalıştırılabilir."
+    else
+        echo "❌ HATA: 3-Tier otomasyon betikleri eksik veya çalıştırılabilir değil!" >&2
+        exit 1
+    fi
+
+    echo "ℹ️ Canlı sunucu testi için kullanım: $0 <HOST_VEYA_IP> [--insecure]"
+    echo "=== [LAB-04] Konfigürasyon Doğrulaması Başarılı! ==="
+    exit 0
 fi
 
 CURL_OPTS="-s --connect-timeout 8"
@@ -17,7 +60,7 @@ if [ "$INSECURE_FLAG" = "--insecure" ] || [ "$INSECURE_FLAG" = "-k" ]; then
     CURL_OPTS="$CURL_OPTS -k"
 fi
 
-echo "=== [LAB-04] Doğrulama Başlatılıyor: $TARGET_HOST ==="
+echo "=== [LAB-04] Canlı Doğrulama Başlatılıyor: $TARGET_HOST ==="
 
 # 1. HTTP -> HTTPS Yönlendirmesi Kontrolü
 echo "1. HTTP (Port 80) -> HTTPS yönlendirme testi..."

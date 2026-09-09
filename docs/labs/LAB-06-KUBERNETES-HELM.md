@@ -13,7 +13,7 @@
 - Kind ile çok düğümlü yerel Kubernetes kümesi kurup `kubectl` ile düğüm ve pod yaşam döngüsünü yönetmek.
 - Üretim düzeyi Kubernetes kaynaklarını (Deployment, Service, ConfigMap, Secret, Ingress) kavramak ve yapılandırmak.
 - Container sağlık problarını (`livenessProbe` ve `readinessProbe`) Spring Boot Actuator endpoint'leri ile entegre etmek.
-- Öğrenci VM bellek sınırlarını korumak için pod bazlı `resources.requests` ve `resources.limits` tanımlamak (D-008).
+- Öğrenci VM bellek sınırlarını korumak için pod bazlı `resources.requests` ve `resources.limits` tanımlamak (PROFILES.md kaynak sınırları).
 - Helm chart şablonlama (templating), `values.yaml` parametrelendirmesi ve Helm sürüm yönetimi (`helm install/upgrade/rollback`) uygulamak.
 
 ---
@@ -394,20 +394,10 @@ docker system prune -f
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. `novashop-ui` Deployment'ının replica sayısını `2`'den `3`'e çıkarın:
    ```bash
    kubectl scale deployment novashop-ui --replicas=3
    ```
 2. 3 pod'un da `Running` ve `1/1 READY` durumuna geçtiğini `kubectl get pods -o wide` ile doğrulayın.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Kind kümesi 1 control-plane ve 2 worker düğümü ile çalışıyor mu?
-- [ ] UI Pod'ları `resources.limits` ve `resources.requests` tanımlı olarak mı çalışıyor?
-- [ ] Liveness ve readiness probları `/actuator/health` üzerinden `UP` yanıtı veriyor mu?
-- [ ] Host üzerinden `curl http://localhost:8888/actuator/health` çağrısı `200 OK` dönüyor mu?
-- [ ] `kubectl rollout undo` komutu ile rollback başarıyla gösterildi mi?

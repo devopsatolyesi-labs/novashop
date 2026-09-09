@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 CONFIG_FILE="$REPO_ROOT/deploy/k8s/kind-cluster-config.yaml"
 
-echo "=== [M06] Kind Kubernetes Kümesi Kurulumu Başlatılıyor ==="
+echo "=== [NovaShop] Kind Kubernetes Kümesi Kurulumu Başlatılıyor ==="
 
 # 1. Gerekli Araçların Varlık Kontrolü
 for tool in kind kubectl helm; do
@@ -47,6 +47,6 @@ helm upgrade --install novashop "$REPO_ROOT/charts/novashop" \
 echo "6. Dağıtılan kaynaklar listeleniyor..."
 kubectl get all -n novashop
 
-echo "=== [M06] Kind ve Helm Dağıtımı Başarıyla Tamamlandı! ==="
+echo "=== [NovaShop] Kind ve Helm Dağıtımı Başarıyla Tamamlandı! ==="
 echo "Mağaza Erişimi: http://localhost:8888"
 echo "Sağlık Kontrolü: http://localhost:8888/actuator/health"

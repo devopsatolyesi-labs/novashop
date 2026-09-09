@@ -23,7 +23,7 @@ NovaShop mikroservis mimarisini; multi-stage Dockerfile ile optimize ve güvenli
 - **Önceki Lab:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
 - **İşletim Sistemi:** Ubuntu 22.04 LTS veya macOS/Linux geliştirme ortamı.
 - **Yüklü Araçlar:** Docker Engine v24+ (`docker --version`), Docker Compose v2.20+ (`docker compose version`).
-- **Kaynak Gereksinimi:** En az 2 vCPU ve 4 GB boş bellek (D-008 kaynak koruma kuralı).
+- **Kaynak Gereksinimi:** En az 2 vCPU ve 4 GB boş bellek (PROFILES.md kaynak koruma kuralı).
 
 ---
 
@@ -116,19 +116,19 @@ docker images novashop-ui:v0.1.0
 
 NovaShop, öğrenci VM kaynaklarını (2 vCPU / 16 GB RAM) korumak ve güvenliği sağlamak için iki ayrı çalışma yolu sunar:
 
-- **Starter Çalışma Yolu (Önerilen - M03 Lab Kapsamı):** Yalnızca UI ve dahili mock verileri ayağa kaldırır. `deploy/compose/starter.secure.yml` overlay'i ile kök dosya sistemi salt-okunur (`read_only: true`), `no-new-privileges: true`, CPU sınırı (0.50) ve 64 MiB kısıtlı `tmpfs /tmp` uygular.
-- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; `scripts/m03-full-compose.sh` üzerinden ve secret-guard koruması ile çalıştırılır.
+- **Starter Çalışma Yolu (Önerilen):** Yalnızca UI ve dahili mock verileri ayağa kaldırır. `deploy/compose/starter.secure.yml` overlay'i ile kök dosya sistemi salt-okunur (`read_only: true`), `no-new-privileges: true`, CPU sınırı (0.50) ve 64 MiB kısıtlı `tmpfs /tmp` uygular.
+- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; `scripts/compose-full.sh` üzerinden ve secret-guard koruması ile çalıştırılır.
 
 ##### Seçenek A: NovaShop Starter Compose Helper (Önerilen)
 1. **Güvenli Overlay ile Yapılandırmayı Çözümleme:**
    ```bash
-   bash scripts/m03-starter-compose.sh config
+   bash scripts/compose-starter.sh config
    ```
    *Beklenen çıktı:* `read_only: true`, `security_opt: [no-new-privileges:true]`, `mem_limit: 536870912`, `cpus: 0.50`, `healthcheck` alanlarını içeren Compose konfigürasyonu.
 
 2. **Konteyneri Başlatma:**
    ```bash
-   bash scripts/m03-starter-compose.sh up
+   bash scripts/compose-starter.sh up
    ```
 
 ##### Seçenek B: Doğrudan Docker CLI ile Çalıştırma
@@ -298,19 +298,8 @@ docker builder prune -f
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. `docker run` komutuna `-e SPRING_PROFILES_ACTIVE=production` ortam değişkenini ekleyerek konteyneri başlatın.
 2. Loglarda profilin aktifleştiğini `docker logs` ile doğrulayın.
 3. Sağlık durumunun `UP` olduğunu teyit edin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Multi-stage Dockerfile ile imaj başarıyla derlendi mi?
-- [ ] Konteyner non-root `appuser` (UID 1000) ile mi çalışıyor?
-- [ ] `--memory` ve `--cpus` kaynak limitleri uygulandı mı?
-- [ ] `/actuator/health` endpoint'i `{"status":"UP"}` dönüyor mu?
-- [ ] Ana sayfada "NovaShop DevOps Store" marka başlığı görünüyor mu?
-- [ ] Öğrenci troubleshooting adımlarını ve cleanup komutunu başarıyla uyguladı mı?

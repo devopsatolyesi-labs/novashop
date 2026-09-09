@@ -48,7 +48,7 @@ NovaShop UI, arka plan servisleri hazır olmadığında otomatik olarak **in-mem
 - Docker yüklü bir sistem (Ubuntu 22.04+ önerilir)
 
 ### 1. NovaShop UI Starter İmajını İnşa Edin
-M01 aşamasında uyarlanan kurumsal marka kimliği, DevOps ürün kataloğu ve favicon'u içeren yerel container imajını oluşturun:
+NovaShop kurumsal marka kimliği, DevOps ürün kataloğu ve özelleştirilmiş temayı içeren yerel container imajını oluşturun:
 ```bash
 docker build -t novashop-ui:v0.1.0 src/ui
 ```
@@ -87,7 +87,7 @@ docker stop novashop-ui && docker rm novashop-ui
 - [Mimari Genel Bakış](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
 - [Ağ Topolojisi ve Port Haritası](docs/architecture/NETWORKING.md) — Port listesi, AWS VPC CIDR planı ve Kubernetes CoreDNS.
 - [Güvenlik Temel İlkeleri (Security Baseline)](docs/architecture/SECURITY_BASELINE.md) — Secret yönetimi, non-root container ve anti-pattern yasakları.
-- [Çalıştırma Profilleri ve Kaynak Bütçesi](docs/architecture/PROFILES.md) — D-008 kaynak kuralları ve profil izolasyonu.
+- [Çalıştırma Profilleri ve Kaynak Bütçesi](docs/architecture/PROFILES.md) — Sistem kaynak limitleri, profil izolasyonu ve bellek yönetimi.
 - [Merkezi Sorun Giderme Kılavuzu](docs/troubleshooting/MASTER_TROUBLESHOOTING_GUIDE.md) — Git, AWS, Docker, Kubernetes ve CI/CD için arıza teşhis ve çözüm matrisi.
 
 ---
@@ -107,6 +107,7 @@ docker stop novashop-ui && docker rm novashop-ui
 11. [LAB-11: Merkezi Loglama (Fluent Bit → Elasticsearch → Kibana ve Trace-ID Korelasyonu)](docs/labs/LAB-11-CENTRALIZED-LOGGING.md)
 12. [LAB-12: Altyapı Otomasyonu (Terraform Modülleri, Cloud-Init ve Idempotency)](docs/labs/LAB-12-TERRAFORM-IAC.md)
 13. [LAB-13 (Bonus): AWS EKS Kurumsal Platform Dağıtımı, IRSA ve Güvenilirlik Yönetimi](docs/labs/LAB-13-EKS-ENTERPRISE.md)
+14. [LAB-14 (Bonus): Amazon ECS Fargate ile Sunucusuz Container Dağıtımı ve ALB Entegrasyonu](docs/labs/LAB-14-ECS-FARGATE.md)
 
 ---
 

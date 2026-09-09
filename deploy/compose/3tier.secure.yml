@@ -1,4 +1,4 @@
-# NovaShop M04 3-Tier Secure Overlay.
+# NovaShop 3-Tier Security Overlay.
 # Applies strict runtime hardening, resource limits, and network isolation.
 services:
   ui:

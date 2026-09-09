@@ -1,4 +1,4 @@
-# NovaShop — M14 Amazon ECS Fargate ve ALB Modülü
+# NovaShop — Amazon ECS Fargate ve ALB Modülü
 # Serverless Container Orchestration with CloudWatch Container Insights
 
 # 1. CloudWatch Log Grubu

@@ -21,7 +21,7 @@ Kurumsal DevOps standartlarına uygun olarak; yerel veya bulut ortamında barın
 ### Ön koşullar
 
 - **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) ve [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) tamamlanmış olmalıdır.
-- **Kaynak Gereksinimi:** Öğrenci VM'inde `cicd-enterprise` profili çalıştırılacaktır (en az 2 vCPU, 8 GB boş RAM). Diğer ağır profiller (Kind, ELK) durdurulmuş olmalıdır (D-008).
+- **Kaynak Gereksinimi:** Öğrenci VM'inde `cicd-enterprise` profili çalıştırılacaktır (en az 2 vCPU, 8 GB boş RAM). Diğer ağır profiller (Kind, ELK) durdurulmuş olmalıdır (PROFILES.md kaynak sınırları).
 - **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`, Git.
 
 ---
@@ -270,7 +270,7 @@ bash scripts/verify/verify-lab-07.sh harbor.novashop.local:8443
 
 #### Senaryo 2: Pipeline Bellek Yetersizliği Nedeniyle Çöküyor (OOMKilled)
 - **Belirti:** GitLab Runner veya Jenkins Agent Java derleme sırasında aniden duruyor.
-- **Muhtemel Neden:** Öğrenci VM'inde GitLab CE ve Jenkins'in aynı anda çalıştırılması (D-008 kaynak ihlali).
+- **Muhtemel Neden:** Öğrenci VM'inde GitLab CE ve Jenkins'in aynı anda çalıştırılması (sistem bellek sınırı ihlali).
 - **Güvenli Çözüm:** Yalnızca bir otomasyon motorunu (tercihen hafif Jenkins veya GitLab Runner) aktif tutun; diğer konteynerleri durdurun: `docker compose down`.
 
 ---
@@ -301,18 +301,8 @@ docker logout <HARBOR_URL> 2>/dev/null || true
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Harbor üzerinde `novashop` projesine bir **Tag Retention Rule (Etiket Saklama Kuralı)** tanımlayın:
    - "Son yüklenen en güncel 5 imajı sakla, 5'ten eski imajları haftalık olarak otomatik sil".
 2. Kuralın simülasyonunu (Dry Run) çalıştırıp doğru imajları hedeflediğini doğrulayın.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Harbor projesi `Private` ve `Tag Immutability` kuralı aktif mi?
-- [ ] Robot hesabı en az ayrıcalıkla oluşturulup pipeline'a tanıtılmış mı?
-- [ ] Pipeline Maven birim testlerini başarıyla çalıştırıp imajı Harbor'a aktarıyor mu?
-- [ ] Aynı etiketle üzerine yazma denemesinde `denied: The tag is immutable` hatası alınıyor mu?
-- [ ] Harbor Trivy tarama sonucu zafiyet panosunda görüntüleniyor mu?

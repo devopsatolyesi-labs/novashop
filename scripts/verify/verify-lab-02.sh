@@ -4,13 +4,34 @@ set -e
 
 EC2_HOST="${1:-}"
 
-if [ -z "$EC2_HOST" ]; then
-    echo "Kullanım: $0 <EC2_PUBLIC_IP_VEYA_HOST>"
-    echo "Örnek:   $0 3.120.45.67"
-    exit 1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+if [ -z "$EC2_HOST" ] || [ "$EC2_HOST" = "--config-only" ]; then
+    echo "=== [LAB-02] Statik / Konfigürasyon Doğrulaması ==="
+    
+    # 1. Dokümantasyon ve Mimari Kılavuzu Varlık Kontrolü
+    if [ ! -f "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md" ]; then
+        echo "❌ HATA: LAB-02-AWS-BASICS.md bulunamadı!" >&2
+        exit 1
+    fi
+    echo "✅ LAB-02-AWS-BASICS.md mimari ve uygulama kılavuzu mevcut."
+
+    # 2. VPC CIDR ve RDS Single-AZ Güvenlik Doğrulaması
+    if grep -q "10.0.0.0/16" "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md" && \
+       grep -q "PubliclyAccessible: false" "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md"; then
+        echo "✅ VPC CIDR (10.0.0.0/16) ve izole RDS (PubliclyAccessible: false) yönergeleri doğrulandı."
+    else
+        echo "❌ HATA: LAB-02 mimari güvenlik gereksinimleri eksik!" >&2
+        exit 1
+    fi
+
+    echo "ℹ️ Canlı sunucu testi için kullanım: $0 <EC2_PUBLIC_IP>"
+    echo "=== [LAB-02] Konfigürasyon Doğrulaması Başarılı! ==="
+    exit 0
 fi
 
-echo "=== [LAB-02] Doğrulama Başlatılıyor: $EC2_HOST ==="
+echo "=== [LAB-02] Canlı AWS Doğrulaması Başlatılıyor: $EC2_HOST ==="
 
 # 1. HTTP 80 Ana Sayfa Yanıtı (Beklenen: 200 OK)
 echo "1. Ana sayfa (HTTP 200) kontrol ediliyor..."

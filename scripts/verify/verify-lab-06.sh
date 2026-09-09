@@ -34,7 +34,7 @@ else
     exit 1
 fi
 
-# Kaynak sınırları (D-008 koruması)
+# Kaynak sınırları (PROFILES.md koruması)
 if grep -q "limits:" "$VALUES_FILE" && grep -q "memory:" "$VALUES_FILE"; then
     echo "✅ Kaynak sınırları (resources.limits) tanımlı."
 else

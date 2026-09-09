@@ -233,16 +233,7 @@ terraform destroy -target=aws_ecs_service.ui -auto-approve
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. `terraform/ecs.tf` içinde `desired_count = 2` değerini `3` yaparak görevi güncelleyin ve `terraform apply` ile ölçekleyin.
 2. AWS konsolunda veya `aws ecs list-tasks` çıktısında 3 görevin de `RUNNING` durumunda olduğunu teyit edin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] ECS Fargate kümesi Container Insights aktif şekilde çalışıyor mu?
-- [ ] ALB üzerinden `/actuator/health` HTTP 200 OK dönüyor mu?
-- [ ] Task Definition `USER appuser` (UID 1000) kuralına uyuyor mu?
-- [ ] Öğrenci `scripts/verify/verify-lab-14.sh` testini başarıyla çalıştırdı mı?

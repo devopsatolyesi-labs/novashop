@@ -437,17 +437,7 @@ aws iam delete-role --role-name novashop-github-actions-role
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. `.github/workflows/deploy.yml` dosyasına derleme öncesinde `src/ui/src/main/resources/lang/messages.properties` dosyasında syntax kontrolü yapan bir shell adımı ekleyin.
 2. Hatalı bir sözdizimi ile commit atıp pipeline'ın derlemeyi durdurduğunu (Quality Gate) Actions sekmesinde gözlemleyin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] GitHub Actions OIDC ile kalıcı AWS anahtarı olmaksızın başarıyla kimlik doğrulaması yapıyor mu?
-- [ ] Maven testleri derleme öncesinde başarıyla koşuyor mu?
-- [ ] İmajlar AWS ECR üzerinde commit SHA etiketi ile kaydedilmiş mi?
-- [ ] EC2 üzerindeki `deploy.sh` betiği yeni imajı çekip kesintisiz başlatabiliyor mu?
-- [ ] Sağlık kontrolü başarısız olduğunda otomatik rollback mekanizması önceki imajı kurtarıyor mu?

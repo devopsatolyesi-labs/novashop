@@ -1,5 +1,5 @@
 # NovaShop DevOps Store — Helm Values Yapılandırması
-# D-008 Öğrenci VM Kaynak Bütçesi (2 vCPU / 16 GB) Uyumlu
+# Sistem Kaynak Bütçesi (PROFILES.md) Uyumlu
 
 global:
   environment: local-kind

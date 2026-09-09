@@ -57,7 +57,7 @@ if echo "$HEALTH_BODY" | grep -q '"status":"UP"'; then
 else
     echo "❌ HATA: http://${HOST}:${PORT}/actuator/health erişilemedi veya durum 'UP' değil!" >&2
     echo "   Dönen yanıt: '$HEALTH_BODY'" >&2
-    echo "   (Konteyneri başlattığınızdan emin olun: bash scripts/m03-starter-compose.sh up)" >&2
+    echo "   (Konteyneri başlattığınızdan emin olun: bash scripts/compose-starter.sh up)" >&2
     exit 1
 fi
 

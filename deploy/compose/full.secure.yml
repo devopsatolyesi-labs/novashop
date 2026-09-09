@@ -1,5 +1,5 @@
-# NovaShop M03 full-Compose security overlay.
-# Use only via scripts/m03-full-compose.sh after setting a local DB_PASSWORD.
+# NovaShop Full-Stack Security Overlay.
+# Use only via scripts/compose-full.sh after setting a local DB_PASSWORD.
 services:
   catalog:
     cpus: "0.50"

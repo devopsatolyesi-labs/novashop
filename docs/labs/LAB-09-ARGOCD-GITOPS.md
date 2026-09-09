@@ -244,16 +244,7 @@ kubectl delete namespace argocd novashop
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Git deposundaki `values.yaml` dosyasında `ui.replicaCount` değerini `2`'den `3`'e çıkarıp commit edin.
 2. Argo CD arayüzünde uygulamanın otomatik senkronize oluşunu ve pod sayısının 3'e yükseldiğini gözlemleyin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Argo CD sunucusu ve Custom Resource tanımları kümede sağlıklı çalışıyor mu?
-- [ ] `Application` kaynağı Git deposu ile `Synced` ve `Healthy` durumunda mı?
-- [ ] Canlı kümede `kubectl scale` ile yapılan manuel değişiklik Argo CD tarafından otomatik olarak Git durumuna döndürüldü mü (Self-Healing kanıtı)?
-- [ ] Rollback işlemi `git revert` üzerinden başarıyla gösterildi mi?

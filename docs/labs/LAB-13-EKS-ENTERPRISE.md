@@ -254,20 +254,10 @@ aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMP
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. EKS kümesinde Horizontal Pod Autoscaler (HPA) tanımlayın:
    ```bash
    kubectl autoscale deployment novashop-ui -n novashop --cpu-percent=50 --min=2 --max=6
    ```
 2. HPA durumunu `kubectl get hpa -n novashop` ile görüntüleyin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] EKS kümesi başarıyla ayağa kalkmış ve düğümler `Ready` mi?
-- [ ] IRSA ile pod seviyesinde IAM yetkilendirmesi doğrulanmış mı?
-- [ ] Argo CD ile mikroservisler EKS üzerine dağıtılmış mı?
-- [ ] Düğüm tahliyesinde (drain) pod'lar diğer düğüme kesintisiz taşındı mı?
-- [ ] `eksctl delete cluster` çalıştırılarak tüm altyapı sıfır maliyetle temizlendi mi?

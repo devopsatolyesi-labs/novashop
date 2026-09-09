@@ -1,4 +1,4 @@
-# NovaShop M03 starter overlay. Use with src/ui/docker-compose.yml.
+# NovaShop UI Starter Security Overlay. Use with src/ui/docker-compose.yml.
 # Keeps the UI's in-memory mock mode while applying runtime hardening.
 services:
   ui:

@@ -157,7 +157,7 @@ chmod 600 .env
 
 #### 4. Üretim Düzeyi Docker Compose Dosyası (`docker-compose.prod.yml`)
 
-EC2 üzerinde `docker-compose.prod.yml` dosyasını oluşturun. Bu dosya UI ve Catalog servislerini izole bir container bridge ağında birleştirir ve katı kaynak limitleri uygular (D-008):
+EC2 üzerinde `docker-compose.prod.yml` dosyasını oluşturun. Bu dosya UI ve Catalog servislerini izole bir container bridge ağında birleştirir ve katı kaynak limitleri uygular (PROFILES.md kaynak sınırları):
 
 ```bash
 cat << 'EOF' > docker-compose.prod.yml
@@ -497,17 +497,7 @@ sudo rm -rf /etc/ssl/novashop ~/novashop-deploy
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Nginx konfigürasyonuna `/api/catalog/` yolunu ekleyerek doğrudan Catalog servisinin sağlık durumunu dönen bir alt yönlendirme (proxy path) tanımlayın.
 2. `curl -k https://<EC2_PUBLIC_IP>/api/catalog/health` çağrısının `200 OK` verdiğini teyit edin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Docker Compose üzerinde UI ve Catalog mikroservisleri `healthy` durumunda mı?
-- [ ] Catalog servisi private subnet'teki RDS MySQL'e başarıyla bağlanıp migration tamamlamış mı?
-- [ ] HTTP istekleri otomatik olarak HTTPS'e (port 443, HTTP 301) yönlendiriliyor mu?
-- [ ] Nginx üzerinden `/healthz` endpoint'i `HTTP 200 OK` dönüyor mu?
-- [ ] `rollback.sh` betiği kesintisiz ve hatasız çalışıyor mu?

@@ -192,16 +192,7 @@ docker compose --profile security-gates down -v 2>/dev/null || true
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Reponun `.gitignore` dosyasına `*.env`, `*.pem` ve `sbom.json` kurallarının eklendiğini teyit edin.
 2. Git hooks (`.git/hooks/pre-commit`) içerisine `trivy fs --security-checks secret` çalıştıran bir komut ekleyerek secret içeren commit'leri yerelde engelleyin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Secret tarayıcı bilerek eklenen test anahtarını yakalayıp 1 koduyla duruyor mu?
-- [ ] SonarQube analizi çalıştırılıp Kalite Kapısı sonucu panoda görünüyor mu?
-- [ ] Trivy imaj taraması HIGH/CRITICAL zafiyetlerde çıkış kodu 1 dönüyor mu?
-- [ ] Standart CycloneDX formatında `sbom.json` dosyası başarıyla üretilmiş mi?

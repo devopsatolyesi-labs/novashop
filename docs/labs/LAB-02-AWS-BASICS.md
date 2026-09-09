@@ -312,7 +312,7 @@ sudo apt-get install -y nginx mysql-client curl
 ```
 
 **NovaShop Statik Karşılama Sayfası ve Sağlık Kontrolü Yapılandırması:**
-M02 temel labında, Nginx doğrudan çalışan bir statik test sayfası ve `/healthz` endpoint'i (HTTP 200) sunar:
+Bu temel laboratuvarda, Nginx doğrudan çalışan bir statik test sayfası ve `/healthz` endpoint'i (HTTP 200) sunar:
 
 ```bash
 sudo tee /etc/nginx/conf.d/novashop.conf > /dev/null << 'EOF'
@@ -516,7 +516,7 @@ bash scripts/verify/verify-lab-02.sh <EC2_PUBLIC_IP>
 
 1. **Açık Portlar ve İzolasyon:**
    - EC2 üzerinde SSH (port 22) yalnızca öğrencinin IP'siyle (`<MY_IP>/32`) sınırlandırılmıştır. Dış dünyaya kesinlikle açılmamıştır.
-   - HTTP (port 80) dış dünyaya açıktır; HTTPS (443) M04 labında domain/TLS ile devreye alınacaktır.
+   - HTTP (port 80) dış dünyaya açıktır; HTTPS (443) bir sonraki laboratuvarda (LAB-04) domain ve TLS ile devreye alınacaktır.
    - RDS MySQL (port 3306) dış dünyaya kesinlikle kapalıdır (`PubliclyAccessible: false`). Yalnızca EC2 Web Security Group üzerinden gelen bağlantıları kabul eder.
 2. **Secret Güvenliği:**
    - Veritabanı ana parolası komut satırında düz metin olarak verilmemiştir; interaktif `read -s` ve `mysql -p` ile korunmuştur.
@@ -614,7 +614,7 @@ aws ec2 delete-vpc --vpc-id <VPC_ID> --region <AWS_REGION>
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. EC2 üzerindeki Nginx konfigürasyonuna (`/etc/nginx/conf.d/novashop.conf`) `/info` adında yeni bir endpoint ekleyin.
 2. Bu endpoint'in HTTP 200 ile aşağıdaki JSON içeriğini dönmesini sağlayın:
@@ -622,16 +622,3 @@ aws ec2 delete-vpc --vpc-id <VPC_ID> --region <AWS_REGION>
    {"service": "novashop-web", "cloud": "aws", "tier": "presentation"}
    ```
 3. `sudo nginx -t && sudo systemctl reload nginx` komutunu çalıştırıp yerel bilgisayarınızdan `curl -s http://<EC2_PUBLIC_IP>/info` ile doğrulayın.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] VPC 10.0.0.0/16, 1 public ve 2 private subnet ile hatasız kurulmuş mu?
-- [ ] RDS MySQL örneği `PubliclyAccessible: false` ve `MultiAZ: False` (Single-AZ) olarak doğrulanmış mı?
-- [ ] RDS Security Group yalnızca EC2 Web SG'den gelen 3306 portuna mı izin veriyor?
-- [ ] RDS master parolası komut geçmişinde görünmeyecek şekilde interaktif mi girilmiş?
-- [ ] EC2 SSH portu yalnızca öğrencinin IP'siyle (`<MY_IP>/32`) mi sınırlandırılmış?
-- [ ] EC2'den RDS'e bağlantıda Amazon Trust Store CA sertifikası (`rds-ca-bundle.pem`) kullanılarak TLS şifrelemesi (`Cipher in use`) doğrulanmış mı?
-- [ ] `curl http://<EC2_PUBLIC_IP>/` ve `curl http://<EC2_PUBLIC_IP>/healthz` çağrıları HTTP 200 OK dönüyor mu?
-- [ ] Temizlik adımlarında deletion protection kontrolü ve snapshot kararı eksiksiz işletilmiş mi?

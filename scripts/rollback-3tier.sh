@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# NovaShop — M04 AWS 3-Tier Acil Geri Alma (Rollback) Betiği
+# NovaShop — AWS 3-Tier Acil Geri Alma (Rollback) Betiği
 set -euo pipefail
 
 TARGET_TAG="${1:-v0.1.0}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-echo "=== [M04 3-Tier] ACİL ROLLBACK BAŞLATILIYOR ==="
+echo "=== [NovaShop 3-Tier] ACİL ROLLBACK BAŞLATILIYOR ==="
 echo "ℹ️ Geri dönülecek kararlı sürüm: ${TARGET_TAG}"
 
 cd "$REPO_ROOT"
@@ -22,4 +22,4 @@ else
     echo "ℹ️ Bilgi: Docker CLI mevcut değil; rollback simülasyonu tamamlandı."
 fi
 
-echo "=== [M04 3-Tier] Rollback Süreci Başarıyla Sonuçlandı ==="
+echo "=== [NovaShop 3-Tier] Rollback Süreci Başarıyla Sonuçlandı ==="

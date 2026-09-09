@@ -265,18 +265,9 @@ git branch -d feature/update-mug-product
 
 ---
 
-## Öğrenci Görevi
+## Pratik Uygulama Görevi
 
 1. `feature/add-devops-sticker` adında yeni bir branch açın.
 2. `src/ui/src/main/resources/data/products.json` dosyasına 13. ürün olarak `Docker & K8s Sticker Pack` (fiyat: 10) ekleyin.
 3. `jq .` ile JSON syntax'ını doğrulayın.
 4. Değişikliği commit edip GitHub'a push edin ve web arayüzünden bir Pull Request açın.
-
----
-
-## Eğitmen Kontrol Listesi
-
-- [ ] `git status` temiz durumda ve çalışma dizininde çözülmemiş conflict yok.
-- [ ] `git log --graph --oneline` çıktısında birleştirme (merge commit) açıkça görünüyor.
-- [ ] `products.json` dosyası `jq` kontrolünden başarıyla geçiyor.
-- [ ] Hiçbir gizli anahtar veya geçici dosya commit geçmişine sızmamış.

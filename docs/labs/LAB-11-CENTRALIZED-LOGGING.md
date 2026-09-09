@@ -212,16 +212,7 @@ docker compose --profile logging-elk down -v
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Kibana üzerinde yalnızca `level: "ERROR"` olan logları listeleyen özel bir filtre oluşturun.
 2. Bu filtrenin sonucunu "Hata Sayacı" (Error Metrics) görselleştirmesi olarak yeni bir Dashboard'a kaydedin.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Fluent Bit konteyneri Docker loglarını başarıyla okuyup Elasticsearch'e iletiyor mu?
-- [ ] Loglar JSON formatında ve `trace_id` alanı içeriyor mu?
-- [ ] Kibana üzerinde `novashop-logs-*` veri görünümü (data view) oluşturulmuş mu?
-- [ ] Belirli bir `trace_id` sorgulandığında ilgili tüm mikroservis logları kronolojik olarak bulunabiliyor mu?

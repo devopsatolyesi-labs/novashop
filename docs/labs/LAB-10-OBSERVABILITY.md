@@ -192,16 +192,7 @@ docker compose --profile observability down -v
 
 ---
 
-### Öğrenci Görevi
+### Pratik Uygulama Görevi
 
 1. Prometheus kural dosyasına (`alert.rules.yml`) p99 gecikmesi 500ms'yi aşarsa tetiklenecek `HighResponseLatency` alarmı ekleyin.
 2. Konfigürasyonu yeniden yükleyin (`curl -X POST http://localhost:9090/-/reload`) ve kuralın panelde listelendiğini doğrulayın.
-
----
-
-### Eğitmen Kontrol Listesi
-
-- [ ] Prometheus, UI ve Catalog servislerinden metrikleri düzenli scrape ediyor mu?
-- [ ] Jaeger üzerinde UI'dan Catalog'a giden dağıtık izleme span'leri görünüyor mu?
-- [ ] Grafana üzerinde RED metrikleri canlı olarak akıyor mu?
-- [ ] Yapay hata oluşturulduğunda Alertmanager alarmı `Firing` durumuna geçiyor mu?

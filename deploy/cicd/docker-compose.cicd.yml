@@ -1,5 +1,5 @@
-# NovaShop — M07 Kurumsal CI/CD Compose Altyapısı
-# D-008 Öğrenci VM Kaynak Bütçesi (2 vCPU / 16 GB) Uyumlu: Hafif Jenkins Dağıtımı
+# NovaShop — Kurumsal CI/CD Compose Altyapısı
+# Sistem Kaynak Bütçesi (PROFILES.md) Uyumlu: Hafif Jenkins Dağıtımı
 services:
   jenkins:
     image: jenkins/jenkins:lts-jdk21

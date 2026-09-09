@@ -1,6 +1,6 @@
 # NovaShop DevOps Store — Merkezi Sorun Giderme Kılavuzu (Master Troubleshooting Guide)
 
-Bu kılavuz; NovaShop eğitimi boyunca öğrencilerin ve eğitmenlerin karşılaşabileceği en yaygın hata belirtilerini, kök nedenlerini, teşhis komutlarını ve güvenli çözüm yollarını tek bir merkezi referansta toplar.
+Bu kılavuz; NovaShop laboratuvarları ve dağıtım süreçleri boyunca karşılaşılabilecek en yaygın hata belirtilerini, kök nedenlerini, teşhis komutlarını ve güvenli çözüm yollarını tek bir merkezi referansta toplar.
 
 ---
 
@@ -138,4 +138,4 @@ Bu kılavuz; NovaShop eğitimi boyunca öğrencilerin ve eğitmenlerin karşıla
 1. **Hiçbir zaman `chmod -R 777` veya `docker run --privileged` çalıştırmayın.**
 2. **Sorunu çözmek için veritabanı portlarını asla `0.0.0.0/0` ile dışarıya açmayın.**
 3. **Loglarda şifre veya secret aramadan önce ekran paylaşımını veya log kaydını maskeleyin.**
-4. **Sistem kilitlendiğinde her zaman D-008 profillerine göre bir önceki profili durdurup (`down -v`) kaynakları boşaltın.**
+4. **Sistem kilitlendiğinde veya bellek tükendiğinde PROFILES.md kurallarına göre bir önceki profili durdurup (`down -v`) kaynakları serbest bırakın.**

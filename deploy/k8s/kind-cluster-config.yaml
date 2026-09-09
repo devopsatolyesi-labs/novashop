@@ -1,5 +1,5 @@
 # NovaShop — Kind Çok Düğümlü Yerel Kubernetes Küme Yapılandırması
-# D-008 Öğrenci Kaynak Bütçesi Uyumlu: 1 Control-Plane, 2 Worker
+# Sistem Kaynak Bütçesi (PROFILES.md) Uyumlu: 1 Control-Plane, 2 Worker
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: novashop-cluster

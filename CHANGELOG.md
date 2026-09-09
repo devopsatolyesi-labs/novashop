@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.7.0](https://github.com/devopsatolyesi-labs/novashop/compare/v1.6.2...v1.7.0) (2026-09-09)
+
+
+### Features
+
+* initial novashop starter repository with branding ([b6d37d2](https://github.com/devopsatolyesi-labs/novashop/commit/b6d37d2c5b041dc086084a64fc5cdd4feb083b62))
+
+
+### Bug Fixes
+
+* **docs:** update starter quickstart to build local image and use local git config in lab ([64d9b07](https://github.com/devopsatolyesi-labs/novashop/commit/64d9b0759b5b46ba068ffee09fcd6ec5434e845f))
+
 ## [1.6.2](https://github.com/aws-containers/retail-store-sample-app/compare/v1.6.1...v1.6.2) (2026-07-28)
 
 

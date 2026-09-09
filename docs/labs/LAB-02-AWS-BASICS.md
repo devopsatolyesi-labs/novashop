@@ -210,21 +210,19 @@ aws rds create-db-subnet-group \
   --region <AWS_REGION>
 ```
 
-**Güvenli Parola Girişi ve RDS Instance Başlatma:**
+**Güvenli Kimlik Yönetimi ve RDS Instance Başlatma:**
 > [!IMPORTANT]
-> Parolanın shell geçmişinde (`history`) veya süreç tablosunda (`ps`) açık metin olarak görünmesini önlemek için interaktif `read -s` kullanılır:
+> Parolanın shell geçmişinde (`history`) veya işletim sistemi süreç tablosunda (`ps aux`) komut satırı argümanı olarak sızmasını önlemek için AWS yerleşik parola yönetimi (`--manage-master-user-password`) kullanılır. Bu parametre ile parola doğrudan AWS Secrets Manager tarafından şifrelenerek yönetilir.
+> *(Alternatif GUI Yöntemi: AWS Management Console > RDS > Create Database adımında "Credentials Settings" altında maskeli parola alanı kullanılabilir).*
 
 ```bash
-read -s -p "RDS Master Kullanıcı Parolasını Giriniz: " DB_PASS
-echo ""
-
 aws rds create-db-instance \
   --db-instance-identifier novashop-catalog-db \
   --db-instance-class db.t3.micro \
   --engine mysql \
   --allocated-storage 20 \
   --master-username novashop \
-  --master-user-password "$DB_PASS" \
+  --manage-master-user-password \
   --db-name catalogdb \
   --db-subnet-group-name novashop-rds-subnet-group \
   --vpc-security-group-ids $RDS_SG \
@@ -232,12 +230,21 @@ aws rds create-db-instance \
   --no-multi-az \
   --backup-retention-period 0 \
   --region <AWS_REGION>
-
-# Bellekteki değişkeni derhal temizle
-unset DB_PASS
 ```
-*Açıklama:* Single-AZ (`--no-multi-az`), 20 GB depolama ve dışarıya kapalı (`--no-publicly-accessible`) bir MySQL instance başlatır.  
+*Açıklama:* Single-AZ (`--no-multi-az`), 20 GB depolama, dışarıya kapalı (`--no-publicly-accessible`) ve AWS Secrets Manager tarafından yönetilen ana parolaya sahip bir MySQL instance başlatır.  
 *Not:* Veritabanının hazır (`available`) duruma geçmesi yaklaşık 5–7 dakika sürebilir.
+
+**Oluşturulan Parolayı AWS Secrets Manager'dan Güvenle Öğrenme:**
+```bash
+# Otomatik oluşturulan Secret ARN kimliğini al
+SECRET_ARN=$(aws rds describe-db-instances \
+  --db-instance-identifier novashop-catalog-db \
+  --region <AWS_REGION> \
+  --query 'DBInstances[0].MasterUserSecret.SecretArn' --output text)
+
+# Parola değerini JSON olarak görüntüle (yalnızca terminal ekranında kalır)
+aws secretsmanager get-secret-value --secret-id "$SECRET_ARN" --region <AWS_REGION> --query 'SecretString' --output text
+```
 
 **Durumu ve Endpoint'i Takip Etme:**
 ```bash
@@ -371,28 +378,28 @@ sudo curl -s https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -
 ls -lh /etc/ssl/certs/rds-ca-bundle.pem
 ```
 
-**TLS Zorunlu ve Etkileşimli Parola ile MySQL Bağlantısı:**
+**Kimlik Doğrulamalı TLS (VERIFY_IDENTITY) ve Etkileşimli Parola ile MySQL Bağlantısı:**
 > [!TIP]
-> `-p` parametresinin yanına şifre yazılmaz; MySQL istemcisi şifreyi gizli olarak sorar. `--ssl-ca` parametresi ile bağlantı TLS üzerinden doğrulanır:
+> `-p` parametresinin yanına şifre yazılmaz; MySQL istemcisi şifreyi gizli olarak sorar. `--ssl-mode=VERIFY_IDENTITY` parametresi ile hem Amazon CA zinciri doğrulanır hem de sunucu alan adının (RDS endpoint) sertifikadaki CN/SAN bilgisiyle birebir eşleştiği teyit edilerek Man-in-the-Middle (MitM) saldırılarına karşı tam koruma sağlanır:
 
 ```bash
 mysql -h <RDS_ENDPOINT> -u novashop -p \
   --ssl-ca=/etc/ssl/certs/rds-ca-bundle.pem \
-  --ssl-mode=REQUIRED \
+  --ssl-mode=VERIFY_IDENTITY \
   -e "STATUS;" | grep -E "(SSL|Cipher)"
 ```
-*İstenecek parola:* `Enter password:` (Adım 4'te belirlediğiniz parolayı girin).  
+*İstenecek parola:* `Enter password:` (Secrets Manager'da görüntülenen parolayı girin).  
 *Beklenen çıktı:*
 ```text
 SSL:			Cipher in use is TLS_AES_256_GCM_SHA384
 ```
-Bu çıktı, bağlantının düz metin yerine yüksek güvenlikli TLS 1.3/AES-256 ile şifrelendiğini kanıtlar.
+Bu çıktı, bağlantının düz metin yerine sunucu kimliği doğrulanmış yüksek güvenlikli TLS 1.3/AES-256 ile şifrelendiğini kanıtlar.
 
 **Tablo Oluşturma ve Doğrulama Sorgusu:**
 ```bash
 mysql -h <RDS_ENDPOINT> -u novashop -p \
   --ssl-ca=/etc/ssl/certs/rds-ca-bundle.pem \
-  --ssl-mode=REQUIRED \
+  --ssl-mode=VERIFY_IDENTITY \
   catalogdb << 'EOF'
 CREATE TABLE IF NOT EXISTS connectivity_check (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -516,12 +523,31 @@ aws ec2 terminate-instances --instance-ids <EC2_INSTANCE_ID> --region <AWS_REGIO
 aws ec2 wait instance-terminated --instance-ids <EC2_INSTANCE_ID> --region <AWS_REGION>
 ```
 
-#### 2. RDS Silme Korumasını Kontrol Edin ve Kaldırın
+#### 2. RDS Silme Korumasını (DeletionProtection) Kontrol Edin ve Kaldırın
 ```bash
-aws rds modify-db-instance \
+# DeletionProtection mevcut durumunu oku
+DP_STATUS=$(aws rds describe-db-instances \
   --db-instance-identifier novashop-catalog-db \
-  --no-deletion-protection \
-  --region <AWS_REGION>
+  --region <AWS_REGION> \
+  --query 'DBInstances[0].DeletionProtection' --output text)
+
+echo "Mevcut DeletionProtection: $DP_STATUS"
+
+# Eğer açıksa kaldır ve veritabanı tekrar hazır (available) duruma gelene kadar bekle
+if [ "$DP_STATUS" = "True" ]; then
+    echo "Silme koruması kaldırılıyor..."
+    aws rds modify-db-instance \
+      --db-instance-identifier novashop-catalog-db \
+      --no-deletion-protection \
+      --apply-immediately \
+      --region <AWS_REGION>
+
+    echo "Veritabanının hazır (available) duruma geçmesi bekleniyor..."
+    aws rds wait db-instance-available \
+      --db-instance-identifier novashop-catalog-db \
+      --region <AWS_REGION>
+    echo "Veritabanı silmeye hazır."
+fi
 ```
 
 #### 3. RDS Instance'ı Silin (Bilinçli Snapshot Kararı)

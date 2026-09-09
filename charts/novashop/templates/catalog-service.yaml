@@ -1,0 +1,19 @@
+{{- if .Values.catalog.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "novashop.fullname" . }}-catalog
+  labels:
+    {{- include "novashop.labels" . | nindent 4 }}
+    app.kubernetes.io/component: catalog
+spec:
+  type: {{ .Values.catalog.service.type }}
+  ports:
+    - port: {{ .Values.catalog.service.port }}
+      targetPort: {{ .Values.catalog.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: {{ include "novashop.name" . }}-catalog
+    app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end }}

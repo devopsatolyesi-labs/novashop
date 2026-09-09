@@ -190,6 +190,25 @@ kubectl rollout status deployment/novashop-ui -n novashop
 
 ---
 
+#### 7. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+ArgoCD Application yapılandırmasını (selfHeal, prune, namespace) otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-09.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-09] ArgoCD GitOps Doğrulama Başlatılıyor ===
+✅ ArgoCD Application manifesti bulundu.
+✅ Otomatik drift düzeltme (selfHeal: true) aktif.
+✅ Yetim kaynak temizleme (prune: true) aktif.
+✅ Hedef kubernetes namespace: novashop.
+=== [LAB-09] ArgoCD GitOps Doğrulama Tamamlandı ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Argo CD `ComparisonError: repository not found`

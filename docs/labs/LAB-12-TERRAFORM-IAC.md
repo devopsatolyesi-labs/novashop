@@ -206,6 +206,23 @@ curl -s http://${EC2_IP}/healthz
 
 ---
 
+#### 8. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Terraform sözdizimini, biçimlendirmesini ve secret sızıntı denetimini otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-12.sh terraform/
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-12] Terraform IaC Doğrulama Başlatılıyor ===
+✅ Terraform dizini bulundu: terraform/
+✅ Terraform dosyalarında düz metin parola bulunamadı.
+=== [LAB-12] Terraform IaC Doğrulaması Başarılı! ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: `Error: Error acquiring the state lock`

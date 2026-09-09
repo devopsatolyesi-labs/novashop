@@ -324,6 +324,26 @@ kubectl rollout status deployment/novashop-ui
 
 ---
 
+#### 8. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Helm chart yapısını, sağlık problarını ve güvenlik/kaynak sınırlarını otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-06.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-06] Kubernetes ve Helm Doğrulama Başlatılıyor ===
+✅ Helm chart dizini mevcut: .../charts/novashop
+✅ Tüm temel Helm chart şablonları mevcut.
+✅ Liveness ve Readiness sağlık probları tanımlı.
+✅ Kaynak sınırları (resources.limits) tanımlı.
+✅ Non-root kullanıcı güvenlik kuralı (runAsNonRoot: true) tanımlı.
+=== [LAB-06] Kubernetes ve Helm Doğrulaması Tamamlandı! ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Pod'lar `CrashLoopBackOff` veya `OOMKilled` Durumuna Geçiyor

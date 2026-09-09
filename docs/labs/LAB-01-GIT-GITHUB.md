@@ -205,6 +205,25 @@ git log --graph --oneline --decorate -n 5
 
 ---
 
+### Bölüm 4: Otomatik Doğrulama Betiğini Çalıştırma
+
+Laboratuvar adımlarını doğru tamamladığınızı doğrulamak için otomatik test betiğini çalıştırın:
+
+```bash
+bash scripts/verify/verify-lab-01.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-01] Doğrulama Başlatılıyor ===
+✅ Git deposu mevcut.
+✅ Local Git yapılandırması: <STUDENT_NAME> <<STUDENT_EMAIL>>
+✅ Toplam commit sayısı: ...
+✅ Çalışma ağacı temiz (clean working tree).
+=== [LAB-01] Doğrulama Başarıyla Tamamlandı! ===
+```
+
+---
+
 ## Troubleshooting (Sorun Giderme)
 
 ### 1. `fatal: refusing to merge unrelated histories`

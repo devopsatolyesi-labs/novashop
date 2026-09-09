@@ -452,6 +452,20 @@ curl -s http://<EC2_PUBLIC_IP>/healthz
 {"status":"UP","layer":"web","host":"ip-10-0-1-xxx"}
 ```
 
+```bash
+# 3. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+bash scripts/verify/verify-lab-02.sh <EC2_PUBLIC_IP>
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-02] Doğrulama Başlatılıyor: <EC2_PUBLIC_IP> ===
+1. Ana sayfa (HTTP 200) kontrol ediliyor...
+✅ Ana sayfa HTTP 200 OK döndü.
+2. Sağlık kontrolü (/healthz) test ediliyor...
+✅ Sağlık kontrolü başarılı: {"status":"UP","layer":"web","host":"ip-10-0-1-xxx"}
+=== [LAB-02] Tüm Testler Başarılı! ===
+```
+
 ---
 
 ### Troubleshooting

@@ -83,13 +83,13 @@ Docker Compose version v2.xx.x
 #### 2. Güvenli Multi-Stage Dockerfile İncelemesi
 
 `novashop/src/ui/Dockerfile` dosyasını inceleyin. Bu Dockerfile kurumsal güvenlik standartlarına göre iki aşamalı (multi-stage) tasarlanmıştır:
-1. **Derleme Aşaması (Builder):** `eclipse-temurin:21-jdk` imajında `./mvnw clean package` ile JAR üretilir. Derleme araçları nihai imaja taşınmaz.
-2. **Çalıştırma Aşaması (Runtime):** Minimal `eclipse-temurin:21-jre` imajı kullanılır.
-3. **Güvenlik (Non-root):** UID 1000 `appuser` tanımlanır; container asla `root` olarak çalışmaz.
+1. **Derleme Aşaması (Builder):** `public.ecr.aws/amazonlinux/amazonlinux:2023` tabanında `java-21-amazon-corretto-headless` ve `./mvnw clean package` ile JAR üretilir. Derleme araçları nihai imaja taşınmaz.
+2. **Çalıştırma Aşaması (Runtime):** Minimal `amazonlinux:2023` taban imajı ve headless Java 21 çalışma zamanı kullanılır.
+3. **Güvenlik (Non-root):** Dockerfile içinde `USER appuser` (UID 1000, GID 1000) açıkça tanımlanır; süreç asla `root` yetkileriyle çalıştırılmaz.
 
 ---
 
-#### 3. Starter Profil: NovaShop UI İmajını Derleme
+#### 3. Starter Çalışma Yolu: NovaShop UI İmajını Derleme
 
 UI dizinine geçerek yerel imajı derleyin:
 
@@ -112,10 +112,26 @@ docker images novashop-ui:v0.1.0
 
 ---
 
-#### 4. Bağımsız Konteyneri Başlatma ve Smoke Testi
+#### 4. Güvenli Docker Compose Başlatma Seçenekleri (Starter vs Full)
 
-Starter profil ile UI'ı tek başına ayağa kaldırın (arka uç servisleri tanımlanmadığında dahili mock verilerini kullanır):
+NovaShop, öğrenci VM kaynaklarını (2 vCPU / 16 GB RAM) korumak ve güvenliği sağlamak için iki ayrı çalışma yolu sunar:
 
+- **Starter Çalışma Yolu (Önerilen - M03 Lab Kapsamı):** Yalnızca UI ve dahili mock verileri ayağa kaldırır. `deploy/compose/starter.secure.yml` overlay'i ile kök dosya sistemi salt-okunur (`read_only: true`), `no-new-privileges: true`, CPU sınırı (0.50) ve 64 MiB kısıtlı `tmpfs /tmp` uygular.
+- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; `scripts/m03-full-compose.sh` üzerinden ve secret-guard koruması ile çalıştırılır.
+
+##### Seçenek A: NovaShop Starter Compose Helper (Önerilen)
+1. **Güvenli Overlay ile Yapılandırmayı Çözümleme:**
+   ```bash
+   bash scripts/m03-starter-compose.sh config
+   ```
+   *Beklenen çıktı:* `read_only: true`, `security_opt: [no-new-privileges:true]`, `mem_limit: 536870912`, `cpus: 0.50`, `healthcheck` alanlarını içeren Compose konfigürasyonu.
+
+2. **Konteyneri Başlatma:**
+   ```bash
+   bash scripts/m03-starter-compose.sh up
+   ```
+
+##### Seçenek B: Doğrudan Docker CLI ile Çalıştırma
 ```bash
 docker run -d \
   --name novashop-ui-starter \
@@ -123,18 +139,14 @@ docker run -d \
   --memory=512m \
   --cpus=0.5 \
   --read-only \
-  --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   novashop-ui:v0.1.0
 ```
-*Açıklama:*
-- `-p 8888:8080`: Host 8888 portunu container 8080 portuna yönlendirir.
-- `--memory=512m --cpus=0.5`: Kaynak tüketimini sınırlandırır.
-- `--read-only`: Kök dosya sistemini salt-okunur yaparak güvenlik sertleştirmesi sağlar.
-- `--tmpfs /tmp`: Spring Boot geçici dosyaları için RAM tabanlı geçici alan açar.
 
 **Konteyner Durumunu Kontrol Etme:**
 ```bash
-docker ps --filter "name=novashop-ui-starter"
+docker ps --filter "name=novashop-ui"
 ```
 *Beklenen çıktı:*
 ```text
@@ -144,7 +156,7 @@ a1b2c3d4e5f6   novashop-ui:v0.1.0     Up 5 seconds   0.0.0.0:8888->8080/tcp   no
 
 ---
 
-#### 5. Sağlık Kontrolü ve Marka Doğrulama
+#### 5. Sağlık Kontrolü, Marka Doğrulama ve Otomatik Test
 
 Konteynerin canlılığını ve NovaShop marka kimliğini test edin:
 
@@ -171,6 +183,28 @@ NovaShop DevOps Store
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8888/favicon.ico
 ```
 *Beklenen çıktı:* `200`
+
+```bash
+# 4. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma (Canlı Smoke Testi)
+# Bu betik canlı konteynerin Actuator UP, Marka Başlığı ve Favicon durumunu zorunlu kılar; hata durumunda fail-fast (exit 1) verir.
+bash scripts/verify/verify-lab-03.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-03] Doğrulama Başlatılıyor (localhost:8888 | Mod: live) ===
+✅ Güvenlik overlay dosyası mevcut (deploy/compose/starter.secure.yml).
+✅ Overlay güvenlik sertleştirmeleri (read-only, no-new-privileges, CPU/PID limits) doğrulandı.
+✅ Dockerfile non-root kullanıcı direktifi (USER appuser) doğrulandı.
+4. Canlı konteyner Actuator sağlık kontrolü test ediliyor...
+✅ Sağlık kontrolü başarılı: {"status":"UP"}
+5. NovaShop marka kimliği test ediliyor...
+✅ Marka başlığı doğrulandı: 'NovaShop DevOps Store'
+6. Favicon HTTP 200 kontrolü...
+✅ Favicon HTTP 200 OK.
+=== [LAB-03] Canlı Smoke ve Güvenlik Doğrulaması Başarılı (PASS) ===
+```
+
+*(Opsiyonel Çevrimdışı Mod: Yalnızca Docker Compose overlay ve Dockerfile non-root statik denetimi için: `bash scripts/verify/verify-lab-03.sh --config-only`)*
 
 ---
 

@@ -137,6 +137,27 @@ docker run --rm -v $(pwd):/src aquasec/trivy:latest fs --security-checks secret 
 
 ---
 
+#### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Kod tabanınızdaki gizli anahtarları, lisans uyumluluğunu ve Dockerfile non-root kontrollerini otomatik betik ile test edin:
+
+```bash
+bash scripts/verify/verify-lab-08.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-08] DevSecOps Güvenlik Kapıları Doğrulama Başlatılıyor ===
+1. Hassas bilgi ve özel anahtar sızıntı taraması yapılıyor...
+✅ Secret taraması temiz: Kod tabanında sızıntı tespit edilmedi.
+2. Açık kaynak lisans ve atıf (Attribution) kontrolü...
+✅ Ana depo LICENSE dosyası mevcut.
+3. Dockerfile güvenlik sertleştirmesi (Non-root) denetleniyor...
+✅ Non-root kullanıcı kuralları doğrulandı.
+=== [LAB-08] DevSecOps Güvenlik Kapıları Doğrulaması Başarılı! ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Trivy Veritabanı İndirme Hatası (`download error: rate limit exceeded`)

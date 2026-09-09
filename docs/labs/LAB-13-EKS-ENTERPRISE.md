@@ -193,6 +193,23 @@ kubectl get pods -n novashop -o wide
 
 ---
 
+#### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+EKS küme durumunu, IRSA ServiceAccount tanımlarını ve temizlik gereksinimlerini otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-13.sh novashop-eks <AWS_REGION>
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-13] Amazon EKS Doğrulama Başlatılıyor (novashop-eks / <AWS_REGION>) ===
+✅ EKS kümesi aktif durumda: novashop-eks
+✅ IRSA IAM Rol anotasyonu bulundu: arn:aws:iam:...
+=== [LAB-13] Amazon EKS Doğrulama Tamamlandı ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: `eksctl create cluster` CloudFormation Rollback Hatası

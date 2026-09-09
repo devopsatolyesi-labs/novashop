@@ -381,6 +381,23 @@ curl -s -k https://<EC2_PUBLIC_IP>/healthz
 curl -s -k https://<EC2_PUBLIC_IP>/ | grep -i "catalog"
 ```
 
+```bash
+# 4. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+bash scripts/verify/verify-lab-04.sh <EC2_PUBLIC_IP> --insecure
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-04] Doğrulama Başlatılıyor: <EC2_PUBLIC_IP> ===
+1. HTTP (Port 80) -> HTTPS yönlendirme testi...
+✅ HTTP -> HTTPS yönlendirmesi başarılı (HTTP 301).
+2. HTTPS üzerinden ana sayfa ve NovaShop marka kontrolü...
+✅ HTTPS erişimi ve marka başlığı ('NovaShop DevOps Store') doğrulandı.
+3. HTTPS /actuator/health sağlık kontrolü...
+✅ Actuator sağlık kontrolü başarılı: {"status":"UP"}
+✅ HTTPS Favicon HTTP 200 OK.
+=== [LAB-04] Tüm 3-Tier Doğrulamaları Başarılı! ===
+```
+
 ---
 
 #### 8. Kontrollü Sürüm Güncelleme ve Rollback Mekanizması

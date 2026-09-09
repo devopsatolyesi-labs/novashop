@@ -141,6 +141,25 @@ for i in {1..50}; do curl -s http://localhost:8888/api/invalid-endpoint > /dev/n
 
 ---
 
+#### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Prometheus metrik endpoint'lerini, JVM metriklerini ve dağıtık izleme yeteneklerini otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-10.sh 8888 localhost
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-10] Gözlemlenebilirlik Doğrulama Başlatılıyor ===
+1. Actuator Prometheus metrik endpoint'i test ediliyor...
+✅ /actuator/prometheus üzerinden JVM metrikleri başarıyla alınıyor.
+✅ HTTP istek gecikme ve sayaç metrikleri (http_server_requests_seconds) mevcut.
+✅ Dağıtık izleme (Trace) metrikleri etkin.
+=== [LAB-10] Gözlemlenebilirlik Doğrulama Tamamlandı ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Jaeger'da İzler (Traces) Görünmüyor

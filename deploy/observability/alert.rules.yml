@@ -1,0 +1,25 @@
+# NovaShop — Prometheus Alarm Kuralları (Alert Rules)
+groups:
+  - name: novashop_alerts
+    rules:
+      # 1. Yüksek HTTP Hata Oranı Alarmı (RED - Rate/Errors/Duration)
+      - alert: HighHttpErrorRate
+        expr: rate(http_server_requests_seconds_count{status=~"5.."}[1m]) > 0.05
+        for: 30s
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "NovaShop UI yüksek HTTP 5xx hata oranı tespit edildi"
+          description: "Son 1 dakikada HTTP 5xx hata oranı saniyede 0.05'i aştı."
+
+      # 2. Servis Kesintisi Alarmı (Service Down)
+      - alert: NovaShopServiceDown
+        expr: up{job="novashop-ui"} == 0
+        for: 1m
+        labels:
+          severity: blocker
+          team: devops
+        annotations:
+          summary: "NovaShop UI servisi erişilemiyor"
+          description: "Prometheus 1 dakikadır novashop-ui metrik endpoint'ine ulaşamıyor."

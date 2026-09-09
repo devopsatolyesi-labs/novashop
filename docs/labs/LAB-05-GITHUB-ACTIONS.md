@@ -367,6 +367,26 @@ curl -s http://127.0.0.1:8888/actuator/health
 
 ---
 
+#### 8. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+İş akışlarınızı, OIDC tanımlarınızı ve secret sızıntı denetimini otomatik test betiği ile denetleyin:
+
+```bash
+bash scripts/verify/verify-lab-05.sh
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-05] GitHub Actions Doğrulama Başlatılıyor ===
+✅ Workflows dizini mevcut.
+✅ Bulunan iş akışı sayısı: ...
+✅ OIDC / AWS kimlik sağlayıcı tanımı tespit edildi: ...
+✅ Hardcoded AWS gizli anahtarı bulunmadı (Güvenli).
+✅ İmaj etiketleme kuralları temiz (SHA veya semantik versiyon kullanılıyor).
+=== [LAB-05] GitHub Actions Doğrulaması Tamamlandı! ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: GitHub Actions `Not authorized to perform sts:AssumeRoleWithWebIdentity`

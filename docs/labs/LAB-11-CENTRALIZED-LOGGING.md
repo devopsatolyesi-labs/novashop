@@ -162,6 +162,24 @@ curl -s -i http://localhost:8888/api/catalog/products/invalid-uuid | grep -E "(H
 
 ---
 
+#### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Log korelasyon kalıplarını ve Elasticsearch küme durumunu otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-11.sh localhost:9200
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-11] Merkezi Günlükleme Doğrulama Başlatılıyor ===
+1. Uygulama loglarında Trace-ID / Span-ID korelasyon kontrolü...
+✅ Kaynak kodda dağıtık log korelasyonu (traceId / spanId) kalıbı mevcut.
+2. Elasticsearch canlı cluster durumu test ediliyor...
+=== [LAB-11] Merkezi Günlükleme Doğrulama Tamamlandı ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Elasticsearch Yetersiz Bellek / Çökme (`Exit Code 137`)

@@ -239,6 +239,24 @@ Bu hata, üretim ortamlarında versiyon karmaşasını ve kötü niyetli kod enj
 
 ---
 
+#### 7. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+CI/CD pipeline dosyalarını ve Harbor Registry erişilebilirliğini otomatik test betiği ile doğrulayın:
+
+```bash
+bash scripts/verify/verify-lab-07.sh harbor.novashop.local:8443
+```
+*Beklenen çıktı:*
+```text
+=== [LAB-07] Kurumsal CI/CD ve Harbor Doğrulama Başlatılıyor ===
+✅ Pipeline tanım dosyası mevcut.
+2. Harbor canlı servis kontrolü yapılıyor: harbor.novashop.local:8443
+✅ Harbor API ping başarılı (pong).
+=== [LAB-07] Kurumsal CI/CD Doğrulama Tamamlandı ===
+```
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: Docker Push Sırasında `x509: certificate signed by unknown authority`

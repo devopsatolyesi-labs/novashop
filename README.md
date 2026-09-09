@@ -82,23 +82,29 @@ http://localhost:8888
 docker stop novashop-ui && docker rm novashop-ui
 ```
 
+## 🏛️ Mimari ve Güvenlik Dokümantasyonu
+
+- [Mimari Genel Bakış ve Ağ Topolojisi](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
+- [Güvenlik Temel İlkeleri (Security Baseline)](docs/architecture/SECURITY_BASELINE.md) — Secret yönetimi, non-root container ve anti-pattern yasakları.
+- [Çalıştırma Profilleri ve Kaynak Bütçesi](docs/architecture/PROFILES.md) — D-008 kaynak kuralları ve profil izolasyonu.
+
 ---
 
 ## 📚 Eğitim Yol Haritası ve Laboratuvarlar
 
 1. [LAB-01: Git Temelleri, Feature Branch ve Merge Conflict Çözümü](docs/labs/LAB-01-GIT-GITHUB.md)
-2. **LAB-02:** AWS Temelleri: VPC, Public/Private Subnet, EC2, RDS ve Nginx
-3. **LAB-03:** Dockerfile Optimizasyonu ve Docker Compose ile Çoklu Servis
-4. **LAB-04:** AWS 3-Tier Dağıtım (EC2 + Private RDS + Let's Encrypt TLS)
-5. **LAB-05:** GitHub Actions ile CI/CD Pipeline (ECR + Otomatik Rollback)
-6. **LAB-06:** Kubernetes Temelleri, Kind Cluster ve Helm Paketleme
-7. **LAB-07:** Kurumsal CI Platformu (GitLab CE, Jenkins Pipeline ve Harbor Registry)
-8. **LAB-08:** DevSecOps Güvenlik ve Kalite Kapıları (SonarQube, Trivy ve SBOM)
-9. **LAB-09:** Argo CD ile Deklaratif GitOps Dağıtımı
-10. **LAB-10:** Gözlemlenebilirlik (Prometheus, Grafana, Alertmanager, OpenTelemetry, Jaeger)
-11. **LAB-11:** Merkezi Loglama (Fluent Bit → Elasticsearch → Kibana)
-12. **LAB-12:** Altyapı Otomasyonu (Terraform ile AWS + Ansible ile Konfigürasyon)
-13. **LAB-13 (Bonus):** AWS EKS Kurumsal Platform Dağıtımı
+2. [LAB-02: AWS Temelleri: VPC, Public/Private Subnet, EC2, RDS ve TLS Doğrulaması](docs/labs/LAB-02-AWS-BASICS.md)
+3. [LAB-03: Dockerfile Optimizasyonu, Non-Root İmaj ve Docker Compose](docs/labs/LAB-03-DOCKER-COMPOSE.md)
+4. [LAB-04: AWS 3-Tier Dağıtım: EC2 Compose, Private RDS ve Nginx TLS](docs/labs/LAB-04-AWS-3TIER.md)
+5. [LAB-05: GitHub Actions CI/CD Pipeline (OIDC, AWS ECR ve Otomatik Rollback)](docs/labs/LAB-05-GITHUB-ACTIONS.md)
+6. [LAB-06: Kubernetes Temelleri, Kind Çok Düğümlü Küme ve Helm Paketleme](docs/labs/LAB-06-KUBERNETES-HELM.md)
+7. [LAB-07: Kurumsal CI Platformu (GitLab CE, Jenkins Pipeline ve Harbor Registry)](docs/labs/LAB-07-ENTERPRISE-CICD.md)
+8. [LAB-08: DevSecOps Güvenlik Kapıları (SonarQube SAST, Trivy SCA, Secret Scan ve SBOM)](docs/labs/LAB-08-SECURITY-GATES.md)
+9. [LAB-09: Argo CD ile Deklaratif GitOps Dağıtımı ve Self-Healing](docs/labs/LAB-09-ARGOCD-GITOPS.md)
+10. [LAB-10: İleri Gözlemlenebilirlik (Prometheus, Grafana, OpenTelemetry, Jaeger ve SLO)](docs/labs/LAB-10-OBSERVABILITY.md)
+11. [LAB-11: Merkezi Loglama (Fluent Bit → Elasticsearch → Kibana ve Trace-ID Korelasyonu)](docs/labs/LAB-11-CENTRALIZED-LOGGING.md)
+12. [LAB-12: Altyapı Otomasyonu (Terraform Modülleri, Cloud-Init ve Idempotency)](docs/labs/LAB-12-TERRAFORM-IAC.md)
+13. [LAB-13 (Bonus): AWS EKS Kurumsal Platform Dağıtımı, IRSA ve Güvenilirlik Yönetimi](docs/labs/LAB-13-EKS-ENTERPRISE.md)
 
 ---
 

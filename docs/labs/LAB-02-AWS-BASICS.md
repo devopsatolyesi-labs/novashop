@@ -4,17 +4,18 @@
 
 ### Amaç
 
-AWS üzerinde izole bir VPC içerisinde; public subnet'te Nginx reverse proxy barındıran bir EC2 sanal sunucusu ile private subnet'te dış dünyaya kapalı bir RDS MySQL veritabanı kurarak 3-katmanlı ağ mimarisini ve katmanlar arası güvenli bağlantıyı doğrulamak.
+AWS üzerinde izole bir VPC içerisinde; public subnet'te bağımsız statik test sayfası ve sağlık kontrolü sunan bir Nginx web sunucusu (EC2) ile private subnet'te dış dünyaya kapalı, TLS şifrelemeli bir RDS MySQL veritabanı kurarak temel bulut ağ topolojisini ve katmanlar arası güvenli erişimi doğrulamak.
 
 ---
 
 ### Kazanımlar
 
-- AWS VPC, Public/Private Subnet, Internet Gateway (IGW) ve Route Table kavramlarını pratik olarak uygulamak.
-- Güvenlik Grupları (Security Groups) ile "En Az Ayrıcalık" (Least Privilege) ilkesine göre ağ erişimini kısıtlamak.
-- Dış dünyaya kapalı (`PubliclyAccessible: false`) bir RDS MySQL veritabanını yalnızca web katmanından erişilecek şekilde konumlandırmak.
-- EC2 Ubuntu üzerinde Nginx web sunucusu ve `/healthz` sağlık kontrolü endpoint'ini yapılandırmak.
-- EC2 üzerinden private RDS veritabanına bağlanıp NovaShop ürün kataloğu şemasını ve başlangıç verisini başarıyla yüklemek.
+- AWS VPC, Public Subnet, Private Subnet Group, Internet Gateway (IGW) ve Route Table bileşenlerini kurup yapılandırmak.
+- Güvenlik Grupları (Security Groups) ile "En Az Ayrıcalık" (Least Privilege) ilkesine göre ağ kurallarını sınırlandırmak.
+- Dış dünyaya kapalı (`PubliclyAccessible: false`, Single-AZ) bir RDS MySQL veritabanını yalnızca web katmanı güvenlik grubundan erişilecek şekilde konumlandırmak.
+- EC2 Ubuntu üzerinde Nginx web sunucusu yapılandırarak çalışan bir karşılama sayfası ve `/healthz` sağlık kontrolü endpoint'i (HTTP 200) sunmak.
+- EC2 üzerinden private RDS veritabanına Amazon Trust Store CA sertifikası (`rds-ca-bundle.pem`) ile doğrulanmış şifreli TLS bağlantısı kurmak ve tablo oluşturup doğrulamak.
+- Komut satırında düz metin parola kullanmadan güvenli kimlik doğrulama ve kontrollü kaynak temizliği (cleanup) uygulamak.
 
 ---
 
@@ -22,7 +23,8 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'te Nginx reverse proxy ba
 
 - **Önceki Lab:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** Geçerli bir AWS hesabı ve IAM kullanıcısı/rolü (VPC, EC2, RDS oluşturma yetkileri).
-- **Yerel Araçlar:** AWS CLI v2 (`aws --version`), OpenSSH istemcisi (`ssh`), MySQL istemcisi (`mysql`).
+- **Maliyet Farkındalığı:** `db.t3.micro` ve `t3.micro` kaynakları yeni hesaplarda AWS Free Tier kapsamında olabilir; ancak hesabınızın Free Tier süresi dolmuşsa veya bölgeye bağlı olarak düşük miktarda ücret yansıyabilir. Lab sonunda temizlik adımlarını uygulamak zorunludur.
+- **Yerel Araçlar:** AWS CLI v2 (`aws --version`), OpenSSH istemcisi (`ssh`).
 - **SSH Anahtar Çifti:** AWS konsolundan veya CLI ile üretilmiş `.pem` formatında bir Key Pair (`novashop-key.pem`).
 
 ---
@@ -31,7 +33,7 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'te Nginx reverse proxy ba
 
 ```mermaid
 graph TD
-    User([Öğrenci / Web İstemcisi]) -->|SSH :22 Sadece MY_IP| EC2[EC2 Ubuntu 22.04<br/>Public Subnet: 10.0.1.0/24<br/>Nginx Reverse Proxy]
+    User([Öğrenci / Web İstemcisi]) -->|SSH :22 Sadece MY_IP/32| EC2[EC2 Ubuntu 22.04 LTS<br/>Public Subnet: 10.0.1.0/24<br/>Nginx Web Server :80]
     User -->|HTTP :80 Dış Dünya| EC2
     
     subgraph AWS VPC 10.0.0.0/16
@@ -39,18 +41,21 @@ graph TD
             EC2
         end
 
-        subgraph Private Subnet Group - RDS Multi-AZ
+        subgraph Private Subnet Group 2 AZ Rezerve - AWS Zorunluluğu
             subgraph Private Subnet 1 10.0.10.0/24 - AZ-a
-                RDS[(RDS MySQL 8.0<br/>catalogdb<br/>Port: 3306)]
+                RDS[(RDS MySQL 8.0 Single-AZ<br/>catalogdb - Port: 3306<br/>PubliclyAccessible: false)]
             end
             subgraph Private Subnet 2 10.0.11.0/24 - AZ-b
-                RDS_Standby[(RDS Standby / Subnet Rezerve)]
+                Subnet2[Rezerve Subnet<br/>Standby Yok - Maliyet Tasarrufu]
             end
         end
     end
 
-    EC2 -->|MySQL :3306 Sadece EC2 SG'den| RDS
+    EC2 -->|MySQL :3306 TLS Şifreli Sadece EC2 SG'den| RDS
 ```
+
+> [!NOTE]
+> AWS RDS, DB Subnet Group oluştururken yüksek erişilebilirlik gereksinimi nedeniyle en az iki farklı Availability Zone (AZ) içinde subnet bulunmasını zorunlu kılar. Ancak gereksiz kaynak maliyetini önlemek amacıyla RDS veritabanı örneği **Single-AZ** (`--no-multi-az`) olarak başlatılır; ikinci subnet yalnızca rezerve alan olarak kalır.
 
 ---
 
@@ -66,8 +71,7 @@ Aşağıdaki komutları çalıştırırken `<...>` ile belirtilen alanları kend
 | `<KEY_PATH>` | Yerel SSH özel anahtarının yolu | `~/.ssh/novashop-key.pem` |
 | `<VPC_ID>` | Oluşturulan VPC kimliği | `vpc-0123456789abcdef0` |
 | `<EC2_PUBLIC_IP>` | EC2 sunucusunun genel IP adresi | `3.120.45.67` |
-| `<RDS_ENDPOINT>` | RDS MySQL bağlantı adresi | `novashop-catalog.cxxxx.eu-central-1.rds.amazonaws.com` |
-| `<DB_PASSWORD>` | RDS veritabanı kullanıcısı şifresi | Güçlü parola (örn: `NovaShopCatalog2026!`) |
+| `<RDS_ENDPOINT>` | RDS MySQL bağlantı adresi | `novashop-catalog-db.cxxxx.eu-central-1.rds.amazonaws.com` |
 
 ---
 
@@ -75,7 +79,7 @@ Aşağıdaki komutları çalıştırırken `<...>` ile belirtilen alanları kend
 
 #### 1. Öğrenci İstemci IP Adresini Öğrenme
 
-SSH erişimini yalnızca kendi IP adresinizle sınırlandırmak güvenlik açısından zorunludur.
+SSH erişimini yalnızca kendi IP adresinizle sınırlandırmak en temel güvenlik gereksinimidir.
 
 ```bash
 curl -s https://checkip.amazonaws.com
@@ -87,23 +91,23 @@ curl -s https://checkip.amazonaws.com
 
 #### 2. VPC, Subnet ve İnternet Ağ Geçidi Yapılandırması
 
-İzole bir sanal ağ oluşturulur: 1 adet VPC, 1 adet Public Subnet (EC2 için), 2 adet Private Subnet (RDS Subnet Group gereksinimi için farklı AZ'lerde).
+İzole bir sanal ağ oluşturulur: 1 adet VPC, 1 adet Public Subnet (EC2 için), 2 adet Private Subnet (RDS Subnet Group gereksinimi için).
 
 **VPC Oluşturma:**
 ```bash
-aws ec2 create-vpc \
+VPC_ID=$(aws ec2 create-vpc \
   --cidr-block 10.0.0.0/16 \
   --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=novashop-vpc}]' \
   --region <AWS_REGION> \
-  --output text --query 'Vpc.VpcId'
+  --output text --query 'Vpc.VpcId')
+
+echo "Oluşturulan VPC: $VPC_ID"
 ```
-*Açıklama:* 10.0.0.0/16 CIDR bloğunda `novashop-vpc` adıyla yeni bir VPC oluşturur.  
-*Beklenen çıktı:* `vpc-0a1b2c3d4e5f6g7h8`
 
 **DNS Desteğini Etkinleştirme:**
 ```bash
-aws ec2 modify-vpc-attribute --vpc-id <VPC_ID> --enable-dns-support "{\"Value\":true}"
-aws ec2 modify-vpc-attribute --vpc-id <VPC_ID> --enable-dns-hostnames "{\"Value\":true}"
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support "{\"Value\":true}" --region <AWS_REGION>
+aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames "{\"Value\":true}" --region <AWS_REGION>
 ```
 
 **İnternet Ağ Geçidi (IGW) Ekleme:**
@@ -112,36 +116,36 @@ IGW_ID=$(aws ec2 create-internet-gateway \
   --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=novashop-igw}]' \
   --region <AWS_REGION> --output text --query 'InternetGateway.InternetGatewayId')
 
-aws ec2 attach-internet-gateway --vpc-id <VPC_ID> --internet-gateway-id $IGW_ID --region <AWS_REGION>
+aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW_ID --region <AWS_REGION>
 ```
 
 **Subnet'leri Oluşturma:**
 ```bash
 # Public Subnet (Web / EC2 için - AZ: a)
-PUB_SUB=$(aws ec2 create-subnet --vpc-id <VPC_ID> --cidr-block 10.0.1.0/24 \
+PUB_SUB=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 \
   --availability-zone <AWS_REGION>a \
   --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=novashop-public-1a}]' \
   --region <AWS_REGION> --output text --query 'Subnet.SubnetId')
 
 # Private Subnet 1 (RDS için - AZ: a)
-PRIV_SUB_1=$(aws ec2 create-subnet --vpc-id <VPC_ID> --cidr-block 10.0.10.0/24 \
+PRIV_SUB_1=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.10.0/24 \
   --availability-zone <AWS_REGION>a \
   --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=novashop-private-1a}]' \
   --region <AWS_REGION> --output text --query 'Subnet.SubnetId')
 
-# Private Subnet 2 (RDS için - AZ: b)
-PRIV_SUB_2=$(aws ec2 create-subnet --vpc-id <VPC_ID> --cidr-block 10.0.11.0/24 \
+# Private Subnet 2 (RDS Subnet Group gereksinimi - AZ: b)
+PRIV_SUB_2=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.11.0/24 \
   --availability-zone <AWS_REGION>b \
   --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=novashop-private-1b}]' \
   --region <AWS_REGION> --output text --query 'Subnet.SubnetId')
 
-# Public Subnet için otomatik IP atamayı aç
-aws ec2 modify-subnet-attribute --subnet-id $PUB_SUB --map-public-ip-on-launch
+# Public Subnet için otomatik IP atamayı etkinleştir
+aws ec2 modify-subnet-attribute --subnet-id $PUB_SUB --map-public-ip-on-launch --region <AWS_REGION>
 ```
 
 **Public Route Table ve IGW Rotası Tanımlama:**
 ```bash
-RT_ID=$(aws ec2 create-route-table --vpc-id <VPC_ID> \
+RT_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID \
   --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=novashop-public-rt}]' \
   --region <AWS_REGION> --output text --query 'RouteTable.RouteTableId')
 
@@ -153,16 +157,16 @@ aws ec2 associate-route-table --subnet-id $PUB_SUB --route-table-id $RT_ID --reg
 
 #### 3. Güvenlik Grupları (Security Groups) Tanımlama
 
-Güvenlik prensipleri gereğince iki ayrı grup tanımlanır:
-1. `novashop-web-sg`: Dış dünyadan HTTP (80), sadece sizin IP adresinizden SSH (22).
-2. `novashop-rds-sg`: SADECE `novashop-web-sg` grubundan MySQL (3306). Dış dünyaya tamamen kapalı.
+En az ayrıcalık kuralı uygulanır:
+1. `novashop-web-sg`: Dış dünyadan HTTP (port 80), sadece sizin IP adresinizden SSH (port 22).
+2. `novashop-rds-sg`: SADECE `novashop-web-sg` grubundan MySQL (port 3306). Dış dünyaya (`0.0.0.0/0`) kesinlikle kapalı.
 
 **Web Güvenlik Grubu:**
 ```bash
 WEB_SG=$(aws ec2 create-security-group \
   --group-name novashop-web-sg \
   --description "NovaShop Web Layer Security Group" \
-  --vpc-id <VPC_ID> --region <AWS_REGION> --output text --query 'GroupId')
+  --vpc-id $VPC_ID --region <AWS_REGION> --output text --query 'GroupId')
 
 # SSH (Yalnızca öğrenci IP'si)
 aws ec2 authorize-security-group-ingress --group-id $WEB_SG --protocol tcp --port 22 --cidr <MY_IP>/32 --region <AWS_REGION>
@@ -176,7 +180,7 @@ aws ec2 authorize-security-group-ingress --group-id $WEB_SG --protocol tcp --por
 RDS_SG=$(aws ec2 create-security-group \
   --group-name novashop-rds-sg \
   --description "NovaShop Database Layer Security Group" \
-  --vpc-id <VPC_ID> --region <AWS_REGION> --output text --query 'GroupId')
+  --vpc-id $VPC_ID --region <AWS_REGION> --output text --query 'GroupId')
 
 # MySQL port 3306 SADECE WEB_SG kaynaklı izin verilir (0.0.0.0/0 KESİNLİKLE YASAKTIR)
 aws ec2 authorize-security-group-ingress --group-id $RDS_SG --protocol tcp --port 3306 --source-group $WEB_SG --region <AWS_REGION>
@@ -186,56 +190,74 @@ aws ec2 authorize-security-group-ingress --group-id $RDS_SG --protocol tcp --por
 
 #### 4. RDS MySQL Veritabanı Örneği Oluşturma
 
-RDS MySQL, private subnet grubunda ve `PubliclyAccessible: false` olarak başlatılır.
+**Bölgesel MySQL Sürümünü Doğrulama:**
+```bash
+aws rds describe-orderable-db-instance-options \
+  --engine mysql \
+  --instance-class db.t3.micro \
+  --region <AWS_REGION> \
+  --query 'OrderableDBInstanceOptions[0].EngineVersion' \
+  --output text
+```
+*Beklenen çıktı:* `8.0.36` veya benzeri desteklenen bir MySQL 8.0 alt sürümü.
 
 **DB Subnet Group Oluşturma:**
 ```bash
 aws rds create-db-subnet-group \
   --db-subnet-group-name novashop-rds-subnet-group \
-  --db-subnet-group-description "Private Subnets for NovaShop Catalog DB" \
+  --db-subnet-group-description "Private Subnets for NovaShop DB" \
   --subnet-ids "$PRIV_SUB_1" "$PRIV_SUB_2" \
   --region <AWS_REGION>
 ```
 
-**RDS MySQL Instance Başlatma:**
+**Güvenli Parola Girişi ve RDS Instance Başlatma:**
+> [!IMPORTANT]
+> Parolanın shell geçmişinde (`history`) veya süreç tablosunda (`ps`) açık metin olarak görünmesini önlemek için interaktif `read -s` kullanılır:
+
 ```bash
+read -s -p "RDS Master Kullanıcı Parolasını Giriniz: " DB_PASS
+echo ""
+
 aws rds create-db-instance \
   --db-instance-identifier novashop-catalog-db \
   --db-instance-class db.t3.micro \
   --engine mysql \
-  --engine-version 8.0 \
   --allocated-storage 20 \
   --master-username novashop \
-  --master-user-password '<DB_PASSWORD>' \
+  --master-user-password "$DB_PASS" \
   --db-name catalogdb \
   --db-subnet-group-name novashop-rds-subnet-group \
   --vpc-security-group-ids $RDS_SG \
   --no-publicly-accessible \
+  --no-multi-az \
   --backup-retention-period 0 \
   --region <AWS_REGION>
-```
-*Açıklama:* 20GB depolama ile `db.t3.micro` ücretsiz katman uyumlu MySQL instance'ı başlatır.  
-*Not:* RDS'in hazır (`available`) duruma geçmesi yaklaşık 5–8 dakika sürebilir.
 
-**Durumu Takip Etme:**
+# Bellekteki değişkeni derhal temizle
+unset DB_PASS
+```
+*Açıklama:* Single-AZ (`--no-multi-az`), 20 GB depolama ve dışarıya kapalı (`--no-publicly-accessible`) bir MySQL instance başlatır.  
+*Not:* Veritabanının hazır (`available`) duruma geçmesi yaklaşık 5–7 dakika sürebilir.
+
+**Durumu ve Endpoint'i Takip Etme:**
 ```bash
 aws rds describe-db-instances \
   --db-instance-identifier novashop-catalog-db \
   --region <AWS_REGION> \
-  --query 'DBInstances[0].[DBInstanceStatus,Endpoint.Address]' \
+  --query 'DBInstances[0].[DBInstanceStatus,Endpoint.Address,MultiAZ]' \
   --output text
 ```
 *Beklenen çıktı (hazır olduğunda):*
 ```text
-available    novashop-catalog-db.cxxxx.eu-central-1.rds.amazonaws.com
+available    novashop-catalog-db.cxxxx.eu-central-1.rds.amazonaws.com    False
 ```
-Endpoint adresini not ediniz (`<RDS_ENDPOINT>`).
+`False` değeri veritabanının planlandığı gibi Single-AZ çalıştığını doğrular. Endpoint adresini not ediniz (`<RDS_ENDPOINT>`).
 
 ---
 
 #### 5. EC2 Ubuntu Sanal Sunucusunu Başlatma
 
-Public Subnet içinde Ubuntu 22.04 LTS instance'ı başlatılır.
+Public Subnet içinde Ubuntu 22.04 LTS instance'ı başlatılır:
 
 ```bash
 # Ubuntu 22.04 LTS en güncel AMI kimliğini bul
@@ -255,7 +277,7 @@ EC2_INSTANCE_ID=$(aws ec2 run-instances \
   --region <AWS_REGION> \
   --output text --query 'Instances[0].InstanceId')
 
-# Public IP bekle ve al
+# Instance çalışana kadar bekle
 aws ec2 wait instance-running --instance-ids $EC2_INSTANCE_ID --region <AWS_REGION>
 
 EC2_PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $EC2_INSTANCE_ID \
@@ -267,7 +289,7 @@ echo "EC2 Public IP: $EC2_PUBLIC_IP"
 
 ---
 
-#### 6. EC2 Sunucusuna SSH ile Bağlanma ve Nginx Kurulumu
+#### 6. EC2 Sunucusuna SSH ile Bağlanma ve Nginx Web Sunucusu Kurulumu
 
 Yerel terminalinizden EC2 sunucusuna bağlanın:
 
@@ -276,57 +298,45 @@ chmod 400 <KEY_PATH>
 ssh -i <KEY_PATH> ubuntu@<EC2_PUBLIC_IP>
 ```
 
-**EC2 üzerinde paketleri güncelleyin ve Nginx ile MySQL istemcisini kurun:**
+**Paketleri Güncelleme ve Nginx ile MySQL İstemcisini Kurma:**
 ```bash
 sudo apt-get update -y
-sudo apt-get install -y nginx mysql-client
+sudo apt-get install -y nginx mysql-client curl
 ```
 
-**NovaShop Nginx Konfigürasyonunu Yükleme:**
-Sunucu üzerinde `/etc/nginx/conf.d/novashop.conf` dosyasını oluşturun:
+**NovaShop Statik Karşılama Sayfası ve Sağlık Kontrolü Yapılandırması:**
+M02 temel labında, Nginx doğrudan çalışan bir statik test sayfası ve `/healthz` endpoint'i (HTTP 200) sunar:
 
 ```bash
 sudo tee /etc/nginx/conf.d/novashop.conf > /dev/null << 'EOF'
-upstream novashop_backend {
-    server 127.0.0.1:8888 max_fails=3 fail_timeout=10s;
-    keepalive 32;
-}
-
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
 
+    # Güvenlik Başlıkları
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
     server_tokens off;
 
+    # 1. Sağlık Kontrolü Endpoint'i (HTTP 200)
     location = /healthz {
         access_log off;
         default_type application/json;
-        return 200 '{"status":"UP","service":"novashop-proxy"}\n';
+        return 200 '{"status":"UP","layer":"web","host":"$hostname"}\n';
     }
 
-    location = /version {
-        default_type application/json;
-        return 200 '{"version":"v0.1.0","app":"NovaShop DevOps Store"}\n';
-    }
-
+    # 2. Ana Sayfa: NovaShop Web Katmanı Test Sayfası (HTTP 200)
     location / {
-        proxy_pass http://novashop_backend;
-        error_page 502 503 504 = @fallback_maintenance;
-    }
-
-    location @fallback_maintenance {
         default_type text/html;
-        return 502 '<!DOCTYPE html><html><head><meta charset="utf-8"><title>NovaShop Web</title></head><body style="background:#0f172a;color:#fff;text-align:center;padding:50px;font-family:sans-serif;"><h1>NovaShop Web Katmanı Aktif</h1><p>Nginx proxy devrede. Sağlık kontrolü: <code>/healthz</code></p></body></html>\n';
+        return 200 '<!DOCTYPE html><html><head><meta charset="utf-8"><title>NovaShop DevOps Store - Web Layer</title><style>body{background:#0f172a;color:#f8fafc;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;}div{background:#1e293b;padding:2.5rem;border-radius:10px;border:1px solid #334155;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.5);}h1{color:#38bdf8;margin-bottom:0.5rem;}p{color:#94a3b8;font-size:1.1rem;}span{color:#a5f3fc;font-weight:bold;}</style></head><body><div><h1>NovaShop DevOps Store</h1><p>AWS EC2 Web Katmanı Aktif ve Çalışıyor.</p><p>Durum: <span>ONLINE (HTTP 200)</span> | Sağlık Kontrolü: <code>/healthz</code></p></div></body></html>\n';
     }
 }
 EOF
 ```
 
-**Varsayılan Nginx Sitesini Devre Dışı Bırakıp Servisi Yeniden Başlatma:**
+**Varsayılan Siteyi Kaldırıp Nginx'i Başlatma:**
 ```bash
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
@@ -341,9 +351,9 @@ nginx: configuration file /etc/nginx/nginx.conf test is successful
 
 ---
 
-#### 7. EC2 Üzerinden Private RDS Bağlantı Testi ve Şema Yükleme
+#### 7. EC2'den Private RDS'e TLS Doğrulamalı Güvenli Bağlantı
 
-EC2 konsolunda iken veritabanı bağlantısını ve port erişimini test edin:
+EC2 konsolunda iken veritabanı portuna ağ düzeyinde erişimi teyit edin:
 
 ```bash
 nc -zv -w 5 <RDS_ENDPOINT> 3306
@@ -353,138 +363,131 @@ nc -zv -w 5 <RDS_ENDPOINT> 3306
 Connection to <RDS_ENDPOINT> 3306 port [tcp/mysql] succeeded!
 ```
 
-**SQL Şema ve Tohum Verilerini Yükleme:**
-NovaShop reposundaki `infrastructure/aws-3tier/sql/init-catalog.sql` içeriğini EC2 üzerine aktarın veya doğrudan MySQL istemcisine pipe edin:
+**Amazon RDS Global CA Sertifika Paketini İndirme:**
+Veritabanı bağlantısının şifrelendiğini ve sunucu kimliğinin doğrulandığını garanti etmek için AWS resmi CA sertifika paketi yüklenir:
 
 ```bash
-# EC2 üzerinde SQL dosyasını çalıştırın
-mysql -h <RDS_ENDPOINT> -u novashop -p'<DB_PASSWORD>' << 'EOF'
-CREATE DATABASE IF NOT EXISTS catalogdb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE catalogdb;
+sudo curl -s https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /etc/ssl/certs/rds-ca-bundle.pem
+ls -lh /etc/ssl/certs/rds-ca-bundle.pem
+```
 
-CREATE TABLE IF NOT EXISTS tags (
-    name VARCHAR(191) NOT NULL PRIMARY KEY,
-    display_name VARCHAR(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+**TLS Zorunlu ve Etkileşimli Parola ile MySQL Bağlantısı:**
+> [!TIP]
+> `-p` parametresinin yanına şifre yazılmaz; MySQL istemcisi şifreyi gizli olarak sorar. `--ssl-ca` parametresi ile bağlantı TLS üzerinden doğrulanır:
 
-CREATE TABLE IF NOT EXISTS products (
-    id VARCHAR(191) NOT NULL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    price INT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```bash
+mysql -h <RDS_ENDPOINT> -u novashop -p \
+  --ssl-ca=/etc/ssl/certs/rds-ca-bundle.pem \
+  --ssl-mode=REQUIRED \
+  -e "STATUS;" | grep -E "(SSL|Cipher)"
+```
+*İstenecek parola:* `Enter password:` (Adım 4'te belirlediğiniz parolayı girin).  
+*Beklenen çıktı:*
+```text
+SSL:			Cipher in use is TLS_AES_256_GCM_SHA384
+```
+Bu çıktı, bağlantının düz metin yerine yüksek güvenlikli TLS 1.3/AES-256 ile şifrelendiğini kanıtlar.
 
-CREATE TABLE IF NOT EXISTS product_tags (
-    product_id VARCHAR(191) NOT NULL,
-    tag_name VARCHAR(191) NOT NULL,
-    PRIMARY KEY (product_id, tag_name),
-    CONSTRAINT fk_product_tags_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
-    CONSTRAINT fk_product_tags_tag FOREIGN KEY (tag_name) REFERENCES tags(name) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+**Tablo Oluşturma ve Doğrulama Sorgusu:**
+```bash
+mysql -h <RDS_ENDPOINT> -u novashop -p \
+  --ssl-ca=/etc/ssl/certs/rds-ca-bundle.pem \
+  --ssl-mode=REQUIRED \
+  catalogdb << 'EOF'
+CREATE TABLE IF NOT EXISTS connectivity_check (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    source_ip VARCHAR(64) NOT NULL
+);
 
-INSERT INTO tags (name, display_name) VALUES
-('accessories', 'Aksesuarlar'),
-('clothing', 'Giyim & Tekstil'),
-('food', 'Gıda & Atıştırmalık'),
-('vehicles', 'Ulaşım & Mobilite')
-ON DUPLICATE KEY UPDATE display_name=VALUES(display_name);
-
-INSERT INTO products (id, name, description, price) VALUES
-('cc789f85-1476-452a-8100-9e74502198e0', 'Kubernetes Cluster Mug', 'Dayanıklı seramik kupa.', 45),
-('87e89b11-d319-446d-b9be-50adcca5224a', 'Docker Container Hoodie', 'DevOps sweatshirt.', 120),
-('4f18544b-70a5-4352-8e19-0d070f46745d', 'CI/CD Pipeline Sneakers', 'Hızlı dağıtım ayakkabısı.', 180)
-ON DUPLICATE KEY UPDATE name=VALUES(name);
-
-INSERT INTO product_tags (product_id, tag_name) VALUES
-('cc789f85-1476-452a-8100-9e74502198e0', 'accessories'),
-('87e89b11-d319-446d-b9be-50adcca5224a', 'clothing'),
-('4f18544b-70a5-4352-8e19-0d070f46745d', 'clothing')
-ON DUPLICATE KEY UPDATE tag_name=VALUES(tag_name);
-
-SELECT COUNT(*) AS total_products FROM products;
+INSERT INTO connectivity_check (source_ip) VALUES ('ec2-web-layer');
+SELECT * FROM connectivity_check;
 EOF
 ```
 *Beklenen çıktı:*
 ```text
-+----------------+
-| total_products |
-+----------------+
-|              3 |
-+----------------+
++----+---------------------+---------------+
+| id | checked_at          | source_ip     |
++----+---------------------+---------------+
+|  1 | 2026-09-09 12:00:00 | ec2-web-layer |
++----+---------------------+---------------+
 ```
 
 ---
 
 #### 8. Yerel Bilgisayardan Uçtan Uca Doğrulama
 
-Yerel terminalinize dönün (`exit` yaparak EC2 oturumundan çıkın). Web sunucusunu dış dünyadan test edin:
+Yerel terminalinize dönün (`exit` ile EC2 oturumunu kapatın). Web sunucusunu dış dünyadan test edin:
 
 ```bash
-# 1. Nginx Sağlık Kontrolü Testi
-curl -s -i http://<EC2_PUBLIC_IP>/healthz
+# 1. Ana Sayfa Yanıtı (HTTP 200 OK)
+curl -s -i http://<EC2_PUBLIC_IP>/ | head -n 12
 ```
 *Beklenen çıktı:*
 ```text
 HTTP/1.1 200 OK
 Server: nginx
-Date: ...
-Content-Type: application/json
-Content-Length: 42
-Connection: keep-alive
+Content-Type: text/html
+...
 X-Frame-Options: SAMEORIGIN
 X-Content-Type-Options: nosniff
 X-XSS-Protection: 1; mode=block
 
-{"status":"UP","service":"novashop-proxy"}
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>NovaShop DevOps Store - Web Layer</title>
 ```
 
 ```bash
-# 2. Ana Sayfa Fallback Bakım Yanıtı
-curl -s -o /dev/null -w "%{http_code}\n" http://<EC2_PUBLIC_IP>/
+# 2. Sağlık Kontrolü Endpoint Testi (HTTP 200 OK JSON)
+curl -s http://<EC2_PUBLIC_IP>/healthz
 ```
-*Beklenen çıktı:* `502` *(Çünkü henüz arkasında NovaShop UI konteyneri çalışmamaktadır; Nginx yapılandırıldığı gibi güvenli fallback sayfasını döner).*
+*Beklenen çıktı:*
+```json
+{"status":"UP","layer":"web","host":"ip-10-0-1-xxx"}
+```
 
 ---
 
 ### Troubleshooting
 
 #### Senaryo 1: EC2'den RDS'e `Connection timed out` veya `nc` Bağlantı Kuramıyor
-- **Belirti:** `nc -zv -w 5 <RDS_ENDPOINT> 3306` komutu yanıt vermiyor veya zaman aşımına uğruyor.
+- **Belirti:** `nc -zv -w 5 <RDS_ENDPOINT> 3306` komutu yanıt vermiyor ve zaman aşımına uğruyor.
 - **Muhtemel Neden:** 
   1. `novashop-rds-sg` güvenlik grubunda gelen kuralı (inbound rule) olarak `novashop-web-sg` Security Group kimliği yerine yanlış bir CIDR tanımlanmış olması.
   2. RDS'in public subnet'te veya VPC dışındaki yanlış subnet grubunda oluşturulması.
 - **Teşhis Komutu:**
   ```bash
-  aws ec2 describe-security-groups --group-ids $RDS_SG --query 'SecurityGroups[0].IpPermissions'
+  aws ec2 describe-security-groups --group-ids $RDS_SG --query 'SecurityGroups[0].IpPermissions' --region <AWS_REGION>
   ```
 - **Güvenli Çözüm:** RDS Security Group gelen kurallarında TCP 3306 portunun kaynak (source) değerini `novashop-web-sg` Security Group kimliği ile güncelleyin:
   ```bash
-  aws ec2 authorize-security-group-ingress --group-id $RDS_SG --protocol tcp --port 3306 --source-group $WEB_SG
+  aws ec2 authorize-security-group-ingress --group-id $RDS_SG --protocol tcp --port 3306 --source-group $WEB_SG --region <AWS_REGION>
   ```
 
 #### Senaryo 2: Yerel Bilgisayardan EC2 SSH Bağlantısı Zaman Aşımına Uğruyor (`Operation timed out`)
 - **Belirti:** `ssh -i ... ubuntu@<EC2_PUBLIC_IP>` komutu bekleyip `Operation timed out` hatası veriyor.
-- **Muhtemel Neden:** İnternet servis sağlayıcınızın dinamik IP değiştirmesi sonucu `<MY_IP>` adresinizin değişmiş olması veya VPC Public Route Table rotasının (`0.0.0.0/0 -> IGW`) eksik olması.
+- **Muhtemel Neden:** İnternet servis sağlayıcınızın dinamik IP değiştirmesi sonucu `<MY_IP>` adresinizin değişmiş olması.
 - **Teşhis Komutu:**
   ```bash
   curl -s https://checkip.amazonaws.com
-  aws ec2 describe-security-groups --group-ids $WEB_SG --query 'SecurityGroups[0].IpPermissions'
+  aws ec2 describe-security-groups --group-ids $WEB_SG --query 'SecurityGroups[0].IpPermissions' --region <AWS_REGION>
   ```
-- **Güvenli Çözüm:** Güncel genel IP adresinizi alıp Security Group kuralını güncelleyin:
+- **Güvenli Çözüm:** Güncel genel IP adresinizi alıp Security Group SSH kuralını güncelleyin:
   ```bash
   NEW_IP=$(curl -s https://checkip.amazonaws.com)
-  aws ec2 authorize-security-group-ingress --group-id $WEB_SG --protocol tcp --port 22 --cidr ${NEW_IP}/32
+  aws ec2 authorize-security-group-ingress --group-id $WEB_SG --protocol tcp --port 22 --cidr ${NEW_IP}/32 --region <AWS_REGION>
   ```
 
-#### Senaryo 3: Nginx Yapılandırma Hatası veya Servis Başlamıyor (`Job for nginx.service failed`)
-- **Belirti:** `systemctl restart nginx` komutu hata veriyor.
-- **Muhtemel Neden:** Konfigürasyon dosyasında eksik noktalı virgül (`;`) veya parantez hatası.
+#### Senaryo 3: MySQL Bağlantısında SSL / TLS Sertifika Hatası (`SSL connection error`)
+- **Belirti:** `mysql` komutu çalıştırıldığında `ERROR 2026 (HY000): SSL connection error: certificate verify failed` hatası alınması.
+- **Muhtemel Neden:** CA bundle dosyasının eksik indirilmesi veya yolunun hatalı girilmesi.
 - **Teşhis Komutu:**
   ```bash
-  sudo nginx -t
-  sudo journalctl -u nginx.service -n 20 --no-pager
+  openssl x509 -in /etc/ssl/certs/rds-ca-bundle.pem -text -noout | head -n 10
   ```
-- **Güvenli Çözüm:** Çıktıda belirtilen dosya ve satır numarasındaki sözdizimi hatasını düzeltip `sudo nginx -t` çıktısının `syntax is ok` verdiğini teyit ettikten sonra servisi yeniden başlatın.
+- **Güvenli Çözüm:** CA bundle dosyasını resmi kaynaktan tekrar indirin ve dosya boyutunun 0 byte olmadığını teyit edin:
+  ```bash
+  sudo curl -s https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -o /etc/ssl/certs/rds-ca-bundle.pem
+  ```
 
 ---
 
@@ -492,43 +495,72 @@ curl -s -o /dev/null -w "%{http_code}\n" http://<EC2_PUBLIC_IP>/
 
 1. **Açık Portlar ve İzolasyon:**
    - EC2 üzerinde SSH (port 22) yalnızca öğrencinin IP'siyle (`<MY_IP>/32`) sınırlandırılmıştır. Dış dünyaya kesinlikle açılmamıştır.
-   - HTTP (port 80) dış dünyaya açıktır; HTTPS (443) M04 labında eklenecektir.
-   - RDS MySQL (port 3306) dış dünyaya kesinlikle kapalıdır (`PubliclyAccessible: false`). Yalnızca EC2 Güvenlik Grubu üzerinden gelen bağlantıları kabul eder.
+   - HTTP (port 80) dış dünyaya açıktır; HTTPS (443) M04 labında domain/TLS ile devreye alınacaktır.
+   - RDS MySQL (port 3306) dış dünyaya kesinlikle kapalıdır (`PubliclyAccessible: false`). Yalnızca EC2 Web Security Group üzerinden gelen bağlantıları kabul eder.
 2. **Secret Güvenliği:**
-   - Veritabanı ana parolası doğrudan shell geçmişinde (`history`) kalıcı yer almamalıdır.
-   - Parolalar repoya kesinlikle commit edilmemelidir.
-3. **Anti-Pattern Yasakları:**
-   - Kolaylık olsun diye RDS için `0.0.0.0/0` kuralı eklemek veya dosya izinlerini `chmod 777` yapmak **kesinlikle yasaktır**.
+   - Veritabanı ana parolası komut satırında düz metin olarak verilmemiştir; interaktif `read -s` ve `mysql -p` ile korunmuştur.
+3. **Şifreli İletişim (TLS):**
+   - Web katmanı ile veritabanı arasındaki tüm SQL sorguları RDS CA sertifikası ile TLS üzerinden şifrelenmiştir.
+4. **Anti-Pattern Yasakları:**
+   - Kolaylık olsun diye RDS için `0.0.0.0/0` kuralı eklemek, dosya izinlerini `chmod 777` yapmak veya TLS doğrulamasını kapatmak (`--skip-ssl`) **kesinlikle yasaktır**.
 
 ---
 
 ### Cleanup / Rollback
 
-Gereksiz bulut maliyetlerini önlemek için oluşturulan kaynakları aşağıdaki sırayla siliniz:
+Gereksiz bulut maliyetlerini önlemek için oluşturulan kaynakları aşağıdaki kontrollü sırayla siliniz:
 
+#### 1. EC2 Instance'ı Sonlandırın (Terminate)
 ```bash
-# 1. EC2 Instance'ı Sonlandırın (Terminate)
 aws ec2 terminate-instances --instance-ids <EC2_INSTANCE_ID> --region <AWS_REGION>
 aws ec2 wait instance-terminated --instance-ids <EC2_INSTANCE_ID> --region <AWS_REGION>
+```
 
-# 2. RDS Instance'ı Silin (Final Snapshot Almadan)
+#### 2. RDS Silme Korumasını Kontrol Edin ve Kaldırın
+```bash
+aws rds modify-db-instance \
+  --db-instance-identifier novashop-catalog-db \
+  --no-deletion-protection \
+  --region <AWS_REGION>
+```
+
+#### 3. RDS Instance'ı Silin (Bilinçli Snapshot Kararı)
+> [!WARNING]
+> Öğrenci lab ortamında veri saklama ihtiyacı yoksa ve ek snapshot saklama maliyetinden kaçınmak isteniyorsa **Seçenek A** uygulanır. Üretim veya veriyi saklamak istediğiniz senaryolarda ise **Seçenek B** tercih edilmelidir:
+
+**Seçenek A (Eğitim Labı - Maliyetsiz Temizleme):**
+```bash
 aws rds delete-db-instance \
   --db-instance-identifier novashop-catalog-db \
   --skip-final-snapshot \
   --delete-automated-backups \
   --region <AWS_REGION>
+```
 
-# RDS silinene kadar bekleyin (5-10 dk)
+**Seçenek B (Veriyi Saklama - Final Snapshot ile):**
+```bash
+# aws rds delete-db-instance \
+#   --db-instance-identifier novashop-catalog-db \
+#   --no-skip-final-snapshot \
+#   --final-db-snapshot-identifier novashop-catalog-db-final-backup \
+#   --region <AWS_REGION>
+```
+
+*RDS silinene kadar bekleyin (yaklaşık 4–6 dakika):*
+```bash
 aws rds wait db-instance-deleted --db-instance-identifier novashop-catalog-db --region <AWS_REGION>
+```
 
-# 3. RDS Subnet Group'u Silin
+#### 4. RDS Subnet Group ve Güvenlik Gruplarını Silin
+```bash
 aws rds delete-db-subnet-group --db-subnet-group-name novashop-rds-subnet-group --region <AWS_REGION>
 
-# 4. Security Group'ları Silin
 aws ec2 delete-security-group --group-id <RDS_SG> --region <AWS_REGION>
 aws ec2 delete-security-group --group-id <WEB_SG> --region <AWS_REGION>
+```
 
-# 5. Route Table, Subnet'ler ve Internet Gateway'i Silin
+#### 5. Route Table, Subnet'ler, Internet Gateway ve VPC'yi Silin
+```bash
 aws ec2 detach-internet-gateway --internet-gateway-id <IGW_ID> --vpc-id <VPC_ID> --region <AWS_REGION>
 aws ec2 delete-internet-gateway --internet-gateway-id <IGW_ID> --region <AWS_REGION>
 
@@ -537,7 +569,6 @@ aws ec2 delete-subnet --subnet-id <PRIV_SUB_1> --region <AWS_REGION>
 aws ec2 delete-subnet --subnet-id <PRIV_SUB_2> --region <AWS_REGION>
 aws ec2 delete-route-table --route-table-id <RT_ID> --region <AWS_REGION>
 
-# 6. VPC'yi Silin
 aws ec2 delete-vpc --vpc-id <VPC_ID> --region <AWS_REGION>
 ```
 
@@ -545,23 +576,22 @@ aws ec2 delete-vpc --vpc-id <VPC_ID> --region <AWS_REGION>
 
 ### Öğrenci Görevi
 
-1. Nginx yapılandırma dosyasına (`/etc/nginx/conf.d/novashop.conf`) `/metrics` adında yeni bir endpoint ekleyin.
-2. Bu endpoint'e yapılan `GET` isteklerine `200 OK` koduyla aşağıdaki JSON içeriğini dönmesini sağlayın:
+1. EC2 üzerindeki Nginx konfigürasyonuna (`/etc/nginx/conf.d/novashop.conf`) `/info` adında yeni bir endpoint ekleyin.
+2. Bu endpoint'in HTTP 200 ile aşağıdaki JSON içeriğini dönmesini sağlayın:
    ```json
-   {"app": "novashop", "layer": "web", "status": "UP"}
+   {"service": "novashop-web", "cloud": "aws", "tier": "presentation"}
    ```
-3. Yerel terminalinizden aşağıdaki komut ile doğrulayın:
-   ```bash
-   curl -s http://<EC2_PUBLIC_IP>/metrics
-   ```
+3. `sudo nginx -t && sudo systemctl reload nginx` komutunu çalıştırıp yerel bilgisayarınızdan `curl -s http://<EC2_PUBLIC_IP>/info` ile doğrulayın.
 
 ---
 
 ### Eğitmen Kontrol Listesi
 
-- [ ] VPC, 1 public ve 2 private subnet ile hatasız kurulmuş mu?
-- [ ] RDS MySQL veritabanı `PubliclyAccessible: false` olarak private subnet grubunda mı?
-- [ ] RDS Security Group, yalnızca EC2 Web Security Group'undan gelen 3306 portuna mı izin veriyor?
-- [ ] EC2 SSH portu yalnızca öğrencinin genel IP'siyle (`<MY_IP>/32`) mi sınırlandırılmış?
-- [ ] `curl http://<EC2_PUBLIC_IP>/healthz` çağrısı HTTP 200 ve JSON çıktısı üretiyor mu?
-- [ ] EC2 üzerinden private RDS'e bağlanılıp `products` tablosunun verisi sorgulanabilmiş mi?
+- [ ] VPC 10.0.0.0/16, 1 public ve 2 private subnet ile hatasız kurulmuş mu?
+- [ ] RDS MySQL örneği `PubliclyAccessible: false` ve `MultiAZ: False` (Single-AZ) olarak doğrulanmış mı?
+- [ ] RDS Security Group yalnızca EC2 Web SG'den gelen 3306 portuna mı izin veriyor?
+- [ ] RDS master parolası komut geçmişinde görünmeyecek şekilde interaktif mi girilmiş?
+- [ ] EC2 SSH portu yalnızca öğrencinin IP'siyle (`<MY_IP>/32`) mi sınırlandırılmış?
+- [ ] EC2'den RDS'e bağlantıda Amazon Trust Store CA sertifikası (`rds-ca-bundle.pem`) kullanılarak TLS şifrelemesi (`Cipher in use`) doğrulanmış mı?
+- [ ] `curl http://<EC2_PUBLIC_IP>/` ve `curl http://<EC2_PUBLIC_IP>/healthz` çağrıları HTTP 200 OK dönüyor mu?
+- [ ] Temizlik adımlarında deletion protection kontrolü ve snapshot kararı eksiksiz işletilmiş mi?

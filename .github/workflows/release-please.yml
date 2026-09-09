@@ -1,7 +1,6 @@
+# Kodlama tamamlanana kadar release ve artifact yayınlama otomatik çalışmaz.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 permissions:
   contents: write

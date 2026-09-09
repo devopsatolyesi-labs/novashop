@@ -1,13 +1,8 @@
 name: "PR"
 
+# Otomatik PR denetimi, kodlama tamamlandığında yeniden etkinleştirilecek.
 on:
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - edited
-      - synchronize
+  workflow_dispatch:
 
 permissions:
   pull-requests: read

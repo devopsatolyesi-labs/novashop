@@ -63,8 +63,8 @@ class AsciiArtWebFilterTest {
     );
 
     String body = exchange.getResponse().getBodyAsString().block();
-    assertThat(body).contains("INCOMING TRANSMISSION");
-    assertThat(body).contains("END OF TRANSMISSION");
+    assertThat(body).contains("NOVASHOP DEVOPS STORE");
+    assertThat(body).contains("NOVASHOP PLATFORM TERMINAL");
   }
 
   @Test

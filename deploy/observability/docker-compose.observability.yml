@@ -9,11 +9,28 @@ services:
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
+      - ./alertmanager.yml:/etc/prometheus/alertmanager.yml:ro
     deploy:
       resources:
         limits:
           cpus: "0.50"
           memory: 512M
+    networks:
+      - novashop-observability-net
+      - novashop-starter-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: novashop-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
     networks:
       - novashop-observability-net
 
@@ -23,7 +40,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set locally; do not commit it}
       - GF_USERS_ALLOW_SIGN_UP=false
     deploy:
       resources:
@@ -69,3 +86,7 @@ services:
 networks:
   novashop-observability-net:
     driver: bridge
+  # The starter helper creates this network. LAB-03 must be running first.
+  novashop-starter-net:
+    external: true
+    name: novashop-starter_default

@@ -40,6 +40,30 @@ graph TD
 
 ---
 
+## 🚀 Nasıl Çalışılır?
+
+Bu depo bir "tek komutla her şeyi kur" projesi değildir. Her laboratuvarın amacı, kullanılan aracı ve komutları öğrencinin önce **manuel olarak** öğrenmesidir. Yardımcı betikler ise ancak manuel akış anlaşıldıktan sonra aynı işlemi hızlı, tekrarlanabilir ve güvenli biçimde başlatmak veya doğrulamak için kullanılır.
+
+İzlenecek sıra:
+
+1. İlgili LAB belgesindeki ön koşulları ve numaralı manuel adımları uygulayın.
+2. Her komutun ne yaptığını ve beklenen çıktıyı kontrol edin.
+3. Varsa helper betiğiyle aynı sonucu tekrar edin.
+4. `verify-lab-XX.sh` ile sonucu doğrulayın.
+5. Cleanup adımını uygulamadan sonraki ağır profile geçmeyin.
+
+### Yerel `.env` Kuralı
+
+Starter profilinin parolaya ihtiyacı yoktur. Full Compose, AWS 3-tier veya Observability çalıştırmadan önce yalnızca yerel makinenizde `.env` oluşturun:
+
+```bash
+cp config/project.env.example .env
+chmod 600 .env
+nano .env
+```
+
+`DB_PASSWORD` ve `GRAFANA_ADMIN_PASSWORD` placeholder değerlerini gerçek yerel değerlerle değiştirin. `.env` Git tarafından yok sayılır; asla commit edilmez. Cloud dağıtımlarında bu değerler yerine ilgili labın anlattığı GitHub/GitLab secret mekanizması veya AWS Secrets Manager kullanılır.
+
 ## 🚀 Hızlı Başlangıç (Starter Profil)
 
 NovaShop UI, arka plan servisleri hazır olmadığında otomatik olarak **in-memory mock** modunda çalışır. Böylece harici veritabanları kurmadan arayüzü hemen test edebilirsiniz.
@@ -47,39 +71,30 @@ NovaShop UI, arka plan servisleri hazır olmadığında otomatik olarak **in-mem
 ### Ön Koşullar
 - Docker yüklü bir sistem (Ubuntu 22.04+ önerilir)
 
-### 1. NovaShop UI Starter İmajını İnşa Edin
-NovaShop kurumsal marka kimliği, DevOps ürün kataloğu ve özelleştirilmiş temayı içeren yerel container imajını oluşturun:
+### 1. Güvenli Starter Compose Profilini Başlatın
+
+Bu helper, gerçek UI Compose dosyasıyla güvenlik overlay'ini birlikte kullanır; imajı derler, UI'ı 8888 portunda başlatır ve healthcheck tamamlanana kadar bekler:
+
 ```bash
-docker build -t novashop-ui:v0.1.0 src/ui
+bash scripts/compose-starter.sh up
 ```
 
-### 2. Starter Container'ı Çalıştırın
+### 2. Sağlık, Marka ve Güvenlik Doğrulaması
+
 ```bash
-docker run -d --name novashop-ui -p 8888:8080 novashop-ui:v0.1.0
+bash scripts/verify/verify-lab-03.sh
 ```
 
-### 3. Sağlık ve Marka Doğrulaması (Smoke Test)
-Container'ın ayağa kalktığını ve NovaShop başlığının döndüğünü doğrulayın:
+Bu komut `/actuator/health`, NovaShop marka başlığı ve favicon için fail-fast smoke testi uygular. İmajı manuel derleme, doğrudan `docker run` kullanımı ve Dockerfile incelemesi LAB-03 içinde adım adım ayrıca öğretilir.
+
+### 3. Tarayıcıda İnceleyin
+
+Tarayıcınızdan `http://localhost:8888` adresini açın.
+
+### 4. Durdurun ve Temizleyin
+
 ```bash
-# Sağlık kontrolü
-curl -f http://localhost:8888/actuator/health
-
-# Marka kontrolü
-curl -s http://localhost:8888/ | grep -o "NovaShop DevOps Store"
-```
-*Beklenen Çıktı:* `{"status":"UP"}` ve `NovaShop DevOps Store`
-
-### 4. Tarayıcıda İnceleyin
-Tarayıcınızdan şu adrese gidin:
-```text
-http://localhost:8888
-```
-
-*(İsteğe bağlı referans: Orijinal upstream imajı `public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2` adresindedir; ancak NovaShop markasını içermez.)*
-
-### 5. Durdurun ve Temizleyin
-```bash
-docker stop novashop-ui && docker rm novashop-ui
+bash scripts/compose-starter.sh down
 ```
 
 ## 🏛️ Mimari, Ağ ve Güvenlik Dokümantasyonu
@@ -94,20 +109,36 @@ docker stop novashop-ui && docker rm novashop-ui
 
 ## 📚 Eğitim Yol Haritası ve Laboratuvarlar
 
-1. [LAB-01: Git Temelleri, Feature Branch ve Merge Conflict Çözümü](docs/labs/LAB-01-GIT-GITHUB.md)
-2. [LAB-02: AWS Temelleri: VPC, Public/Private Subnet, EC2, RDS ve TLS Doğrulaması](docs/labs/LAB-02-AWS-BASICS.md)
-3. [LAB-03: Dockerfile Optimizasyonu, Non-Root İmaj ve Docker Compose](docs/labs/LAB-03-DOCKER-COMPOSE.md)
-4. [LAB-04: AWS 3-Tier Dağıtım: EC2 Compose, Private RDS ve Nginx TLS](docs/labs/LAB-04-AWS-3TIER.md)
-5. [LAB-05: GitHub Actions CI/CD Pipeline (OIDC, AWS ECR ve Otomatik Rollback)](docs/labs/LAB-05-GITHUB-ACTIONS.md)
-6. [LAB-06: Kubernetes Temelleri, Kind Çok Düğümlü Küme ve Helm Paketleme](docs/labs/LAB-06-KUBERNETES-HELM.md)
-7. [LAB-07: Kurumsal CI Platformu (GitLab CE, Jenkins Pipeline ve Harbor Registry)](docs/labs/LAB-07-ENTERPRISE-CICD.md)
-8. [LAB-08: DevSecOps Güvenlik Kapıları (SonarQube SAST, Trivy SCA, Secret Scan ve SBOM)](docs/labs/LAB-08-SECURITY-GATES.md)
-9. [LAB-09: Argo CD ile Deklaratif GitOps Dağıtımı ve Self-Healing](docs/labs/LAB-09-ARGOCD-GITOPS.md)
-10. [LAB-10: İleri Gözlemlenebilirlik (Prometheus, Grafana, OpenTelemetry, Jaeger ve SLO)](docs/labs/LAB-10-OBSERVABILITY.md)
-11. [LAB-11: Merkezi Loglama (Fluent Bit → Elasticsearch → Kibana ve Trace-ID Korelasyonu)](docs/labs/LAB-11-CENTRALIZED-LOGGING.md)
-12. [LAB-12: Altyapı Otomasyonu (Terraform Modülleri, Cloud-Init ve Idempotency)](docs/labs/LAB-12-TERRAFORM-IAC.md)
-13. [LAB-13 (Bonus): AWS EKS Kurumsal Platform Dağıtımı, IRSA ve Güvenilirlik Yönetimi](docs/labs/LAB-13-EKS-ENTERPRISE.md)
-14. [LAB-14 (Bonus): Amazon ECS Fargate ile Sunucusuz Container Dağıtımı ve ALB Entegrasyonu](docs/labs/LAB-14-ECS-FARGATE.md)
+Her bağlantı, öğrencinin izleyeceği eksiksiz manuel kurulum kılavuzudur. Sağdaki komutlar, öğretim adımlarının yerine geçmeyen isteğe bağlı hızlandırma veya doğrulama araçlarıdır.
+
+| Lab | Manuel olarak öğrenilecek ana konu | Hızlandırma / doğrulama |
+|---|---|---|
+| [LAB-01](docs/labs/LAB-01-GIT-GITHUB.md) | Git, branch, PR ve conflict çözümü | `bash scripts/verify/verify-lab-01.sh` |
+| [LAB-02](docs/labs/LAB-02-AWS-BASICS.md) | AWS Console ile VPC, EC2, private RDS ve TLS | `bash scripts/verify/verify-lab-02.sh --config-only` |
+| [LAB-03](docs/labs/LAB-03-DOCKER-COMPOSE.md) | Dockerfile, Docker CLI ve Compose | `bash scripts/compose-starter.sh up`; `bash scripts/verify/verify-lab-03.sh` |
+| [LAB-04](docs/labs/LAB-04-AWS-3TIER.md) | EC2 üzerinde 3-tier Compose, Nginx ve TLS | `bash scripts/compose-3tier.sh up`; `bash scripts/verify/verify-lab-04.sh` |
+| [LAB-05](docs/labs/LAB-05-GITHUB-ACTIONS.md) | GitHub Actions, OIDC, ECR ve rollback | `bash scripts/verify/verify-lab-05.sh` |
+| [LAB-06](docs/labs/LAB-06-KUBERNETES-HELM.md) | Kind, kubectl ve Helm | `bash scripts/setup-kind-cluster.sh`; `bash scripts/verify/verify-lab-06.sh` |
+| [LAB-07](docs/labs/LAB-07-ENTERPRISE-CICD.md) | GitLab, Jenkins ve Harbor | `bash scripts/verify/verify-lab-07.sh` |
+| [LAB-08](docs/labs/LAB-08-SECURITY-GATES.md) | SonarQube, Trivy, Gitleaks ve SBOM | `bash scripts/generate-sbom.sh`; `bash scripts/verify/verify-lab-08.sh` |
+| [LAB-09](docs/labs/LAB-09-ARGOCD-GITOPS.md) | Argo CD ve GitOps uzlaştırması | `bash scripts/verify/verify-lab-09.sh` |
+| [LAB-10](docs/labs/LAB-10-OBSERVABILITY.md) | Prometheus, Grafana, OTel, Jaeger ve Alertmanager | `bash scripts/compose-observability.sh up`; `bash scripts/verify/verify-lab-10.sh` |
+| [LAB-11](docs/labs/LAB-11-CENTRALIZED-LOGGING.md) | Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
+| [LAB-12](docs/labs/LAB-12-TERRAFORM-IAC.md) | Terraform modülleri, plan ve cleanup | `bash scripts/verify/verify-lab-12.sh` |
+| [LAB-13](docs/labs/LAB-13-EKS-ENTERPRISE.md) | EKS, IRSA ve AWS gözlemlenebilirliği | `bash scripts/verify/verify-lab-13.sh` |
+| [LAB-14](docs/labs/LAB-14-ECS-FARGATE.md) | ECS Fargate, ALB ve CI/CD | `bash scripts/verify/verify-lab-14.sh` |
+
+Tüm yapılandırmaları hızlı ön kontrolden geçirmek için, servisler kapalıyken bile şu komut kullanılabilir:
+
+```bash
+bash scripts/verify/verify-all-labs.sh --config-only
+```
+
+LAB-03 starter UI çalışırken canlı smoke kontrollerini de eklemek için:
+
+```bash
+bash scripts/verify/verify-all-labs.sh --live
+```
 
 ---
 

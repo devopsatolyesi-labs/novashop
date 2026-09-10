@@ -4,6 +4,17 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+MODE="${1:---config-only}"
+
+case "$MODE" in
+    --config-only|--live) ;;
+    *)
+        echo "Kullanım: $0 [--config-only|--live]" >&2
+        exit 2
+        ;;
+esac
+
+cd "$REPO_ROOT"
 
 echo "========================================================"
 echo "   NovaShop DevOps Store — Laboratuvar Doğrulama Paketi "
@@ -32,14 +43,22 @@ run_test() {
 # LAB-01'den LAB-14'e kadar tüm laboratuvar doğrulamaları
 run_test "verify-lab-01.sh" "LAB-01 Git & GitHub Doğrulaması"
 run_test "verify-lab-02.sh" "LAB-02 AWS Temel Altyapı ve Nginx Doğrulaması" --config-only
-run_test "verify-lab-03.sh" "LAB-03 Docker & Compose Doğrulaması" 8888 localhost
+if [ "$MODE" = "--live" ]; then
+    run_test "verify-lab-03.sh" "LAB-03 Docker & Compose Doğrulaması" 8888 localhost
+else
+    run_test "verify-lab-03.sh" "LAB-03 Docker & Compose Doğrulaması" --config-only
+fi
 run_test "verify-lab-04.sh" "LAB-04 AWS 3-Tier ve Nginx TLS Doğrulaması" --config-only
 run_test "verify-lab-05.sh" "LAB-05 GitHub Actions CI/CD Doğrulaması"
 run_test "verify-lab-06.sh" "LAB-06 Kubernetes & Helm Doğrulaması"
 run_test "verify-lab-07.sh" "LAB-07 Kurumsal CI/CD Platformu Doğrulaması"
 run_test "verify-lab-08.sh" "LAB-08 DevSecOps Güvenlik Kapıları Doğrulaması"
 run_test "verify-lab-09.sh" "LAB-09 ArgoCD GitOps Dağıtımı Doğrulaması"
-run_test "verify-lab-10.sh" "LAB-10 Gözlemlenebilirlik ve Metrik Doğrulaması" 8888 localhost
+if [ "$MODE" = "--live" ]; then
+    run_test "verify-lab-10.sh" "LAB-10 Gözlemlenebilirlik ve Metrik Doğrulaması" 8888 localhost
+else
+    run_test "verify-lab-10.sh" "LAB-10 Gözlemlenebilirlik ve Metrik Doğrulaması" --config-only
+fi
 run_test "verify-lab-11.sh" "LAB-11 Merkezi Günlükleme Doğrulaması"
 run_test "verify-lab-12.sh" "LAB-12 Terraform IaC Doğrulaması"
 run_test "verify-lab-13.sh" "LAB-13 Kurumsal Amazon EKS Doğrulaması"

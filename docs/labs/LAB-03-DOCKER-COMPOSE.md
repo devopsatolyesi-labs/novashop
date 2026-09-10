@@ -117,7 +117,7 @@ docker images novashop-ui:v0.1.0
 NovaShop, öğrenci VM kaynaklarını (2 vCPU / 16 GB RAM) korumak ve güvenliği sağlamak için iki ayrı çalışma yolu sunar:
 
 - **Starter Çalışma Yolu (Önerilen):** Yalnızca UI ve dahili mock verileri ayağa kaldırır. `deploy/compose/starter.secure.yml` overlay'i ile kök dosya sistemi salt-okunur (`read_only: true`), `no-new-privileges: true`, CPU sınırı (0.50) ve 64 MiB kısıtlı `tmpfs /tmp` uygular.
-- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; `scripts/compose-full.sh` üzerinden ve secret-guard koruması ile çalıştırılır.
+- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; repo kökündeki Git-dışı `.env` dosyasından `DB_PASSWORD` okuyarak `scripts/compose-full.sh` üzerinden çalışır.
 
 ##### Seçenek A: NovaShop Starter Compose Helper (Önerilen)
 1. **Güvenli Overlay ile Yapılandırmayı Çözümleme:**
@@ -131,7 +131,28 @@ NovaShop, öğrenci VM kaynaklarını (2 vCPU / 16 GB RAM) korumak ve güvenliğ
    bash scripts/compose-starter.sh up
    ```
 
-##### Seçenek B: Doğrudan Docker CLI ile Çalıştırma
+##### Seçenek B: Full Compose için Yerel Secret Dosyası
+
+Starter profilinde parola gerekmez. Full profil veya gözlemlenebilirlik profili çalıştırmadan önce, örnek dosyayı yalnızca yerel `.env` olarak kopyalayın ve placeholder değerleri değiştirin:
+
+```bash
+cp config/project.env.example .env
+chmod 600 .env
+nano .env
+```
+
+`.env` içindeki en az `DB_PASSWORD` değerini gerçek bir yerel parola ile değiştirin. Bu dosya `.gitignore` kapsamındadır; `git add .env` çalıştırmayın.
+
+Ardından önce çözümlemeyi, sonra full stack'i başlatın:
+
+```bash
+bash scripts/compose-full.sh config
+bash scripts/compose-full.sh up
+```
+
+*Beklenen çıktı:* İlk komut secret değeri yazdırmadan Compose yapılandırmasını doğrular; ikinci komut 11 servisi `novashop-full` proje adıyla başlatır.
+
+##### Seçenek C: Doğrudan Docker CLI ile Çalıştırma
 ```bash
 docker run -d \
   --name novashop-ui-starter \

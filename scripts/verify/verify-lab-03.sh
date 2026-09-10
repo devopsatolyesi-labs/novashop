@@ -6,6 +6,8 @@ set -euo pipefail
 PORT="${1:-8888}"
 HOST="${2:-localhost}"
 MODE="${3:-live}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Eğer ilk parametre --config-only ise statik denetim moduna geç
 if [ "$PORT" = "--config-only" ] || [ "$PORT" = "--static" ]; then
@@ -16,8 +18,8 @@ fi
 echo "=== [LAB-03] Doğrulama Başlatılıyor (${HOST}:${PORT} | Mod: ${MODE}) ==="
 
 # 1. Compose Güvenlik Overlay Dosyası Kontrolü
-OVERLAY_FILE="deploy/compose/starter.secure.yml"
-if [ ! -f "$OVERLAY_FILE" ] && [ ! -f "../$OVERLAY_FILE" ]; then
+OVERLAY_FILE="$REPO_ROOT/deploy/compose/starter.secure.yml"
+if [ ! -f "$OVERLAY_FILE" ]; then
     echo "❌ HATA: Güvenlik overlay dosyası bulunamadı ($OVERLAY_FILE)." >&2
     exit 1
 fi
@@ -25,7 +27,6 @@ echo "✅ Güvenlik overlay dosyası mevcut ($OVERLAY_FILE)."
 
 # 2. Overlay İçi Güvenlik Sertleştirmeleri Kontrolü
 TARGET_OVERLAY="$OVERLAY_FILE"
-[ -f "$TARGET_OVERLAY" ] || TARGET_OVERLAY="../$OVERLAY_FILE"
 
 grep -q "read_only: true" "$TARGET_OVERLAY" || { echo "❌ HATA: Overlay içinde read_only: true eksik." >&2; exit 1; }
 grep -q "no-new-privileges:true" "$TARGET_OVERLAY" || { echo "❌ HATA: Overlay içinde no-new-privileges:true eksik." >&2; exit 1; }
@@ -34,8 +35,7 @@ grep -q "cpus" "$TARGET_OVERLAY" || { echo "❌ HATA: Overlay içinde cpus limit
 echo "✅ Overlay güvenlik sertleştirmeleri (read-only, no-new-privileges, CPU/PID limits) doğrulandı."
 
 # 3. Dockerfile Non-root (appuser / UID 1000) Kontrolü
-DOCKERFILE="src/ui/Dockerfile"
-[ -f "$DOCKERFILE" ] || DOCKERFILE="../src/ui/Dockerfile"
+DOCKERFILE="$REPO_ROOT/src/ui/Dockerfile"
 if [ -f "$DOCKERFILE" ]; then
     grep -q "USER appuser" "$DOCKERFILE" || { echo "❌ HATA: Dockerfile içinde USER appuser direktifi eksik." >&2; exit 1; }
     echo "✅ Dockerfile non-root kullanıcı direktifi (USER appuser) doğrulandı."

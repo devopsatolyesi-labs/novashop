@@ -41,14 +41,14 @@ fi
 # 3. Dockerfile Non-Root Güvenlik Denetimi
 echo "3. Dockerfile güvenlik sertleştirmesi (Non-root) denetleniyor..."
 NON_ROOT_COUNT=0
-for df in $(find "$REPO_ROOT/src" -name "Dockerfile" 2>/dev/null); do
+while IFS= read -r -d '' df; do
     if grep -q "USER " "$df"; then
         echo "✅ Non-root kullanıcı kuralı mevcut: $(basename "$(dirname "$df")")/Dockerfile"
         NON_ROOT_COUNT=$((NON_ROOT_COUNT + 1))
     else
         echo "⚠️ UYARI: Non-root USER direktifi eksik: $df"
     fi
-done
+done < <(find "$REPO_ROOT/src" -name "Dockerfile" -print0 2>/dev/null)
 
 # 4. Trivy Taraması (Eğer Trivy yüklüyse)
 if command -v trivy >/dev/null 2>&1; then

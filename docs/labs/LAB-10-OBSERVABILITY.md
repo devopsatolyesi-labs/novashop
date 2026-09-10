@@ -65,25 +65,32 @@ graph TD
 Docker Compose ile izleme altyapısını (`observability` profili) ayağa kaldırın:
 
 ```bash
-docker compose --profile observability up -d
+test -f .env || cp config/project.env.example .env
+chmod 600 .env
+nano .env
+# GRAFANA_ADMIN_PASSWORD placeholder değerini gerçek bir yerel parola ile değiştirin.
+bash scripts/compose-observability.sh config
+bash scripts/compose-observability.sh up
 ```
-*Beklenen çıktı:* Prometheus, Grafana, Alertmanager, Jaeger ve OTel Collector servislerinin `Up` duruma geçmesi.
+*Açıklama:* `.env` yalnızca bu makinede kalır ve Git tarafından yok sayılır. Helper, parola eksik veya placeholder ise Compose'u başlatmadan durur.
+
+*Beklenen çıktı:* Prometheus, Grafana, Alertmanager, Jaeger ve OTel Collector servislerinin `Up` duruma geçmesi. Bu stack, LAB-03 starter helper'ın oluşturduğu `novashop-starter_default` ağına bağlanır; bu nedenle starter UI önce çalışıyor olmalıdır.
 
 **Servislerin Sağlık Durumunu Doğrulama:**
 ```bash
-docker compose --profile observability ps
+bash scripts/compose-observability.sh ps
 ```
 
 ---
 
 #### 2. Prometheus Metrik Toplama (Scraping) Kontrolü
 
-Prometheus arayüzüne bağlanarak (`http://localhost:9090/targets`) NovaShop hedeflerinin aktif (`UP`) olduğunu doğrulayın:
+Prometheus arayüzüne bağlanarak (`http://localhost:9090/targets`) NovaShop UI hedefinin aktif (`UP`) olduğunu doğrulayın:
 
 ```bash
 curl -s http://localhost:9090/api/v1/targets | grep -o '"health":"up"'
 ```
-*Beklenen çıktı:* En az 2 adet `"health":"up"` çıktısı (UI ve Catalog servisleri).
+*Beklenen çıktı:* En az 1 adet `"health":"up"` çıktısı (UI).
 
 **Örnek PromQL Metrik Sorguları:**
 - Toplam HTTP istek hızı (RPS):
@@ -113,7 +120,7 @@ for i in {1..10}; do curl -s http://localhost:8888/ > /dev/null; sleep 0.5; done
 
 #### 4. Grafana Üzerinde RED Metrik Panosu
 
-Tarayıcınızda `http://localhost:3000` adresine gidin (Varsayılan: `admin` / `admin`):
+Tarayıcınızda `http://localhost:3000` adresine gidin ve kullanıcı adı olarak `admin`, parola olarak da yerel `.env` dosyasında belirlediğiniz `GRAFANA_ADMIN_PASSWORD` değerini kullanın:
 
 1. **Connections > Data Sources > Prometheus** bağlantısının aktif olduğunu doğrulayın (`URL: http://prometheus:9090`).
 2. Hazır **NovaShop Service Overview** panosunu açın:
@@ -187,7 +194,7 @@ bash scripts/verify/verify-lab-10.sh 8888 localhost
 
 ```bash
 # Observability altyapısını durdur ve birimleri temizle
-docker compose --profile observability down -v
+bash scripts/compose-observability.sh down -v
 ```
 
 ---

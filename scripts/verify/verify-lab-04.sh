@@ -55,9 +55,9 @@ if [ -z "$TARGET_HOST" ] || [ "$TARGET_HOST" = "--config-only" ]; then
     exit 0
 fi
 
-CURL_OPTS="-s --connect-timeout 8"
+CURL_OPTS=(-s --connect-timeout 8)
 if [ "$INSECURE_FLAG" = "--insecure" ] || [ "$INSECURE_FLAG" = "-k" ]; then
-    CURL_OPTS="$CURL_OPTS -k"
+    CURL_OPTS+=(-k)
 fi
 
 echo "=== [LAB-04] Canlı Doğrulama Başlatılıyor: $TARGET_HOST ==="
@@ -74,7 +74,7 @@ fi
 
 # 2. HTTPS Ana Sayfa ve Marka Doğrulama
 echo "2. HTTPS üzerinden ana sayfa ve NovaShop marka kontrolü..."
-HOME_PAGE=$(curl $CURL_OPTS "https://${TARGET_HOST}/" 2>/dev/null || echo "")
+HOME_PAGE=$(curl "${CURL_OPTS[@]}" "https://${TARGET_HOST}/" 2>/dev/null || echo "")
 
 if echo "$HOME_PAGE" | grep -q "NovaShop DevOps Store"; then
     echo "✅ HTTPS erişimi ve marka başlığı ('NovaShop DevOps Store') doğrulandı."
@@ -85,7 +85,7 @@ fi
 
 # 3. HTTPS Actuator Sağlık Kontrolü
 echo "3. HTTPS /actuator/health sağlık kontrolü..."
-HEALTH_BODY=$(curl $CURL_OPTS "https://${TARGET_HOST}/actuator/health" 2>/dev/null || echo "")
+HEALTH_BODY=$(curl "${CURL_OPTS[@]}" "https://${TARGET_HOST}/actuator/health" 2>/dev/null || echo "")
 
 if echo "$HEALTH_BODY" | grep -q '"status":"UP"'; then
     echo "✅ Actuator sağlık kontrolü başarılı: $HEALTH_BODY"
@@ -95,7 +95,7 @@ else
 fi
 
 # 4. Favicon HTTP 200 Kontrolü
-HTTP_CODE=$(curl $CURL_OPTS -o /dev/null -w "%{http_code}" "https://${TARGET_HOST}/favicon.ico" 2>/dev/null || echo "000")
+HTTP_CODE=$(curl "${CURL_OPTS[@]}" -o /dev/null -w "%{http_code}" "https://${TARGET_HOST}/favicon.ico" 2>/dev/null || echo "000")
 if [ "$HTTP_CODE" = "200" ]; then
     echo "✅ HTTPS Favicon HTTP 200 OK."
 fi

@@ -4,8 +4,40 @@ set -e
 
 PORT="${1:-8888}"
 HOST="${2:-localhost}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 echo "=== [LAB-10] Gözlemlenebilirlik Doğrulama Başlatılıyor ==="
+
+if [ "$PORT" = "--config-only" ]; then
+    for required_file in \
+        "$REPO_ROOT/deploy/observability/docker-compose.observability.yml" \
+        "$REPO_ROOT/deploy/observability/prometheus.yml" \
+        "$REPO_ROOT/deploy/observability/alert.rules.yml" \
+        "$REPO_ROOT/deploy/observability/alertmanager.yml" \
+        "$REPO_ROOT/deploy/observability/otel-collector-config.yaml"; do
+        if [ ! -f "$required_file" ]; then
+            echo "❌ HATA: Gerekli gözlemlenebilirlik dosyası bulunamadı: $required_file" >&2
+            exit 1
+        fi
+    done
+
+    grep -q 'metrics_path: "/actuator/prometheus"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus Actuator metrik scrape yolu eksik." >&2
+        exit 1
+    }
+    grep -q 'otlp/jaeger' "$REPO_ROOT/deploy/observability/otel-collector-config.yaml" || {
+        echo "❌ HATA: Jaeger OTLP exporter yapılandırması eksik." >&2
+        exit 1
+    }
+    grep -q 'alertmanager:9093' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus Alertmanager yönlendirmesi eksik." >&2
+        exit 1
+    }
+    echo "✅ Gözlemlenebilirlik yapılandırması (Prometheus, Alertmanager, OTel/Jaeger) doğrulandı."
+    echo "=== [LAB-10] Yapılandırma Doğrulaması Başarılı (PASS) ==="
+    exit 0
+fi
 
 # 1. Spring Boot Actuator Prometheus Metrik Endpoint'i
 echo "1. Actuator Prometheus metrik endpoint'i test ediliyor..."

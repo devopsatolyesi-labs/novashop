@@ -3,22 +3,34 @@
 # Enforces the full.secure.yml security overlay and prevents empty/placeholder database secrets.
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
 action="${1:-config}"
 shift || true
+ENV_FILE="${NOVASHOP_ENV_FILE:-$REPO_ROOT/.env}"
 
-if [[ -z "${DB_PASSWORD:-}" ]]; then
-  printf 'DB_PASSWORD must be set in the local shell; do not write it to Git.\n' >&2
+if [[ ! -r "$ENV_FILE" ]]; then
+  printf 'Local environment file not found: %s\nCopy config/project.env.example to .env, set DB_PASSWORD, and do not commit it.\n' "$ENV_FILE" >&2
   exit 2
 fi
 
-case "$DB_PASSWORD" in
-  '<'*'>'|CHANGE_ME|changeme|example|password)
-    printf 'DB_PASSWORD is a placeholder; set a real local value before using full Compose.\n' >&2
+db_password="$(grep -E '^DB_PASSWORD=' "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+if [[ "${db_password:0:1}" == '"' && "${db_password: -1}" == '"' ]] || \
+   [[ "${db_password:0:1}" == "'" && "${db_password: -1}" == "'" ]]; then
+  db_password="${db_password:1:${#db_password}-2}"
+fi
+
+case "$db_password" in
+  ''|'<'*'>'|CHANGE_ME|changeme|example|password|REPLACE_WITH_SECRETS_MANAGER_GENERATED_PASSWORD)
+    printf 'DB_PASSWORD is missing or a placeholder in %s; set a real local value before using full Compose.\n' "$ENV_FILE" >&2
     exit 2
     ;;
 esac
 
 compose_args=(
+  --env-file "$ENV_FILE"
   -p novashop-full
   -f src/app/docker-compose.yml
   -f src/app/compose.override.yaml

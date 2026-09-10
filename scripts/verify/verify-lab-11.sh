@@ -10,10 +10,8 @@ echo "=== [LAB-11] Merkezi Günlükleme Doğrulama Başlatılıyor ==="
 echo "1. Uygulama loglarında Trace-ID / Span-ID korelasyon kontrolü..."
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-LOG_PATTERN_FOUND=false
 if grep -rn "traceId" "$REPO_ROOT/src/ui" 2>/dev/null || grep -rn "trace_id" "$REPO_ROOT/src" 2>/dev/null; then
     echo "✅ Kaynak kodda dağıtık log korelasyonu (traceId / spanId) kalıbı mevcut."
-    LOG_PATTERN_FOUND=true
 fi
 
 # 2. Elasticsearch Canlı Sağlık Kontrolü (Opsiyonel)

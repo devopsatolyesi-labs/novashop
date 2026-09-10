@@ -1,5 +1,5 @@
 # NovaShop Full-Stack Security Overlay.
-# Use only via scripts/compose-full.sh after setting a local DB_PASSWORD.
+# Use only via scripts/compose-full.sh after setting DB_PASSWORD in the local .env file.
 services:
   catalog:
     cpus: "0.50"

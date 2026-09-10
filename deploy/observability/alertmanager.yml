@@ -1,0 +1,7 @@
+# NovaShop local lab Alertmanager configuration.
+# The default receiver deliberately has no external notification integration.
+route:
+  receiver: local-lab
+
+receivers:
+  - name: local-lab

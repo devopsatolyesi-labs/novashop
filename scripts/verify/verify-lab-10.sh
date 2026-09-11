@@ -15,7 +15,12 @@ if [ "$PORT" = "--config-only" ]; then
         "$REPO_ROOT/deploy/observability/prometheus.yml" \
         "$REPO_ROOT/deploy/observability/alert.rules.yml" \
         "$REPO_ROOT/deploy/observability/alertmanager.yml" \
-        "$REPO_ROOT/deploy/observability/otel-collector-config.yaml"; do
+        "$REPO_ROOT/deploy/observability/otel-collector-config.yaml" \
+        "$REPO_ROOT/deploy/observability/grafana/provisioning/datasources/datasources.yml" \
+        "$REPO_ROOT/deploy/observability/grafana/provisioning/dashboards/dashboards.yml" \
+        "$REPO_ROOT/deploy/observability/grafana/provisioning/dashboards/json/novashop-services-overview.json" \
+        "$REPO_ROOT/deploy/observability/grafana/provisioning/dashboards/json/docker-container-host-overview.json" \
+        "$REPO_ROOT/deploy/k8s/servicemonitors/novashop-servicemonitor.yaml"; do
         if [ ! -f "$required_file" ]; then
             echo "❌ HATA: Gerekli gözlemlenebilirlik dosyası bulunamadı: $required_file" >&2
             exit 1
@@ -26,6 +31,30 @@ if [ "$PORT" = "--config-only" ]; then
         echo "❌ HATA: Prometheus Actuator metrik scrape yolu eksik." >&2
         exit 1
     }
+    grep -q 'job_name: "novashop-catalog"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus catalog scrape hedefi eksik." >&2
+        exit 1
+    }
+    grep -q 'job_name: "novashop-cart"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus cart scrape hedefi eksik." >&2
+        exit 1
+    }
+    grep -q 'job_name: "novashop-checkout"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus checkout scrape hedefi eksik." >&2
+        exit 1
+    }
+    grep -q 'job_name: "novashop-orders"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus orders scrape hedefi eksik." >&2
+        exit 1
+    }
+    grep -q 'job_name: "node-exporter"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus node-exporter scrape hedefi eksik." >&2
+        exit 1
+    }
+    grep -q 'job_name: "cadvisor"' "$REPO_ROOT/deploy/observability/prometheus.yml" || {
+        echo "❌ HATA: Prometheus cadvisor scrape hedefi eksik." >&2
+        exit 1
+    }
     grep -q 'otlp/jaeger' "$REPO_ROOT/deploy/observability/otel-collector-config.yaml" || {
         echo "❌ HATA: Jaeger OTLP exporter yapılandırması eksik." >&2
         exit 1
@@ -34,7 +63,11 @@ if [ "$PORT" = "--config-only" ]; then
         echo "❌ HATA: Prometheus Alertmanager yönlendirmesi eksik." >&2
         exit 1
     }
-    echo "✅ Gözlemlenebilirlik yapılandırması (Prometheus, Alertmanager, OTel/Jaeger) doğrulandı."
+    grep -q 'checkout_attempt_total' "$REPO_ROOT/src/ui/src/main/java/com/amazon/sample/ui/web/CheckoutController.java" || {
+        echo "❌ HATA: NovaShop UI iş metrikleri (checkout_attempt_total) eksik." >&2
+        exit 1
+    }
+    echo "✅ Gözlemlenebilirlik yapılandırması (Prometheus hedefleri, Node Exporter, cAdvisor, Grafana Provisioning, ServiceMonitor ve İş Metrikleri) doğrulandı."
     echo "=== [LAB-10] Yapılandırma Doğrulaması Başarılı (PASS) ==="
     exit 0
 fi

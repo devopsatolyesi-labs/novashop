@@ -33,15 +33,13 @@ graph TD
     User([Kullanıcı / İstek Üretici]) -->|İstek Gönderimi| UI[NovaShop UI]
     UI -->|Hata Üreten İstek!| Catalog[Catalog Service]
 
-    subgraph Log Üretimi
-        UI -->|JSON stdout MDC: trace_id| DockerLog1[(Docker Container Log)]
-        Catalog -->|JSON stdout MDC: trace_id| DockerLog2[(Docker Container Log)]
+    subgraph Log Üretimi ve İletimi
+        UI -->|Fluentd Driver :24224 MDC: trace_id| FluentBit[Fluent Bit Log Forwarder]
+        Catalog -->|Fluentd Driver :24224 MDC: trace_id| FluentBit
     end
 
     subgraph Merkezi Loglama Altyapısı logging-elk profili
-        FluentBit[Fluent Bit Log Forwarder] -->|Tail: /var/lib/docker/containers/*| DockerLog1
-        FluentBit -->|Tail: /var/lib/docker/containers/*| DockerLog2
-        FluentBit -->|Parse JSON & Enrich| ES[(Elasticsearch 8.x<br/>Index: novashop-logs-*)]
+        FluentBit -->|Parse JSON & Index| ES[(Elasticsearch 8.x<br/>Index: novashop-logs-*)]
         ES --> Kibana[Kibana Web UI :5601<br/>Log Discovery & Korelasyon]
     end
 
@@ -81,38 +79,47 @@ curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[a-z]*"'
 
 #### 2. Fluent Bit Yapılandırma Dosyası (`fluent-bit.conf`)
 
-Fluent Bit'in Docker loglarını okuyup JSON ayrıştırması yaparak Elasticsearch'e ilettiği kuralları inceleyin:
+Fluent Bit'in Docker mikroservis loglarını Fluentd forward protokolü (port 24224) ile alıp JSON ayrıştırması yaparak Elasticsearch'e ilettiği kuralları inceleyin:
 
 ```ini
 [SERVICE]
     Flush        1
+    Daemon       Off
     Log_Level    info
     Parsers_File parsers.conf
 
+# 1. Giriş: Docker Konteyner Loglarını Oku (Fluentd Forward Driver)
 [INPUT]
-    Name             tail
-    Path             /var/log/containers/*novashop*.log
-    Parser           docker
+    Name             forward
+    Listen           0.0.0.0
+    Port             24224
     Tag              novashop.*
-    Mem_Buf_Limit    50MB
-    Skip_Long_Lines  On
 
+# 2. Filtre: JSON Loglarını Çözümle ve Trace-ID Korelasyonu Yap
 [FILTER]
-    Name         parser
-    Match        novashop.*
-    Key_Name     log
-    Parser       json
-    Reserve_Data On
+    Name             parser
+    Match            *
+    Key_Name         log
+    Parser           json
+    Reserve_Data     On
 
+# 3. Çıkış: Logları Elasticsearch'e İndeksle
 [OUTPUT]
-    Name            es
-    Match           novashop.*
-    Host            elasticsearch
-    Port            9200
-    Index           novashop-logs
-    Type            _doc
-    Logstash_Format On
-    Logstash_Prefix novashop-logs
+    Name             es
+    Match            *
+    Host             elasticsearch
+    Port             9200
+    Index            novashop-logs
+    Type             _doc
+    Logstash_Format  On
+    Logstash_Prefix  novashop-logs
+    Suppress_Type_Name On
+    Trace_Error      On
+```
+
+*Not:* Docker Compose servislerinin loglarını Fluent Bit'e iletmesi için `deploy/logging/docker-compose.logging-driver.yml` overlay dosyası (`logging.driver: "fluentd"`) kullanılır:
+```bash
+docker compose -f src/app/docker-compose.yml -f deploy/logging/docker-compose.logging-driver.yml up -d
 ```
 
 ---

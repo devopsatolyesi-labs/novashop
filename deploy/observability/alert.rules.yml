@@ -1,25 +1,36 @@
-# NovaShop — Prometheus Alarm Kuralları (Alert Rules)
+# NovaShop — Prometheus Alarm Kuralları (Alert Rules & SLO)
 groups:
-  - name: novashop_alerts
+  - name: novashop_slo_alerts
     rules:
-      # 1. Yüksek HTTP Hata Oranı Alarmı (RED - Rate/Errors/Duration)
+      # 1. Servis Bazlı HTTP 5xx Hata Yüzdesi Alarmı (SLO: %2 Hata Bütçesi İhlali)
       - alert: HighHttpErrorRate
-        expr: rate(http_server_requests_seconds_count{status=~"5.."}[1m]) > 0.05
+        expr: (sum by (job) (rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum by (job) (rate(http_server_requests_seconds_count[1m]))) * 100 > 2
         for: 30s
         labels:
           severity: critical
           team: devops
         annotations:
-          summary: "NovaShop UI yüksek HTTP 5xx hata oranı tespit edildi"
-          description: "Son 1 dakikada HTTP 5xx hata oranı saniyede 0.05'i aştı."
+          summary: "NovaShop {{ $labels.job }} HTTP 5xx hata oranı SLO eşiğini (%2) aştı"
+          description: "Son 1 dakikada {{ $labels.job }} HTTP 5xx hata oranı %{{ $value | printf \"%.2f\" }} seviyesinde; %2 SLO hata bütçesi ihlal edildi."
 
-      # 2. Servis Kesintisi Alarmı (Service Down)
+      # 2. Servis Bazlı Yanıt Gecikmesi Alarmı (SLO: p95 Latency > 500ms)
+      - alert: HighResponseLatency
+        expr: histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket[1m]))) > 0.5
+        for: 30s
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "NovaShop {{ $labels.job }} p95 gecikme süresi 500ms eşiğini aştı"
+          description: "{{ $labels.job }} servisinde son 1 dakikada p95 istek süresi {{ $value | printf \"%.3f\" }}s oldu."
+
+      # 3. Servis Kesintisi Alarmı (Availability SLO)
       - alert: NovaShopServiceDown
-        expr: up{job="novashop-ui"} == 0
+        expr: up{job=~"novashop-.*"} == 0
         for: 1m
         labels:
           severity: blocker
           team: devops
         annotations:
-          summary: "NovaShop UI servisi erişilemiyor"
-          description: "Prometheus 1 dakikadır novashop-ui metrik endpoint'ine ulaşamıyor."
+          summary: "NovaShop servisi erişilemiyor: {{ $labels.job }}"
+          description: "Prometheus 1 dakikadır {{ $labels.job }} metrik endpoint'ine ulaşamıyor."

@@ -79,6 +79,23 @@ const repositoryProvider = {
   inject: [ConfigService],
 };
 
+import { makeCounterProvider } from '@willsoto/nestjs-prometheus';
+
+const checkoutAttemptProvider = makeCounterProvider({
+  name: 'checkout_attempt_total',
+  help: 'Total checkout attempts initiated',
+});
+
+const checkoutSuccessProvider = makeCounterProvider({
+  name: 'checkout_success_total',
+  help: 'Total successful checkouts completed',
+});
+
+const paymentFailureProvider = makeCounterProvider({
+  name: 'payment_failure_total',
+  help: 'Total payment or order submission failures',
+});
+
 @Module({
   imports: [ConfigModule],
   controllers: [CheckoutController],
@@ -86,6 +103,9 @@ const repositoryProvider = {
     orderServiceProvider,
     shippingServiceProvider,
     repositoryProvider,
+    checkoutAttemptProvider,
+    checkoutSuccessProvider,
+    paymentFailureProvider,
     CheckoutService,
   ],
 })

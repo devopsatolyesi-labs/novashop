@@ -27,6 +27,8 @@ import com.amazon.sample.ui.web.payload.ShippingAddressRequest;
 import com.amazon.sample.ui.web.util.RequiresCommonAttributes;
 import com.amazon.sample.ui.web.util.SessionIDUtil;
 import jakarta.validation.Valid;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -46,9 +48,36 @@ import reactor.core.publisher.Mono;
 public class CheckoutController {
 
   private CheckoutService checkoutService;
+  private final Counter checkoutAttemptCounter;
+  private final Counter checkoutSuccessCounter;
+  private final Counter paymentFailureCounter;
 
-  public CheckoutController(@Autowired CheckoutService checkoutService) {
+  public CheckoutController(
+    @Autowired CheckoutService checkoutService,
+    @Autowired(required = false) MeterRegistry meterRegistry
+  ) {
     this.checkoutService = checkoutService;
+    if (meterRegistry != null) {
+      this.checkoutAttemptCounter = Counter.builder("checkout_attempt_total")
+        .description("Total number of checkout attempts initiated")
+        .register(meterRegistry);
+      this.checkoutSuccessCounter = Counter.builder("checkout_success_total")
+        .description("Total number of successful checkouts completed")
+        .register(meterRegistry);
+      this.paymentFailureCounter = Counter.builder("payment_failure_total")
+        .description("Total number of payment and checkout submission failures")
+        .register(meterRegistry);
+    } else {
+      this.checkoutAttemptCounter = null;
+      this.checkoutSuccessCounter = null;
+      this.paymentFailureCounter = null;
+    }
+  }
+
+  private void incrementCounter(Counter counter) {
+    if (counter != null) {
+      counter.increment();
+    }
   }
 
   @GetMapping
@@ -175,9 +204,11 @@ public class CheckoutController {
     ServerHttpRequest request,
     Model model
   ) {
+    incrementCounter(checkoutAttemptCounter);
     String sessionId = SessionIDUtil.getSessionId(request);
 
     if (result.hasErrors()) {
+      incrementCounter(paymentFailureCounter);
       return this.checkoutService.get(sessionId).map(c ->
           showPayment(c, paymentDetailsRequest, request, model)
         );
@@ -185,7 +216,11 @@ public class CheckoutController {
 
     return this.checkoutService.submit(sessionId)
       .doOnNext(o -> {
+        incrementCounter(checkoutSuccessCounter);
         model.addAttribute("summary", o);
+      })
+      .doOnError(e -> {
+        incrementCounter(paymentFailureCounter);
       })
       .thenReturn("order");
   }

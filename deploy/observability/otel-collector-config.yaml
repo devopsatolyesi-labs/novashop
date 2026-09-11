@@ -35,3 +35,9 @@ service:
       receivers: [otlp]
       processors: [batch]
       exporters: [prometheus, logging]
+    # OTel temel log akışı (Konsol/stdout inceleme için).
+    # Kurumsal merkezi indeksleme ve Kibana analizi LAB-11 / ELK stack hattında yürütülür.
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [logging]

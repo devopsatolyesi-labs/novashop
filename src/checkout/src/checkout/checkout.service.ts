@@ -26,6 +26,8 @@ import { IShippingService } from './shipping';
 import { ICheckoutRepository } from './repositories';
 import { Item } from './models/Item';
 import { ShippingRates } from './models/ShippingRates';
+import { InjectMetric } from '@willsoto/nestjs-prometheus';
+import { Counter } from 'prom-client';
 
 @Injectable()
 export class CheckoutService {
@@ -34,6 +36,12 @@ export class CheckoutService {
     private checkoutRepository: ICheckoutRepository,
     @Inject('OrdersService') private ordersService: IOrdersService,
     @Inject('ShippingService') private shippingService: IShippingService,
+    @InjectMetric('checkout_attempt_total')
+    private checkoutAttemptCounter?: Counter<string>,
+    @InjectMetric('checkout_success_total')
+    private checkoutSuccessCounter?: Counter<string>,
+    @InjectMetric('payment_failure_total')
+    private paymentFailureCounter?: Counter<string>,
   ) {}
 
   async get(customerId: string): Promise<Checkout> {
@@ -101,25 +109,43 @@ export class CheckoutService {
   }
 
   async submit(customerId: string): Promise<CheckoutSubmitted> {
+    if (this.checkoutAttemptCounter) {
+      this.checkoutAttemptCounter.inc();
+    }
+
     const checkout = await this.get(customerId);
 
     if (!checkout) {
+      if (this.paymentFailureCounter) {
+        this.paymentFailureCounter.inc();
+      }
       throw new Error('Checkout not found');
     }
 
-    const order = await this.ordersService.create(checkout);
+    try {
+      const order = await this.ordersService.create(checkout);
 
-    await this.checkoutRepository.remove(customerId);
+      await this.checkoutRepository.remove(customerId);
 
-    return Promise.resolve({
-      orderId: order.id,
-      email: checkout.shippingAddress.email,
-      items: checkout.items,
-      subtotal: checkout.subtotal,
-      shipping: checkout.shipping,
-      tax: checkout.tax,
-      total: checkout.total,
-    });
+      if (this.checkoutSuccessCounter) {
+        this.checkoutSuccessCounter.inc();
+      }
+
+      return {
+        orderId: order.id,
+        email: checkout.shippingAddress.email,
+        items: checkout.items,
+        subtotal: checkout.subtotal,
+        shipping: checkout.shipping,
+        tax: checkout.tax,
+        total: checkout.total,
+      };
+    } catch (err) {
+      if (this.paymentFailureCounter) {
+        this.paymentFailureCounter.inc();
+      }
+      throw err;
+    }
   }
 
   private makeid(length) {

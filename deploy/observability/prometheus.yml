@@ -24,7 +24,43 @@ scrape_configs:
     static_configs:
       - targets: ["ui:8080"]
 
-  # 3. OpenTelemetry Collector Metrik Çıkışı
+  # 3. NovaShop Mikroservis Metrikleri
+  - job_name: "novashop-catalog"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["catalog:8080"]
+
+  - job_name: "novashop-cart"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["cart:8080"]
+
+  - job_name: "novashop-checkout"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["checkout:8080"]
+
+  - job_name: "novashop-orders"
+    metrics_path: "/actuator/prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["orders:8080"]
+
+  # 4. OpenTelemetry Collector Metrik Çıkışı
   - job_name: "otel-collector"
     static_configs:
       - targets: ["otel-collector:8889"]
+
+  # 5. Host & Konteyner İzleme (Docker Monitoring)
+  - job_name: "node-exporter"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "cadvisor"
+    scrape_interval: 10s
+    static_configs:
+      - targets: ["cadvisor:8080"]

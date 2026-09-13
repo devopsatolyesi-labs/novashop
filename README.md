@@ -113,20 +113,20 @@ Her bağlantı, öğrencinin izleyeceği eksiksiz manuel kurulum kılavuzudur. S
 
 | Lab | Manuel olarak öğrenilecek ana konu | Hızlandırma / doğrulama |
 |---|---|---|
-| [LAB-01](docs/labs/LAB-01-GIT-GITHUB.md) | Git, branch, PR ve conflict çözümü | `bash scripts/verify/verify-lab-01.sh` |
-| [LAB-02](docs/labs/LAB-02-AWS-BASICS.md) | AWS Console ile VPC, EC2, private RDS ve TLS | `bash scripts/verify/verify-lab-02.sh --config-only` |
-| [LAB-03](docs/labs/LAB-03-DOCKER-COMPOSE.md) | Dockerfile, Docker CLI ve Compose | `bash scripts/compose-starter.sh up`; `bash scripts/verify/verify-lab-03.sh` |
-| [LAB-04](docs/labs/LAB-04-AWS-3TIER.md) | EC2 üzerinde 3-tier Compose, Nginx ve TLS | `bash scripts/compose-3tier.sh up`; `bash scripts/verify/verify-lab-04.sh` |
-| [LAB-05](docs/labs/LAB-05-GITHUB-ACTIONS.md) | GitHub Actions, OIDC, ECR ve rollback | `bash scripts/verify/verify-lab-05.sh` |
-| [LAB-06](docs/labs/LAB-06-KUBERNETES-HELM.md) | Kind, kubectl ve Helm | `bash scripts/setup-kind-cluster.sh`; `bash scripts/verify/verify-lab-06.sh` |
-| [LAB-07](docs/labs/LAB-07-ENTERPRISE-CICD.md) | GitLab, Jenkins ve Harbor | `bash scripts/verify/verify-lab-07.sh` |
-| [LAB-08](docs/labs/LAB-08-SECURITY-GATES.md) | SonarQube, Trivy, Gitleaks ve SBOM | `bash scripts/generate-sbom.sh`; `bash scripts/verify/verify-lab-08.sh` |
-| [LAB-09](docs/labs/LAB-09-ARGOCD-GITOPS.md) | Argo CD ve GitOps uzlaştırması | `bash scripts/verify/verify-lab-09.sh` |
-| [LAB-10](docs/labs/LAB-10-OBSERVABILITY.md) | Prometheus, Grafana, OTel, Jaeger ve Alertmanager | `bash scripts/compose-observability.sh up`; `bash scripts/verify/verify-lab-10.sh` |
-| [LAB-11](docs/labs/LAB-11-CENTRALIZED-LOGGING.md) | Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
-| [LAB-12](docs/labs/LAB-12-TERRAFORM-IAC.md) | Terraform modülleri, plan ve cleanup | `bash scripts/verify/verify-lab-12.sh` |
-| [LAB-13](docs/labs/LAB-13-EKS-ENTERPRISE.md) | EKS, IRSA ve AWS gözlemlenebilirliği | `bash scripts/verify/verify-lab-13.sh` |
-| [LAB-14](docs/labs/LAB-14-ECS-FARGATE.md) | ECS Fargate, ALB ve CI/CD | `bash scripts/verify/verify-lab-14.sh` |
+| [LAB-01](labs/LAB-01/README.md) | Git, branch, PR ve conflict çözümü | `bash scripts/verify/verify-lab-01.sh` |
+| [LAB-02](labs/LAB-02/README.md) | AWS Console ve Terraform ile VPC, EC2, private RDS ve TLS | `bash scripts/verify/verify-lab-02.sh --config-only` |
+| [LAB-03](labs/LAB-03/README.md) | Dockerfile, Docker CLI ve Compose | `bash scripts/compose-starter.sh up`; `bash scripts/verify/verify-lab-03.sh` |
+| [LAB-04](labs/LAB-04/README.md) | EC2 üzerinde 3-tier Compose, Nginx ve TLS | `bash scripts/compose-3tier.sh up`; `bash scripts/verify/verify-lab-04.sh` |
+| [LAB-05](labs/LAB-05/README.md) | GitHub Actions, OIDC, ECR ve rollback | `bash scripts/verify/verify-lab-05.sh` |
+| [LAB-06](labs/LAB-06/README.md) | Kind, kubectl ve Helm | `bash scripts/setup-kind-cluster.sh`; `bash scripts/verify/verify-lab-06.sh` |
+| [LAB-07](labs/LAB-07/README.md) | GitLab, Jenkins ve Harbor | `bash scripts/verify/verify-lab-07.sh` |
+| [LAB-08](labs/LAB-08/README.md) | SonarQube, Trivy, Gitleaks ve SBOM | `bash scripts/generate-sbom.sh`; `bash scripts/verify/verify-lab-08.sh` |
+| [LAB-09](labs/LAB-09/README.md) | Argo CD ve GitOps uzlaştırması | `bash scripts/verify/verify-lab-09.sh` |
+| [LAB-10](labs/LAB-10/README.md) | Prometheus, Grafana, OTel, Jaeger ve Alertmanager | `bash scripts/compose-observability.sh up`; `bash scripts/verify/verify-lab-10.sh` |
+| [LAB-11](labs/LAB-11/README.md) | Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
+| [LAB-12](labs/LAB-12/README.md) | Terraform modülleri, plan ve cleanup | `bash scripts/verify/verify-lab-12.sh` |
+| [LAB-13](labs/LAB-13/README.md) | EKS, IRSA ve AWS gözlemlenebilirliği | `bash scripts/verify/verify-lab-13.sh` |
+| [LAB-14](labs/LAB-14/README.md) | ECS Fargate, ALB ve CI/CD | `bash scripts/verify/verify-lab-14.sh` |
 
 Tüm yapılandırmaları hızlı ön kontrolden geçirmek için, servisler kapalıyken bile şu komut kullanılabilir:
 

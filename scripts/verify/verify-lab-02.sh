@@ -11,15 +11,19 @@ if [ -z "$EC2_HOST" ] || [ "$EC2_HOST" = "--config-only" ]; then
     echo "=== [LAB-02] Statik / Konfigürasyon Doğrulaması ==="
     
     # 1. Dokümantasyon ve Mimari Kılavuzu Varlık Kontrolü
-    if [ ! -f "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md" ]; then
-        echo "❌ HATA: LAB-02-AWS-BASICS.md bulunamadı!" >&2
+    LAB02_DOC="$REPO_ROOT/labs/LAB-02/README.md"
+    if [ ! -f "$LAB02_DOC" ]; then
+        LAB02_DOC="$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md"
+    fi
+    if [ ! -f "$LAB02_DOC" ]; then
+        echo "❌ HATA: LAB-02 kılavuzu bulunamadı!" >&2
         exit 1
     fi
-    echo "✅ LAB-02-AWS-BASICS.md mimari ve uygulama kılavuzu mevcut."
+    echo "✅ LAB-02 mimari ve uygulama kılavuzu mevcut ($LAB02_DOC)."
 
     # 2. VPC CIDR ve RDS Single-AZ Güvenlik Doğrulaması
-    if grep -q "10.0.0.0/16" "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md" && \
-       grep -q "PubliclyAccessible: false" "$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md"; then
+    if grep -q "10.0.0.0/16" "$LAB02_DOC" && \
+       grep -q "PubliclyAccessible: false" "$LAB02_DOC"; then
         echo "✅ VPC CIDR (10.0.0.0/16) ve izole RDS (PubliclyAccessible: false) yönergeleri doğrulandı."
     else
         echo "❌ HATA: LAB-02 mimari güvenlik gereksinimleri eksik!" >&2

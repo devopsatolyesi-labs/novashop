@@ -12,16 +12,17 @@ Kurulan altyapı bileşenleri:
 - **Private Subnets (10.1.10.0/24 & 10.1.11.0/24):** Çoklu Erişilebilirlik Alanlı (Multi-AZ) RDS MySQL (`db.t3.small`).
 - **Güvenlik Grupları (Security Groups):** Dışarıdan sadece HTTP (80) ve SSH (22) erişimi; RDS veritabanına sadece EC2 Web katmanından erişim.
 
-![NovaShop AWS Mimarisi](../docs/images/lab-02-architecture.jpg)
+![NovaShop AWS Mimarisi](../images/lab-02-architecture.jpg)
 
 ---
 
 ## 📁 Dizin Yapısı
 
 ```text
-lab-02/
-├── README.md                      # Bu kılavuz
+labs/LAB-02/
+├── README.md                      # Ana lab kılavuzu
 └── terraform-basic-infra/
+    ├── README.md                  # Bu kılavuz
     ├── provider.tf                # AWS provider ve S3 backend tanımı
     ├── variables.tf               # Genel değişkenler (Region, CIDR, Instance tipleri)
     ├── main.tf                    # Modülleri bağlayan ana dosya
@@ -42,7 +43,7 @@ lab-02/
 
 ### 1. Çalışma Dizinine Geçin
 ```bash
-cd ~/novashop/lab-02/terraform-basic-infra
+cd ~/novashop/labs/LAB-02/terraform-basic-infra
 ```
 
 ### 2. AWS Kimlik Bilgilerini Tanımlayın
@@ -92,7 +93,7 @@ Eğer her adımı elle çalıştırmak yerine tam otomatik dağıtım yapmak ist
 
 ### Tek Komutla Çalıştırma:
 ```bash
-cd ~/novashop/lab-02/terraform-basic-infra
+cd ~/novashop/labs/LAB-02/terraform-basic-infra
 
 # Sadece Access Key ve Secret Key tanımlamanız yeterlidir:
 export AWS_ACCESS_KEY_ID="AKIAxxxxxxxxxxxxxxxx"

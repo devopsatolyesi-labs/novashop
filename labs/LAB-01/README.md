@@ -139,9 +139,6 @@ Tarayıcınızda `https://github.com/<GITHUB_USERNAME>/novashop` sayfasını aç
 
 Bu bölümde, ana dalı (`main`) izole tutarak yeni bir feature branch açacak, bir ürün fiyatını güncelleyecek ve GitHub üzerinde Pull Request (PR) oluşturacaksınız.
 
-> **🛡️ Mimari ve Güvenlik Notu (Neden `labs/LAB-01/products.json` Kullanıyoruz?):**  
-> Gerçek kurumsal DevOps projelerinde branch, PR ve merge conflict pratikleri yapılırken canlı üretim kaynak kodları (`src/ui/...`) doğrudan riske atılmaz. Bu pratik için özel olarak hazırlanan `labs/LAB-01/products.json` dosyasını kullanarak Git çakışma senaryolarını güvenle öğreniriz; böylece sonraki laboratuvarlarda (LAB-03, LAB-04) ayağa kaldıracağımız mikroservis uygulamamızın çalışma ortamı (`src/ui`) her zaman temiz ve hatasız kalır.
-
 #### 2.1 Yeni Feature Branch Oluşturun
 ```bash
 git checkout -b feature/update-mug-product
@@ -284,7 +281,18 @@ bash scripts/verify/verify-lab-01.sh
 
 ## 🧹 Temizlik (Cleanup)
 
-Yereldeki geçici feature branch'i silin:
+İşiniz bittiğinde açtığınız geçici `feature/update-mug-product` dalını hem yerelden hem de uzak GitHub deposundan temizleyebilirsiniz:
+
+### 1. Yerel (Local) Dalı Silme:
 ```bash
 git branch -d feature/update-mug-product
 ```
+
+### 2. Uzak (Remote - GitHub) Dalı Silme (Opsiyonel / İsteğe Bağlı):
+Uzak depodaki dalı temizlemek için iki yöntemden birini seçebilirsiniz:
+- **Terminalden Tek Komutla Silme:**
+  ```bash
+  git push origin --delete feature/update-mug-product
+  ```
+- **GitHub Web Arayüzünden Silme:**  
+  Merge edilmiş Pull Request sayfanızın en altındaki **`Delete branch`** butonuna tıklayarak doğrudan tarayıcı üzerinden silebilirsiniz.

@@ -21,7 +21,13 @@ Kurumsal DevOps standartlarına uygun olarak; yerel veya bulut ortamında barın
 ### Ön koşullar
 
 - **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
-- **Kaynak Gereksinimi:** Öğrenci VM'inde `cicd-enterprise` profili çalıştırılacaktır (en az 2 vCPU, 8 GB boş RAM). Diğer ağır profiller (Kind, ELK) durdurulmuş olmalıdır (PROFILES.md kaynak sınırları).
+- **Altyapı Araçları (GitLab & Harbor):** Sunucunuzda GitLab CE ve Harbor çalışır durumda olmalıdır. Henüz kurmadıysanız:
+  - [GitLab Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/01-gitlab-setup.md) veya `docker compose -f infra/gitlab/docker-compose.yml up -d`
+  - [Harbor Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/02-harbor-setup.md) veya `bash infra/harbor/install_harbor.sh`
+- **Erişim Modeli:**
+  - *Model A (Doğrudan IP):* GitLab `http://<UBUNTU_IP>:8929`, Harbor `http://<UBUNTU_IP>:18082`
+  - *Model B (Kurumsal DNS + SSL):* GitLab `https://studentXX-gitlab.devopsatolyesi.com`, Harbor `https://studentXX-harbor.devopsatolyesi.com`
+- **Kaynak Gereksinimi:** Öğrenci VM'inde `cicd-enterprise` profili çalıştırılacaktır (en az 2 vCPU, 8 GB boş RAM). Diğer ağır profiller (Kind, ELK) durdurulmuş olmalıdır.
 - **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`, Git.
 
 ---

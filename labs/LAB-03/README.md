@@ -217,8 +217,10 @@ curl -s http://localhost:8888/ | grep -o "NovaShop DevOps Store"
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8888/favicon.ico
 ```
 
-> **Tarayıcıdan İnceleme:**  
-> Web tarayıcınızdan **`http://<SUNUCU_IP_ADRESINIZ>:8888`** adresine giderek NovaShop e-ticaret arayüzünü canlı olarak görüntüleyin.
+> **Tarayıcıdan İnceleme (Erişim Seçenekleri):**  
+> * **Model A (Doğrudan IP):** `http://<UBUNTU_IP>:8888` (DNS veya SSL gerektirmez)  
+> * **Model B (Kurumsal DNS + SSL):** `https://studentXX-novashop.devopsatolyesi.com` (Nginx Reverse Proxy yapılandırıldıysa)  
+> Web tarayıcınızdan yukarıdaki adreslerden biriyle NovaShop e-ticaret arayüzünü canlı olarak görüntüleyin.
 
 ---
 

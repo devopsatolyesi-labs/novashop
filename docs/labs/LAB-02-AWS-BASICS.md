@@ -42,18 +42,20 @@ Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** 
 
 ### Mimari Şema
 
+![NovaShop AWS 3-Katmanlı Mimari Şeması](../images/lab-02-architecture.jpg)
+
 ```mermaid
 graph TD
-    User([Öğrenci / Web Tarayıcısı]) -->|HTTP :80| Web_Console[EC2 Web (Console)<br/>10.0.1.x :80<br/>Public Subnet]
-    User -->|HTTP :80| Web_TF[EC2 Web (Terraform)<br/>10.1.1.x :80<br/>Public Subnet]
+    User["Öğrenci / Web Tarayıcısı"] -->|HTTP :80| Web_Console["EC2 Web (Console)<br/>10.0.1.x :80<br/>Public Subnet"]
+    User -->|HTTP :80| Web_TF["EC2 Web (Terraform)<br/>10.1.1.x :80<br/>Public Subnet"]
 
-    subgraph AWS Cloud eu-central-1
-        subgraph VPC 1: novashop-console-vpc (10.0.0.0/16)
-            Web_Console -->|MySQL :3306| RDS_Console[(RDS MySQL<br/>novashop-console-db<br/>Private Subnet Group)]
+    subgraph AWS_Cloud ["AWS Cloud (eu-central-1 / us-east-1)"]
+        subgraph VPC_Console ["VPC 1: novashop-console-vpc (10.0.0.0/16)"]
+            Web_Console -->|MySQL :3306| RDS_Console[("RDS MySQL<br/>novashop-console-db<br/>Private Subnet")]
         end
 
-        subgraph VPC 2: novashop-tf-vpc (10.1.0.0/16)
-            Web_TF -->|MySQL :3306| RDS_TF[(RDS MySQL<br/>novashop-tf-db<br/>Private Subnet Group)]
+        subgraph VPC_TF ["VPC 2: novashop-tf-vpc (10.1.0.0/16)"]
+            Web_TF -->|MySQL :3306| RDS_TF[("RDS MySQL<br/>novashop-tf-db<br/>Private Subnet")]
         end
     end
 ```

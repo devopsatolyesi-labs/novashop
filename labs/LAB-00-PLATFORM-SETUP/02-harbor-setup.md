@@ -2,14 +2,15 @@
 
 Harbor; kurumsal ölçekte konteyner imajlarını depolamak, güvenlik açıklarını (Trivy ile) taramak ve imaj yaşam döngüsünü yönetmek için kullanılan kurumsal düzeyde bir açık kaynak OCI Registry platformudur.
 
-Bu rehber, sunucunuzda `/opt/harbor` veya Harbor bileşenleri **hiç bulunmasa bile** sıfırdan adım adım kurulum yapmanızı sağlar.
+Bu rehber, sunucunuzda `/opt/harbor` veya Harbor bileşenleri **hiç bulunmasa bile** sıfırdan adım adım kurulum yapmanızı sağlar ve iki farklı erişim modelini destekler:
+1. **Model A (Lokal / Doğrudan IP:Port):** DNS ve SSL olmadan doğrudan `http://<UBUNTU_IP>:18082` ile kullanım.
+2. **Model B (Kurumsal DNS + SSL):** Nginx Edge arkasında `https://student100-harbor.devopsatolyesi.com` ile kullanım.
 
 ---
 
 ## 🧭 Genel Bakış ve Port Yapılandırması
 
-* **Erişim Modeli:** HTTP (SSL ve alan adı zorunluluğu olmadan doğrudan IP ile çalışır)
-* **Harbor Web & Registry Portu:** `18082` (Nginx 80/443 portlarıyla çakışmaz)
+* **Dahili Harbor HTTP Portu:** `18082` (Nginx 80/443 portlarıyla çakışmaz)
 * **Dahili Güvenlik Tarayıcısı:** Trivy Scanner etkin
 * **Varsayılan Giriş Bilgileri:**
   * **Kullanıcı:** `admin`
@@ -60,7 +61,7 @@ cd /opt/harbor
 
 ### Adım 2: Yapılandırma Dosyasını (`harbor.yml`) Hazırlama
 
-Harbor'ı SSL ve DNS karmaşası olmadan, doğrudan sunucu IP'si ve `18082` HTTP portuyla çalışacak şekilde ayarlayın:
+Harbor'ı dahili olarak port `18082` HTTP modunda çalıştıracağız:
 
 1. Örnek şablonu kopyalayın:
    ```bash
@@ -73,13 +74,13 @@ Harbor'ı SSL ve DNS karmaşası olmadan, doğrudan sunucu IP'si ve `18082` HTTP
    echo "Sunucu IP: $LOCAL_IP"
    ```
 
-3. `harbor.yml` dosyasını HTTP moduna getirin (HTTPS bloğunu kapatın ve portu 18082 yapın):
+3. `harbor.yml` dosyasını HTTP 18082 moduna getirin:
    ```bash
    # Hostname ve port güncellemesi
    sudo sed -i "s/hostname: reg.mydomain.com/hostname: ${LOCAL_IP}/" /opt/harbor/harbor.yml
    sudo sed -i 's/port: 80/port: 18082/' /opt/harbor/harbor.yml
 
-   # HTTPS bloğunu devre dışı bırakma (Sertifika hatası vermemesi için)
+   # HTTPS bloğunu devre dışı bırakma (SSL'i gerekirse Nginx 443 çözecektir)
    sudo sed -i 's/^https:/#https:/' /opt/harbor/harbor.yml
    sudo sed -i 's/^  port: 443/#  port: 443/' /opt/harbor/harbor.yml
    sudo sed -i 's/^  certificate:/#  certificate:/' /opt/harbor/harbor.yml
@@ -88,86 +89,95 @@ Harbor'ı SSL ve DNS karmaşası olmadan, doğrudan sunucu IP'si ve `18082` HTTP
 
 ---
 
-### Adım 3: Docker Daemon Güvensiz Registry (Insecure Registry) Ayarı
+### Adım 3: Harbor Kurulumunu Başlatma (Trivy Dahil)
 
-Harbor SSL olmadan (HTTP) çalıştığı için Docker daemon'ın bu porta güvensiz erişimine izin verilmelidir:
-
-```bash
-sudo mkdir -p /etc/docker
-cat << 'DAEMON_EOF' | sudo tee /etc/docker/daemon.json
-{
-  "insecure-registries": ["${LOCAL_IP}:18082", "127.0.0.1:18082", "localhost:18082"]
-}
-DAEMON_EOF
-
-# Docker servisini yeniden başlatın
-sudo systemctl restart docker
-```
-
----
-
-### Adım 4: Harbor Kurulumunu Başlatma (Trivy Dahil)
-
-Kurulum betiğini Trivy zafiyet tarayıcısı bayrağı ile çalıştırın:
+Kurulum betiğini Trivy zafiyet tarayıcısı ile çalıştırın:
 
 ```bash
 cd /opt/harbor
 sudo ./install.sh --with-trivy
 ```
 
-*Açıklama:* Bu işlem Harbor imajlarını çeker, konfigürasyonu üretir ve tüm servisleri (`harbor-core`, `harbor-db`, `registry`, `trivy-adapter`, `nginx`) Docker konteyneri olarak ayağa kaldırır.
-
 **Konteynerlerin Durumunu Kontrol Etme:**
 ```bash
 cd /opt/harbor
 sudo docker compose ps
 ```
-*Beklenen çıktı:* Tüm Harbor konteynerleri `Up` (healthy) durumunda olmalıdır.
+*Beklenen çıktı:* Tüm Harbor konteynerleri (`harbor-core`, `harbor-db`, `registry`, `trivy-adapter`, `nginx`) `Up (healthy)` durumunda olmalıdır.
 
 ---
 
-### Adım 5: Web Arayüzüne Giriş ve İlk Projeyi Açma
+### Adım 4: Web Arayüzünden `novashop` Projesini Açma
 
-1. Tarayıcınızdan web arayüzünü açın:
-   ```text
-   http://<UBUNTU_IP>:18082
+1. Tarayıcınızdan Harbor'a erişin:
+   * **Doğrudan IP ile:** `http://<UBUNTU_IP>:18082`
+   * **veya DNS/SSL ile:** `https://student100-harbor.devopsatolyesi.com`
+2. Giriş yapın (`admin` / `Harbor12345`).
+3. Sol menüden **Projects** -> **+ New Project** butonuna basın:
+   * **Project Name:** `novashop`
+   * **Access Level:** **Public** kutucuğunu işaretleyin (Böylece Kubernetes kümesi imaj çekerken k8s imagePullSecret gerektirmez).
+   * **OK** butonuna basarak projeyi oluşturun.
+
+---
+
+## 🔐 İki Farklı Modelde Docker CLI Girişi ve İmaj Gönderimi
+
+### Model A: DNS ve SSL Olmadığında (Lokal / Doğrudan IP Modu)
+
+Harbor HTTP üzerinde çalıştığı için Docker daemon varsayılan olarak güvensiz registry bağlantısını engeller. Bunu aşmak için:
+
+1. `/etc/docker/daemon.json` dosyasını oluşturun/güncelleyin:
+   ```bash
+   LOCAL_IP=$(hostname -I | awk '{print $1}')
+   sudo mkdir -p /etc/docker
+   cat << DAEMON_EOF | sudo tee /etc/docker/daemon.json
+   {
+     "insecure-registries": ["${LOCAL_IP}:18082", "127.0.0.1:18082", "localhost:18082"]
+   }
+   DAEMON_EOF
+
+   sudo systemctl restart docker
    ```
-2. Giriş yapın:
-   * **Username:** `admin`
-   * **Password:** `Harbor12345`
 
-3. NovaShop projeleri için isim alanı oluşturun:
-   * Sol menüden **Projects** sekmesine tıklayın.
-   * **+ New Project** butonuna basın.
-   * **Project Name:** `novashop` yazın.
-   * **Access Level:** **Public** kutucuğunu işaretleyin (Böylece Kubernetes ve Kind kümesi imaj çekerken k8s secret gerektirmez).
-   * **OK** butonuna basarak kaydedin.
+2. Docker CLI ile giriş yapın ve test imajı gönderin:
+   ```bash
+   docker login ${LOCAL_IP}:18082 -u admin -p Harbor12345
 
----
+   # Test imajı:
+   docker pull alpine:latest
+   docker tag alpine:latest ${LOCAL_IP}:18082/novashop/alpine:v1
+   docker push ${LOCAL_IP}:18082/novashop/alpine:v1
+   ```
 
-### Adım 6: Docker CLI ile Giriş ve Test
-
-Sunucu terminalinden Harbor'a giriş yapın ve test imajı yükleyin:
-
-```bash
-# 1. Harbor'a giriş yapın
-docker login ${LOCAL_IP}:18082 -u admin -p Harbor12345
-
-# 2. Örnek bir hafif imaj indirin ve etiketleyin
-docker pull alpine:latest
-docker tag alpine:latest ${LOCAL_IP}:18082/novashop/alpine:test
-
-# 3. Harbor'a gönderin (push)
-docker push ${LOCAL_IP}:18082/novashop/alpine:test
-```
-
-*Beklenen çıktı:* İmaj katmanları başarıyla `Pushed` edilmeli ve Harbor web panelinde `novashop/alpine` olarak görünmelidir.
+3. **Kind Kümesi İçin Çözüm:**  
+   Lokal Kind kümesi çalıştırıyorsanız imajı doğrudan node'lara aktararak ağ/insecure kısıtlarına takılmadan çalışabilirsiniz:
+   ```bash
+   kind load docker-image ${LOCAL_IP}:18082/novashop/alpine:v1 --name novashop-cluster
+   ```
 
 ---
 
-## ⚡ Alternatif Yöntem: Tek Komutla Hızlı Kurulum (Fast-Track)
+### Model B: Kurumsal DNS ve SSL Olduğunda (Nginx Edge Modu)
 
-Yukarıdaki tüm adımları (dizin açma, indirme, IP tespiti, harbor.yml oluşturma, daemon.json güncelleme ve Trivy ile kurulum) tek bir komutla tamamlamak isterseniz:
+Eğer [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) adımı ile `student100` için SSL Edge ayağa kaldırıldıysa:
+
+1. Docker CLI standart port 443 (HTTPS) üzerinden Harbor'a bağlanır:
+   ```bash
+   docker login student100-harbor.devopsatolyesi.com -u admin -p Harbor12345
+   ```
+   *(Hiçbir `daemon.json` veya `insecure-registries` ayarı gerektirmez!)*
+
+2. İmajı güvenli alan adı ile etiketleyip gönderin:
+   ```bash
+   docker tag alpine:latest student100-harbor.devopsatolyesi.com/novashop/alpine:v1
+   docker push student100-harbor.devopsatolyesi.com/novashop/alpine:v1
+   ```
+
+---
+
+## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track Script)
+
+Tüm dizin açma, indirme, IP tespiti ve Trivy kurulumunu tek komutla tamamlamak için:
 
 ```bash
 cd ~/novashop
@@ -178,12 +188,12 @@ sudo bash infra/harbor/install_harbor.sh
 
 ## 🛑 Servisi Durdurma ve Başlatma (RAM Tasarrufu)
 
-Harbor arka planda 8-9 adet konteyner çalıştırır (~1.5 GB RAM). İhtiyaç duymadığınız lablarda RAM'i boşa çıkarmak için:
+Harbor arka planda 8-9 konteyner çalıştırır (~1.5 GB RAM). Başka lablara geçtiğinizde RAM'i serbest bırakmak için:
 
 ```bash
-# Harbor'ı durdurun (Verileriniz /data altında güvenle korunur)
+# Durdurma:
 cd /opt/harbor && sudo docker compose stop
 
-# Tekrar ihtiyaç duyduğunuzda başlatın:
+# Yeniden başlatma:
 cd /opt/harbor && sudo docker compose start
 ```

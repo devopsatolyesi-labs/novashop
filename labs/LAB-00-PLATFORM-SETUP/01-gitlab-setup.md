@@ -120,7 +120,7 @@ http://<UBUNTU_IP>:8929
 
 #### Model B: Kurumsal DNS ve SSL ile Erişim
 ```text
-https://studentXX-gitlab.devopsatolyesi.com
+https://student100-gitlab.devopsatolyesi.com
 ```
 
 ---

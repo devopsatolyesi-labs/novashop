@@ -7,10 +7,12 @@ Bu modül, kurumsal DevOps laboratuvarlarında kullanılacak temel platform ara�
 ## 🎯 Temel İlkeler ve Yaklaşım
 
 1. **Sıfır Sunucu Varsayımı:** Sunucuda `/opt/harbor` veya benzeri dizinler ya da araçlar önceden kurulu olmak zorunda değildir. Her rehber, sıfır bir sanal makinede baştan sona çalışacak şekilde tasarlanmıştır.
-2. **Adım Adım (Manual) Öncelikli Rehber:** Öğrencinin ne yaptığını tam kavraması için yapılandırma dosyaları, portlar, çekirdek parametreleri ve yetkiler açıkça anlatılır.
-3. **Hızlı Kurulum (Fast-Track) Seçeneği:** Manuel adımların ardından, acelesi olanlar için tek komutluk script veya compose seçenekleri sunulur.
-4. **Sıfır `.env` Hatası:** Yapılandırmalar harici eksik `.env` dosyalarına bağımlı değildir; tüm çevre değişkenleri varsayılan değerlerle gömülüdür.
-5. **Bellek (RAM) Yönetimi:** Tüm araçları aynı anda çalıştırmak zorunda değilsiniz. İlgili laba geçildiğinde aracı başlatıp, lab bitiminde durdurarak RAM tasarrufu sağlayabilirsiniz.
+2. **Çift Erişim Modeli (Dual Mode):**
+   * **Model A (Doğrudan IP:Port — Standart & Varsayılan):** DNS ve SSL zorunluluğu olmadan doğrudan `http://<UBUNTU_IP>:<PORT>` ile çalışır.
+   * **Model B (Kurumsal DNS + Wildcard SSL):** Sunucuya DNS tahsis edildiğinde (`student100` gibi) tek komutla Nginx 443 SSL ayağa kalkar.
+   * **Önemli:** Model B aktif olsa bile Model A (doğrudan IP:Port erişimi) asla kapanmaz; iki model eşzamanlı çalışır.
+3. **Sıfır `.env` Hatası:** Yapılandırmalar harici eksik `.env` dosyalarına bağımlı değildir; tüm çevre değişkenleri varsayılan değerlerle gömülüdür.
+4. **Bellek (RAM) Yönetimi:** Tüm araçları aynı anda çalıştırmak zorunda değilsiniz. İlgili laba geçildiğinde aracı başlatıp, lab bitiminde durdurarak (`docker compose stop`) RAM tasarrufu sağlayabilirsiniz.
 
 ---
 
@@ -24,45 +26,37 @@ sudo apt-get install -y ca-certificates curl git docker.io docker-compose-plugin
 sudo usermod -aG docker $USER
 ```
 
-*Not: Kullanıcı grubunu aktif etmek için oturumu kapatıp açabilir veya `newgrp docker` çalıştırabilirsiniz.*
+---
+
+## 🧭 DevOps Araçları, Port ve Erişim Haritası (Örnek: `student100`)
+
+| Araç | Kurulum Rehberi | Model A: Doğrudan IP:Port | Model B: DNS + SSL (HTTPS) | RAM Tüketimi | Hızlı Başlatma |
+| :--- | :--- | :---: | :---: | :---: | :--- |
+| **NovaShop UI** | [LAB-06](../LAB-06/README.md) | `http://<UBUNTU_IP>:8888` | `https://student100-novashop.devopsatolyesi.com` | ~512 MB | Helm / Kind |
+| **Harbor Registry** | [02-harbor-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/02-harbor-setup.md) | `http://<UBUNTU_IP>:18082` | `https://student100-harbor.devopsatolyesi.com` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
+| **GitLab CE** | [01-gitlab-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/01-gitlab-setup.md) | `http://<UBUNTU_IP>:8929` | `https://student100-gitlab.devopsatolyesi.com` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
+| **SonarQube** | [03-sonarqube-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/03-sonarqube-setup.md) | `http://<UBUNTU_IP>:19000` | `https://student100-sonarqube.devopsatolyesi.com` | ~2.0 GB | `docker compose -f infra/sonarqube/docker-compose.yml up -d` |
+| **Jenkins** | [04-jenkins-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/04-jenkins-setup.md) | `http://<UBUNTU_IP>:18080` | `https://student100-jenkins.devopsatolyesi.com` | ~1.0 GB | `docker compose -f infra/jenkins/docker-compose.yml up -d` |
+| **Nginx Proxy** | [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) | - | `80/443 (Edge)` | ~100 MB | `sudo bash infra/nginx/setup-ssl-edge.sh student100` |
 
 ---
 
-## 🧭 DevOps Araçları, Port ve Kaynak Haritası
+## ⚡ Kurumsal DNS ve SSL Aktivasyonu (student100)
 
-| Araç | Kurulum Rehberi | Dahili Port | RAM Tüketimi | Hızlı Başlatma Komutu |
-| :--- | :--- | :---: | :---: | :--- |
-| **Harbor Registry** | [02-harbor-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/02-harbor-setup.md) | `18082` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
-| **GitLab CE** | [01-gitlab-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/01-gitlab-setup.md) | `8929` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
-| **SonarQube** | [03-sonarqube-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/03-sonarqube-setup.md) | `19000` | ~2.0 GB | `docker compose -f infra/sonarqube/docker-compose.yml up -d` |
-| **Jenkins** | [04-jenkins-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/04-jenkins-setup.md) | `18080` | ~1.0 GB | `docker compose -f infra/jenkins/docker-compose.yml up -d` |
-| **Nginx Proxy** | [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) | `80/443` | ~100 MB | `sudo systemctl restart nginx` |
+Eğer eğitim başlangıcında size bir öğrenci kodu (örneğin `student100`) ve alan adı tahsis edildiyse, Nginx Edge ve Wildcard Origin SSL sertifikasını tek komutla aktifleştirebilirsiniz:
 
----
+```bash
+cd ~/novashop
+sudo bash infra/nginx/setup-ssl-edge.sh student100
+```
 
-## 🌐 Çift Erişim Modeli
-
-Kurulan her bir servis iki yöntemle de erişilebilir şekilde yapılandırılmıştır:
-
-### Model A: Doğrudan IP:Port Erişimi (DNS ve SSL Gerektirmez)
-Sunucunun yerel IP adresiyle doğrudan tarayıcıdan bağlanabilirsiniz:
-* **Harbor Web:** `http://<UBUNTU_IP>:18082`
-* **GitLab Web:** `http://<UBUNTU_IP>:8929`
-* **SonarQube:** `http://<UBUNTU_IP>:19000`
-* **Jenkins:** `http://<UBUNTU_IP>:18080`
-
-### Model B: Kurumsal DNS ve SSL ile Erişim
-Eğer [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) rehberini uyguladıysanız standart alan adları:
-* `https://studentXX-harbor.devopsatolyesi.com`
-* `https://studentXX-gitlab.devopsatolyesi.com`
-* `https://studentXX-sonarqube.devopsatolyesi.com`
-* `https://studentXX-jenkins.devopsatolyesi.com`
+Bu komuttan sonra yukarıdaki tabloda yer alan tüm `https://student100-*.devopsatolyesi.com` adresleri yeşil kilit ve Cloudflare güvencesiyle yayına başlayacaktır.
 
 ---
 
 ## 🛑 Kaynak Tasarrufu Pratiği (Start / Stop)
 
-Laboratuvar sanal makinenizin RAM sınırlarını zorlamamak için tamamlanan araçları durdurun:
+Laboratuvar sanal makinenizin RAM sınırlarını zorlamamak için işiniz biten araçları durdurun:
 
 ```bash
 # Servisi durdurma (Veriler volume'de kalır):

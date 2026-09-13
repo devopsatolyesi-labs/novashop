@@ -1,115 +1,170 @@
-# Platform Hazırlık 05 — Nginx Reverse Proxy ve SSL Yapılandırması
+# Platform Hazırlık 05 — Nginx Reverse Proxy ve Wildcard SSL Yapılandırması
 
-Ubuntu sunucusu üzerinde çalışan tüm DevOps araçlarını (`NovaShop UI`, `GitLab`, `Harbor`, `SonarQube`, `Jenkins`) standart HTTP/HTTPS (port 80 ve 443) üzerinden tek bir giriş noktasıyla dış dünyaya açmak ve SSL sertifikalarını sonlandırmak için Nginx kullanılır.
+Ubuntu sunucusu üzerinde çalışan tüm DevOps araçlarını (`NovaShop UI`, `GitLab`, `Harbor`, `SonarQube`, `Jenkins`) standart HTTP/HTTPS (port 80 ve 443) üzerinden tek bir güvenli giriş noktasıyla dış dünyaya açmak için Nginx Edge Reverse Proxy kullanılır.
 
-Bu rehber, sunucunuzda Nginx hiç kurulu olmasa bile sıfırdan adım adım kurulumu ve araç bazlı reverse proxy kurallarını açıklar.
+Bu mimari, **Cloudflare Full SSL** modu ile entegre çalışacak şekilde tasarlanmıştır. Böylece:
+1. **Public Repoda Gizli Anahtar Olmaz:** SSL özel anahtarı (`origin.key`) repoda tutulmaz, sunucuda yerel olarak üretilir (sıfır güvenlik riski).
+2. **Rate-Limit Yoktur:** Her servis veya öğrenci için ayrı ayrı Let's Encrypt üretmek yerine tek bir `*.devopsatolyesi.com` Wildcard Origin sertifikası kullanılır.
+3. **Doğrudan IP:Port Asla Bozulmaz:** Nginx 80/443 portlarını yönetirken, Docker konteynerleri kendi portlarında (`8888`, `8929`, `18082`, `19000`, `18080`) doğrudan açık kalmaya devam eder.
 
 ---
 
-## 🧭 Genel Bakış ve Alan Adı Eşleme Haritası
+## 🧭 Servis ve Port Eşleme Tablosu (Örnek: `student100`)
 
-| Servis | İç Port | Alan Adı Formatı |
+| Servis | Dahili Docker Portu (IP:Port) | Kurumsal DNS + SSL (HTTPS) |
 |---|:---:|---|
-| **NovaShop UI** | `8888` | `https://studentXX-novashop.devopsatolyesi.com` |
-| **GitLab CE** | `8929` | `https://studentXX-gitlab.devopsatolyesi.com` |
-| **Harbor Registry** | `18082` | `https://studentXX-harbor.devopsatolyesi.com` |
-| **SonarQube** | `19000` | `https://studentXX-sonarqube.devopsatolyesi.com` |
-| **Jenkins** | `18080` | `https://studentXX-jenkins.devopsatolyesi.com` |
+| **NovaShop UI** | `http://<UBUNTU_IP>:8888` | `https://student100-novashop.devopsatolyesi.com` |
+| **GitLab CE** | `http://<UBUNTU_IP>:8929` | `https://student100-gitlab.devopsatolyesi.com` |
+| **Harbor Registry** | `http://<UBUNTU_IP>:18082` | `https://student100-harbor.devopsatolyesi.com` |
+| **SonarQube** | `http://<UBUNTU_IP>:19000` | `https://student100-sonarqube.devopsatolyesi.com` |
+| **Jenkins** | `http://<UBUNTU_IP>:18080` | `https://student100-jenkins.devopsatolyesi.com` |
 
 ---
 
-## 📋 Ana Yöntem: Adım Adım Manuel Kurulum
+## ⚡ Yöntem A: Tek Komutla Aktivasyon (Önerilen)
 
-### Adım 1: Nginx ve Certbot Kurulumu
+Eğer eğitmeniniz size bir öğrenci kodu (örneğin `student100`) ve DNS kaydı tahsis ettiyse, tüm SSL ve Nginx yapılandırmasını tek bir komutla ayağa kaldırabilirsiniz:
 
-Sıfır Ubuntu makinesinde Nginx web sunucusunu ve Certbot SSL aracını yükleyin:
+```bash
+cd ~/novashop
+sudo bash infra/nginx/setup-ssl-edge.sh student100
+```
+
+*Bu script arkada:*
+1. Nginx ve OpenSSL araçlarını yükler.
+2. `/etc/nginx/ssl/devops-training/` dizininde `*.devopsatolyesi.com` için yerel Wildcard Origin sertifikasını üretir.
+3. Port 80 yönlendirmesini ve Port 443 SSL reverse proxy kurallarını Nginx'e bağlar.
+4. Nginx sözdizimini test edip servisi yeniden başlatır.
+
+---
+
+## 📋 Yöntem B: Adım Adım Manuel Kurulum
+
+Otomasyon scriptini kullanmak yerine tüm adımları kendiniz yapılandırmak isterseniz:
+
+### Adım 1: Nginx ve OpenSSL Kurulumu
 
 ```bash
 sudo apt update
-sudo apt install -y nginx certbot python3-certbot-nginx
+sudo apt install -y nginx openssl
 sudo systemctl enable --now nginx
-```
-
-Varsayılan karşılama sayfasını kaldırın:
-```bash
-sudo rm -f /etc/nginx/sites-enabled/default
 ```
 
 ---
 
-### Adım 2: DevOps Araçları İçin Nginx Yapılandırmasını Oluşturma
+### Adım 2: Wildcard Origin SSL Sertifikası Üretme
 
-Tüm servisler için proxy ayarlarını, WebSocket desteğini ve büyük imaj yüklemeleri için gerekli `client_max_body_size` kurallarını içeren konfigürasyon dosyasını oluşturun:
+Sunucunuzda Cloudflare Full SSL modu ile uyumlu yerel wildcard sertifika oluşturun:
 
 ```bash
-cat << 'NGINX_EOF' | sudo tee /etc/nginx/sites-available/student-tools.conf
-# 1. NovaShop Web UI -> Port 8888
+sudo mkdir -p /etc/nginx/ssl/devops-training
+
+sudo openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+  -keyout /etc/nginx/ssl/devops-training/origin.key \
+  -out /etc/nginx/ssl/devops-training/origin.crt \
+  -subj "/CN=student100.devopsatolyesi.com" \
+  -addext "subjectAltName=DNS:student100.devopsatolyesi.com,DNS:*.devopsatolyesi.com,DNS:devopsatolyesi.com"
+
+sudo chmod 0600 /etc/nginx/ssl/devops-training/origin.key
+```
+
+---
+
+### Adım 3: Nginx Konfigürasyonunu Tanımlama
+
+Aşağıdaki yapılandırmayı `/etc/nginx/sites-available/student-tools.conf` olarak kaydedin (`student100` yerine kendi öğrenci numaranızı yazabilirsiniz):
+
+```bash
+STUDENT_ID="student100"
+DOMAIN_NAME="devopsatolyesi.com"
+
+cat << NGINX_EOF | sudo tee /etc/nginx/sites-available/student-tools.conf
+# HTTP -> HTTPS Yönlendirmesi
 server {
     listen 80;
-    server_name ~^(?<student>student\d+)-novashop\.devopsatolyesi\.com$;
+    server_name ${STUDENT_ID}-*.${DOMAIN_NAME};
+    return 301 https://\$host\$request_uri;
+}
+
+# NovaShop UI -> Port 8888
+server {
+    listen 443 ssl http2;
+    server_name ${STUDENT_ID}-novashop.${DOMAIN_NAME};
+    ssl_certificate /etc/nginx/ssl/devops-training/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/devops-training/origin.key;
     location / {
         proxy_pass http://127.0.0.1:8888;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
     }
 }
 
-# 2. GitLab CE -> Port 8929
+# GitLab CE -> Port 8929
 server {
-    listen 80;
-    server_name ~^(?<student>student\d+)-gitlab\.devopsatolyesi\.com$;
+    listen 443 ssl http2;
+    server_name ${STUDENT_ID}-gitlab.${DOMAIN_NAME};
+    ssl_certificate /etc/nginx/ssl/devops-training/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/devops-training/origin.key;
     client_max_body_size 250M;
     location / {
         proxy_pass http://127.0.0.1:8929;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
     }
 }
 
-# 3. Harbor OCI Registry -> Port 18082
+# Harbor Registry -> Port 18082
 server {
-    listen 80;
-    server_name ~^(?<student>student\d+)-harbor\.devopsatolyesi\.com$;
-    # Docker imaj yüklemelerinde boyut sınırı olmamalı:
+    listen 443 ssl http2;
+    server_name ${STUDENT_ID}-harbor.${DOMAIN_NAME};
+    ssl_certificate /etc/nginx/ssl/devops-training/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/devops-training/origin.key;
     client_max_body_size 0;
     location / {
         proxy_pass http://127.0.0.1:18082;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_buffering off;
+        proxy_request_buffering off;
     }
 }
 
-# 4. SonarQube -> Port 19000
+# SonarQube -> Port 19000
 server {
-    listen 80;
-    server_name ~^(?<student>student\d+)-sonarqube\.devopsatolyesi\.com$;
+    listen 443 ssl http2;
+    server_name ${STUDENT_ID}-sonarqube.${DOMAIN_NAME};
+    ssl_certificate /etc/nginx/ssl/devops-training/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/devops-training/origin.key;
     location / {
         proxy_pass http://127.0.0.1:19000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
     }
 }
 
-# 5. Jenkins -> Port 18080 (WebSocket destekli)
+# Jenkins -> Port 18080 (WebSocket Destekli)
 server {
-    listen 80;
-    server_name ~^(?<student>student\d+)-jenkins\.devopsatolyesi\.com$;
+    listen 443 ssl http2;
+    server_name ${STUDENT_ID}-jenkins.${DOMAIN_NAME};
+    ssl_certificate /etc/nginx/ssl/devops-training/origin.crt;
+    ssl_certificate_key /etc/nginx/ssl/devops-training/origin.key;
+    client_max_body_size 256M;
     location / {
         proxy_pass http://127.0.0.1:18080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection "upgrade";
     }
 }
@@ -118,10 +173,11 @@ NGINX_EOF
 
 ---
 
-### Adım 3: Yapılandırmayı Etkinleştirme ve Test
+### Adım 4: Yapılandırmayı Etkinleştirme ve Test
 
 ```bash
-# 1. Sembolik link oluşturarak siteyi etkinleştirin
+# 1. Varsayılan Nginx sayfasını kaldırın ve linki bağlayın
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -sf /etc/nginx/sites-available/student-tools.conf /etc/nginx/sites-enabled/
 
 # 2. Sözdizimini test edin
@@ -133,35 +189,19 @@ sudo systemctl reload nginx
 
 ---
 
-### Adım 4: SSL Sertifikası Yapılandırması
+## 🔍 Doğrulama ve Sağlık Testi (`student100`)
 
-#### Yöntem A: Otomatik Let's Encrypt SSL (DNS Tanımlı İse)
-Sunucunuza ait DNS kayıtları genel internete açıksa Certbot ile ücretsiz SSL alın:
-```bash
-sudo certbot --nginx -d studentXX-novashop.devopsatolyesi.com \
-                    -d studentXX-gitlab.devopsatolyesi.com \
-                    -d studentXX-harbor.devopsatolyesi.com \
-                    -d studentXX-sonarqube.devopsatolyesi.com \
-                    -d studentXX-jenkins.devopsatolyesi.com
-```
-
-#### Yöntem B: Yerel Test İçin Self-Signed (Kendinden İmzalı) Wildcard SSL
-DNS'iniz genel internete açık değilse test ortamında HTTPS sağlamak için wildcard sertifika üretebilirsiniz:
-```bash
-sudo mkdir -p /etc/nginx/ssl
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /etc/nginx/ssl/wildcard.key \
-  -out /etc/nginx/ssl/wildcard.crt \
-  -subj "/CN=*.devopsatolyesi.com"
-```
-
----
-
-## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
+Servislerin HTTPS üzerinden çalıştığını test edin:
 
 ```bash
-sudo apt update && sudo apt install -y nginx
-sudo cp infra/nginx/student-tools.conf /etc/nginx/sites-available/ 2>/dev/null || true
-sudo ln -sf /etc/nginx/sites-available/student-tools.conf /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl restart nginx
+# Web UI testi:
+curl -kI https://student100-novashop.devopsatolyesi.com
+
+# Harbor HTTPS testi:
+curl -kI https://student100-harbor.devopsatolyesi.com
+
+# Jenkins HTTPS testi:
+curl -kI https://student100-jenkins.devopsatolyesi.com
 ```
+
+*Açıklama:* Tarayıcı üzerinden Cloudflare aracılığıyla girdiğinizde Cloudflare'in geçerli yeşil kilitli genel SSL sertifikası görünür. `curl -k` ise sunucu içerisinden yerel origin sertifikasını doğrulamadan hızlıca test etmek içindir.

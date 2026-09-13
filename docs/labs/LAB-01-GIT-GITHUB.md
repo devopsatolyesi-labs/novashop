@@ -1,46 +1,43 @@
-# LAB-GIT-01 — Git Temelleri, GitHub ve Kontrollü Merge Conflict Çözümü
-
-> 💡 **Eğitmen & Canlı Demo İpucu:** Sınıfta anlatırken sol ekranda Terminal, sağ ekranda GitHub web arayüzünü açarak adım adım gitmek isterseniz [LAB-01 Web Arayüzü ve PR Canlı Demo Rehberi](./LAB-01-WEB-UI-VE-PR-DEMO-REHBERI.md) dosyasını takip edebilirsiniz.
-
+# LAB-01 — Git Temelleri, GitHub ve Kontrollü Merge Conflict Çözümü
 
 ## Amaç
 
-Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, GitHub üzerinde kişisel bir uzak depo oluşturup projeyi göndermek, bir özellik dalı (feature branch) açıp değişiklik yapmak ve `products.json` üzerinde kasıtlı oluşturulmuş bir merge conflict'i (çakışmayı) komut satırında teşhis edip başarıyla çözmek.
+Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, GitHub üzerinde kişisel bir uzak depo oluşturup projeyi push etmek, bir feature branch açıp Pull Request (PR) süreci işletmek ve `products.json` üzerinde kasıtlı oluşturulmuş bir merge conflict'i hem komut satırında hem de GitHub web arayüzünde gözlemleyip çözmek.
 
 ---
 
 ## Kazanımlar
 
-1. Linux komut satırında `git init`, `.gitignore`, `git status`, `git add` ve anlamlı commit pratiklerini kazanmak.
-2. GitHub üzerinde Personal Access Token (PAT) oluşturup Ubuntu sunucusundan uzak depoya güvenli ilk aktarımı yapmak.
-3. Feature branch yaşam döngüsünü (`git checkout -b`, değişiklik, push) uygulamak.
-4. İki farklı dalda aynı satır değiştirildiğinde ortaya çıkan merge conflict yapısını (`<<<<<<<`, `=======`, `>>>>>>>`) okumak, düzenlemek ve birleştirmeyi tamamlamak.
+1. Linux komut satırında `git init`, `.gitignore`, `git status`, `git add` (staging) ve anlamlı commit pratiklerini kazanmak.
+2. GitHub üzerinde Personal Access Token (PAT) oluşturup terminalden uzak depoya ilk push işlemini gerçekleştirmek.
+3. Feature branch yaşam döngüsünü (`git checkout -b`, değişiklik, commit, push, Pull Request) uygulamak.
+4. İki farklı branch'te aynı satır değiştirildiğinde ortaya çıkan merge conflict yapısını (`<<<<<<<`, `=======`, `>>>>>>>`) hem terminalde hem de GitHub web arayüzünde incelemek ve çözmek.
 5. `git log --graph --oneline` ile dal geçmişini terminalde görselleştirmek.
 
 ---
 
 ## 🛠️ Ön Koşullar
 
-Laboratuvara başlamadan önce aşağıdaki adımları tamamlayın:
+Laboratuvara başlamadan önce aşağıdaki hazırlıkları tamamlayın:
 
 ### 1. GitHub Hesabı ve Boş Depo (Repository) Oluşturma
-1. [GitHub](https://github.com)'a giriş yapın (hesabınız yoksa ücretsiz oluşturun).
-2. Sağ üstteki **`+`** butonuna tıklayıp **New repository** seçin.
+1. [GitHub](https://github.com)'a giriş yapın.
+2. Sağ üstteki **`+`** simgesine tıklayıp **New repository** seçin.
 3. Repository name: **`novashop`** yazın.
 4. Görünürlük: **Public** (veya isteğe bağlı Private) seçin.
-5. ⚠️ **ÖNEMLİ:** *"Add a README file"*, *"Add .gitignore"* veya *"Choose a license"* seçeneklerinin **HİÇBİRİNİ İŞARETLEMEYİN** (Depo tamamen boş olmalıdır).
+5. ⚠️ **ÖNEMLİ:** *"Add a README file"*, *"Add .gitignore"* veya *"Choose a license"* seçeneklerinin **HİÇBİRİNİ İŞARETLEMEYİN**. Depo tamamen boş olmalıdır.
 6. **Create repository** butonuna tıklayın.
 
 ### 2. GitHub Personal Access Token (PAT) Oluşturma
-GitHub, komut satırından şifre ile erişimi güvenlik nedeniyle engellemiştir; bunun yerine bir **Personal Access Token (PAT)** kullanmanız gerekir:
-1. GitHub'da sağ üstteki profil resminize tıklayın -> **Settings** seçin.
-2. Sol menünün en altına inip **Developer Settings** -> **Personal access tokens** -> **Tokens (classic)** seçeneğine tıklayın.
-3. **Generate new token** -> **Generate new token (classic)** butonuna tıklayın.
+GitHub, terminalden parola ile push işlemlerini engellediği için bir erişim token'ı (PAT) oluşturmanız gerekir:
+1. GitHub'da profil ikonunuza tıklayın -> **Settings** seçin.
+2. Sol menünün en altındaki **Developer Settings** -> **Personal access tokens** -> **Tokens (classic)** seçeneğine tıklayın.
+3. **Generate new token** -> **Generate new token (classic)** seçin.
 4. **Note:** `novashop-lab` yazın.
 5. **Expiration:** `30 days` seçin.
-6. **Scopes:** En üstteki **`repo`** kutucuğunu işaretleyin (Tüm repository yönetim izinlerini verir).
-7. Sayfanın altındaki yeşil **Generate token** butonuna tıklayın.
-8. ⚠️ **DİKKAT:** Ekranda beliren `ghp_xxxxxxxxxxxxxxxxxxxx` biçimindeki token'ı bir yere kopyalayın. Sayfayı kapattığınızda bir daha göremezsiniz!
+6. **Scopes:** En üstteki **`repo`** kutucuğunu işaretleyin (Tüm repository yönetim izinleri).
+7. **Generate token** butonuna tıklayın.
+8. Üretilen `ghp_xxxxxxxxxxxxxxxxxxxx` token'ını güvenli bir yere kopyalayın.
 
 ### 3. Ubuntu Sunucu Ortamı
 - Ubuntu 22.04+ işletim sistemi (Cockpit web terminali veya SSH erişimi).
@@ -48,29 +45,14 @@ GitHub, komut satırından şifre ile erişimi güvenlik nedeniyle engellemişti
 
 ---
 
-## Mimari ve Dal Akışı
-
-```mermaid
-gitGraph
-   commit id: "Initial Commit (NovaShop Starter)"
-   branch feature/update-mug-product
-   checkout feature/update-mug-product
-   commit id: "Update Mug Price to 55"
-   checkout main
-   commit id: "Update Mug Price to 50 on main"
-   merge feature/update-mug-product id: "Merge Conflict Resolution (55)"
-```
-
----
-
 ## Kullanılan Placeholder'lar
 
-| Placeholder | Anlamı | Örnek Biçim |
+| Placeholder | Anlamı | Örnek Değer |
 |---|---|---|
 | `<GITHUB_USERNAME>` | GitHub kullanıcı adınız | `johndoe` |
-| `<STUDENT_NAME>` | Git commit'lerinde görünecek adınız soyadınız | `Ahmet Yilmaz` |
-| `<STUDENT_EMAIL>` | Git commit'lerinde görünecek e-posta adresiniz | `ahmet@example.com` |
-| `<GITHUB_PAT_TOKEN>` | GitHub'dan aldığınız erişim token'ı | `ghp_1234567890abcdef...` |
+| `<STUDENT_NAME>` | Git commit yazar adı | `Ahmet Yilmaz` |
+| `<STUDENT_EMAIL>` | Git commit yazar e-postası | `ahmet@example.com` |
+| `<GITHUB_PAT_TOKEN>` | GitHub Personal Access Token | `ghp_1234567890abcdef...` |
 
 ---
 
@@ -78,27 +60,22 @@ gitGraph
 
 ### Bölüm 1: Yerel Depoyu Başlatma ve İlk Commit
 
-Bu bölümde, NovaShop proje şablonunu sunucuya indirecek, mevcut Git geçmişini temizleyip kendi adınıza sıfırdan bir Git deposu başlatacaksınız.
+Bu bölümde, NovaShop kod tabanını sunucuda temiz bir Git geçmişiyle başlatıp kendi GitHub deponuza göndereceksiniz.
 
-#### 1.1 Projeyi İndirin ve Yeni Git Deposu Başlatın
+#### 1.1 Proje Dizinine Geçin ve Git Deposu Başlatın
 ```bash
-cd ~
-# Eğer daha önce novashop klasörü varsa temiz bir başlangıç için yedekleyin veya silin
-git clone https://github.com/devopsatolyesi-labs/novashop.git
-cd novashop/
+cd ~/novashop
 rm -rf .git
 git init -b main
 ```
-> **Neden `rm -rf .git` yapıyoruz?**  
-> Projeyi ilk indirdiğimizde orijinal depoya ait geçmiş ve commit referansları bulunur. Bu laboratuvarda deponun ilk mimarı siz olacaksınız; `.git` dizinini silip `git init -b main` çalıştırarak temiz, sıfır bir geçmişle kendi deponuzu başlatmış olursunuz.
+> **Not:** Mevcut `.git` dizinini silerek orijinal projenin geçmişini temizler ve deponun ilk mimarı olarak `main` dalıyla sıfırdan başlarsınız.
 
 *Beklenen Çıktı:*
 ```text
 Initialized empty Git repository in /home/.../novashop/.git/
 ```
 
-#### 1.2 Depoya Özel (Local) Git Kimlik Bilgilerini Yapılandırın
-Sunucudaki genel Git ayarlarını etkilememek için kimlik bilgilerinizi yalnızca bu depoya özel (`--local`) olarak tanımlayın:
+#### 1.2 Depoya Özel (Local) Git Kimlik Bilgilerini Tanımlayın
 ```bash
 git config --local user.name "<STUDENT_NAME>"
 git config --local user.email "<STUDENT_EMAIL>"
@@ -111,12 +88,11 @@ git config --local --get user.email
 ```
 
 #### 1.3 .gitignore Dosyasını İnceleyin
-Depoda gizli anahtarların (`.env`), geçici ve derleme artıklarının izlenmesini engellemek için `.gitignore` dosyasının ilk satırlarına göz atın:
 ```bash
 head -n 20 .gitignore
 ```
 
-#### 1.4 Dosyaları Sahneleyin (Stage) ve İlk Commit'i Atın
+#### 1.4 Dosyaları Stage Alanına Alın ve İlk Commit'i Atın
 ```bash
 git add .
 git commit -m "feat: initial novashop starter repository with branding"
@@ -128,28 +104,28 @@ git commit -m "feat: initial novashop starter repository with branding"
  ... files changed, ... insertions(+)
 ```
 
-#### 1.5 GitHub Uzak Deposunu Ekleyin ve Gönderin
-Kendi GitHub kullanıcı adınızı yazarak uzak depoyu bağlayın ve `main` dalını gönderin:
+#### 1.5 GitHub Uzak Deposunu Ekleyin ve Push Edin
 ```bash
 git remote add origin https://github.com/<GITHUB_USERNAME>/novashop.git
 git push -u origin main
 ```
 > **Kimlik Doğrulama:**  
 > - **Username:** `<GITHUB_USERNAME>`  
-> - **Password:** Yukarıda oluşturduğunuz `<GITHUB_PAT_TOKEN>` değerini yapıştırın (Terminalde yazarken karakterler görünmez, yapıştırıp Enter'a basın).  
-> *(İpucu: Şifre sormasın isterseniz doğrudan `git remote set-url origin https://<GITHUB_USERNAME>:<GITHUB_PAT_TOKEN>@github.com/<GITHUB_USERNAME>/novashop.git` komutunu da kullanabilirsiniz).*
+> - **Password:** Oluşturduğunuz `<GITHUB_PAT_TOKEN>` değerini girin.
+
+**Web Arayüzü Kontrolü:**  
+Tarayıcınızda `https://github.com/<GITHUB_USERNAME>/novashop` sayfasını açın. Dosyaların, `main` branch'inin ve commit geçmişinin listelendiğini doğrulayın.
 
 ---
 
-### Bölüm 2: Feature Branch Açma ve Değişiklik Yapma
+### Bölüm 2: Feature Branch Açma ve Pull Request Süreci
 
-Bu bölümde, ana dalı (`main`) riske atmadan yeni bir özellik dalı açacak ve ilk ürünün fiyatını güncelleyeceksiniz.
+Bu bölümde, ana dalı (`main`) izole tutarak yeni bir feature branch açacak, bir ürün fiyatını güncelleyecek ve GitHub üzerinde Pull Request (PR) oluşturacaksınız.
 
-#### 2.1 Yeni Bir Özellik Dalı (Branch) Oluşturun
+#### 2.1 Yeni Feature Branch Oluşturun
 ```bash
 git checkout -b feature/update-mug-product
 ```
-*Açıklama:* `main` dalından ayrılarak izole bir geliştirme dalına geçer.
 
 *Beklenen Çıktı:*
 ```text
@@ -161,35 +137,45 @@ Switched to a new branch 'feature/update-mug-product'
 ```bash
 sed -i 's/"price": 45/"price": 55/' src/ui/src/main/resources/data/products.json
 ```
-> **Linux / Ubuntu Notu (Neden `.bak` yok?):**  
-> macOS BSD sed komutunda `-i` parametresi `.bak` uzantısı zorunlu kılar ve yedek dosya üretir. Ancak Ubuntu (GNU sed) üzerinde `sed -i` doğrudan dosya üzerinde işlem yapar, fazladan `.bak` dosyası üretmez. İsterseniz bu değişikliği `nano` editörüyle dosyayı açıp elle de yapabilirsiniz.
 
-#### 2.3 Değişikliği İnceleyin, Commit Edin ve GitHub'a Gönderin
+#### 2.3 Değişikliği İnceleyin, Commit Edin ve Push Edin
 ```bash
 git diff src/ui/src/main/resources/data/products.json
 git add src/ui/src/main/resources/data/products.json
 git commit -m "feat(catalog): update kubernetes mug price to 55"
 git push -u origin feature/update-mug-product
 ```
-*Açıklama:* Değişikliği feature branch'e kaydettiniz ve GitHub'a gönderdiniz. Bu branch şu an `main` dalıyla birleştirilmedi, uzakta izole bir dal olarak duruyor.
+
+#### 2.4 GitHub Üzerinde Pull Request (PR) Açın
+1. GitHub'da `https://github.com/<GITHUB_USERNAME>/novashop` sayfasına gidin.
+2. Sayfanın üstünde sarı kutuda **`Compare & pull request`** butonunu göreceksiniz. Butona tıklayın.
+3. PR başlığı: `feat(catalog): update kubernetes mug price to 55`
+4. **Files changed** sekmesine tıklayıp satır farkını (`-45` -> `+55`) inceleyin.
+5. Yeşil **`Create pull request`** butonuna tıklayın.
+6. ⚠️ **DİKKAT:** PR'ı henüz merge etmeyin! Bir sonraki bölümde bu PR üzerinden çakışma senaryosu simüle edilecektir.
 
 ---
 
-### Bölüm 3: Kontrollü Merge Conflict (Çakışma) Simülasyonu ve Çözümü
+### Bölüm 3: Kontrollü Merge Conflict Simülasyonu ve Çözümü
 
-#### 💡 Senaryonun Mantığı:
-Gerçek hayatta siz bir özellik dalında çalışırken (`feature/update-mug-product`), başka bir ekip arkadaşınız `main` dalında aynı ürünün fiyatını acil bir düzeltmeyle `50` yapmış olsun.  
-Siz kendi dalınızı `main` ile birleştirmek istediğinizde, Git aynı satırda iki farklı değer (`50` ve `55`) görecek ve hangi bilginin doğru olduğuna makine karar veremeyeceği için **Merge Conflict** üretecektir.
+#### Senaryo:
+Siz `feature/update-mug-product` dalında fiyatı `55` yapıp PR açmışken, bir ekip arkadaşınız `main` dalında aynı ürünün fiyatını acil olarak `50` olarak değiştirip `main` dalına push etmiştir.
 
-#### 3.1 Ana Dala Geri Dönün ve Farklı Bir Fiyat Değişikliği Commit Edin
+#### 3.1 `main` Dalına Geri Dönün ve Rakip Değişikliği Push Edin
 ```bash
 git checkout main
 sed -i 's/"price": 45/"price": 50/' src/ui/src/main/resources/data/products.json
 git commit -am "fix(pricing): adjust kubernetes mug price to 50 on main"
+git push origin main
 ```
-*Açıklama:* Artık `main` dalında fiyat `50`, `feature/update-mug-product` dalında ise fiyat `55`tir. İki dal çatallanmış (diverged) durumdadır.
 
-#### 3.2 Feature Branch'i `main` ile Birleştirmeyi Deneyin (Conflict Tetikleme)
+#### 3.2 GitHub PR Ekranını İnceleyin
+1. GitHub'da açık bıraktığınız Pull Request sayfasına dönün ve sayfayı yenileyin (**F5**).
+2. GitHub'ın otomatik olarak çakışmayı tespit ettiğini göreceksiniz:  
+   ⚠️ **`This branch has conflicts that must be resolved`**
+3. `Merge pull request` butonu devre dışı kalmıştır.
+
+#### 3.3 Çakışmayı Terminalde Tetikleyin
 ```bash
 git merge feature/update-mug-product
 ```
@@ -201,12 +187,12 @@ CONFLICT (content): Merge conflict in src/ui/src/main/resources/data/products.js
 Automatic merge failed; fix conflicts and then commit the result.
 ```
 
-#### 3.3 Çakışmayı İnceleyin
+#### 3.4 Çakışmayı İnceleyin
 ```bash
 git status
 git diff src/ui/src/main/resources/data/products.json
 ```
-Dosyayı açtığınızda Git'in eklediği şu conflict bloklarını görürsünüz:
+Dosyada conflict bloklarını göreceksiniz:
 ```json
 <<<<<<< HEAD
     "price": 50,
@@ -214,20 +200,18 @@ Dosyayı açtığınızda Git'in eklediği şu conflict bloklarını görürsün
     "price": 55,
 >>>>>>> feature/update-mug-product
 ```
-- `<<<<<<< HEAD`: Mevcut bulunduğunuz daldaki (`main`) değer: `50`.
-- `=======`: Çakışan iki değişiklik arasındaki sınır çizgisi.
-- `>>>>>>> feature/...`: Birleştirmeye çalıştığınız daldaki değer: `55`.
+- `<<<<<<< HEAD`: Mevcut daldaki (`main`) değer (`50`).
+- `=======`: Ayrım çizgisi.
+- `>>>>>>> feature/...`: Gelen daldaki değer (`55`).
 
-#### 3.4 Çakışmayı Çözün
-Ekip içi karar gereği geçerli fiyatın **`55`** olması kararlaştırılmıştır.  
-Dosyayı `nano` ile açarak veya komut satırından conflict işaretçilerini temizleyip tek satır haline getirin:
+#### 3.5 Çakışmayı Çözün
+Ekip kararı gereği geçerli fiyatın **`55`** olduğunu kabul ediyoruz. Dosyayı düzenleyerek işaretçileri kaldırın ve sadece doğru satırı bırakın:
 
 ```bash
-# nano ile açıp elle düzenlemek isterseniz:
+# nano ile açıp elle düzenleyebilirsiniz:
 nano src/ui/src/main/resources/data/products.json
-# <<<<<<<, =======, >>>>>>> satırlarını silin ve sadece "price": 55, bırakın.
 ```
-*VEYA tek komutla otomatik temizlemek isterseniz:*
+*Veya komut satırından doğrudan temizleyin:*
 ```bash
 sed -i '/<<<<<<< HEAD/d' src/ui/src/main/resources/data/products.json
 sed -i '/"price": 50,/d' src/ui/src/main/resources/data/products.json
@@ -240,37 +224,27 @@ sed -i '/>>>>>>> feature\/update-mug-product/d' src/ui/src/main/resources/data/p
 jq . src/ui/src/main/resources/data/products.json > /dev/null && echo "✅ JSON GEÇERLİ"
 ```
 
-#### 3.5 Çözümü Sahneye Alın ve Merge Commit'ini Tamamlayın
+#### 3.6 Merge Commit'ini Tamamlayın ve Push Edin
 ```bash
 git add src/ui/src/main/resources/data/products.json
 git commit -m "merge: resolve pricing conflict on kubernetes mug (set to 55)"
+git push origin main
 ```
 
-#### 3.6 Dal Geçmişini Terminalde Görselleştirin
-İki dalın ayrılıp başarıyla birleştiğini terminalde gözlemleyin:
+#### 3.7 Git Geçmişini Doğrulayın
 ```bash
 git log --graph --oneline --decorate -n 6
 ```
-*Beklenen Çıktı Görünümü:*
-```text
-*   7f8a9b1 (HEAD -> main) merge: resolve pricing conflict on kubernetes mug (set to 55)
-|\  
-| * 3b2c1d0 (origin/feature/update-mug-product, feature/update-mug-product) feat(catalog): update kubernetes mug price to 55
-* | 9e8f7a6 fix(pricing): adjust kubernetes mug price to 50 on main
-|/  
-* 8a1b2c3 (origin/main) feat: initial novashop starter repository with branding
-```
 
-#### 3.7 Çözülen `main` Dalını GitHub'a Gönderin
-```bash
-git push origin main
-```
+#### 3.8 GitHub PR Ekranını Yenileyin
+GitHub'daki PR sayfasını yenileyin (**F5**).  
+Çakışma uyarısının kalktığını, PR durumunun yeşile döndüğünü ve artık **`Merge pull request`** butonunun kullanılabilir olduğunu gözlemleyin.
 
 ---
 
 ### Bölüm 4: Otomatik Doğrulama Betiğini Çalıştırma
 
-Laboratuvar adımlarını başarıyla tamamladığınızı doğrulamak için hazır doğrulama betiğini çalıştırın:
+Laboratuvar adımlarını başarıyla tamamladığınızı doğrulamak için doğrulama betiğini çalıştırın:
 
 ```bash
 bash scripts/verify/verify-lab-01.sh
@@ -290,23 +264,7 @@ bash scripts/verify/verify-lab-01.sh
 
 ## 🧹 Temizlik (Cleanup)
 
-Egzersiz sonrasında yereldeki geçici özellik dalını güvenle silebilirsiniz:
+Yereldeki geçici feature branch'i silin:
 ```bash
 git branch -d feature/update-mug-product
 ```
-
----
-
-## 🚨 Troubleshooting (Sık Karşılaşılan Sorunlar)
-
-### 1. `Support for password authentication was removed`
-- **Belirti:** `git push` sırasında şifrenizi girdiğinizde kimlik doğrulama reddedilir.
-- **Çözüm:** GitHub normal hesap şifresini komut satırında kabul etmez. **Ön Koşullar** bölümündeki adımları takip ederek `repo` yetkisine sahip bir **Personal Access Token (PAT)** oluşturun ve şifre sorulduğunda o token'ı yapıştırın.
-
-### 2. `fatal: refusing to merge unrelated histories`
-- **Belirti:** Uzak repodan çekerken veya birleştirirken hata verir.
-- **Neden:** GitHub'da repo açarken "Add README" veya ".gitignore" işaretlendiği için uzakta ilgisiz bir başlangıç commit'i oluşmuştur.
-- **Çözüm:** Depoyu GitHub'da tamamen boş olarak oluşturun veya:
-  ```bash
-  git pull origin main --allow-unrelated-histories
-  ```

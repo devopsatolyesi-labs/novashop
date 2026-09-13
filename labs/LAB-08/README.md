@@ -20,7 +20,12 @@ NovaShop kod tabanında statik kod analizi (SonarQube/SAST), bağımlılık ve k
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-05](../LAB-05/README.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
+- **Altyapı Araçları (SonarQube):** Sunucunuzda SonarQube çalışır durumda olmalıdır. Henüz kurmadıysanız:
+  - [SonarQube Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/03-sonarqube-setup.md) veya `docker compose -f infra/sonarqube/docker-compose.yml up -d`
+- **Erişim Modeli:**
+  - *Model A (Doğrudan IP):* SonarQube `http://<UBUNTU_IP>:19000`
+  - *Model B (Kurumsal DNS + SSL):* SonarQube `https://studentXX-sonarqube.devopsatolyesi.com`
 - **Yüklü Araçlar:** Docker Engine, `trivy` CLI, Java 21 JDK, Git.
 - **Kaynak Gereksinimi:** `security-gates` profili (en az 2 vCPU, 4 GB boş RAM).
 

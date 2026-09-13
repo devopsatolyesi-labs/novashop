@@ -382,6 +382,30 @@ curl -s $(terraform output -raw storefront_url) | grep "NovaShop DevOps Store"
 
 ---
 
+### 🎁 BONUS: Tek Komutla Sıfır Dokunuş (Zero-Touch) Otomasyonu
+
+Yukarıdaki Terraform adımlarını tek tek yürütmek yerine, laboratuvar için hazırlanan **`run.sh`** scripti ile altyapıyı tek komutla ayağa kaldırabilirsiniz.
+
+#### `run.sh` Neler Yapar?
+1. **AWS STS ile Hesap Çözme:** `aws sts get-caller-identity` çalıştırarak Hesap ID'nizi çözer.
+2. **S3 tfstate Backend Yönetimi:** AWS hesabınıza özel `novashop-tfstate-<HESAP_ID>` bucket'ını denetler, yoksa oluşturup versiyonlamayı açar.
+3. **SSH Key Pair Otomasyonu:** AWS üzerinde `novashop-key` anahtar çiftini kontrol eder, yoksa üretip yerel makinenizdeki `~/.ssh/novashop-key.pem` dosyasına kaydeder.
+4. **Terraform Init & Apply:** Backend konfigürasyonunu dinamik bağlayarak tüm VPC, EC2 ve RDS kaynaklarını tek hamlede kurar.
+
+#### Tek Komutla Çalıştırma:
+```bash
+cd ~/novashop/lab-02/terraform-basic-infra
+
+# Sadece AWS Access Key ve Secret Key tanımlamanız yeterlidir:
+export AWS_ACCESS_KEY_ID="AKIAxxxxxxxxxxxxxxxx"
+export AWS_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Scripti çalıştırın:
+./run.sh
+```
+
+---
+
 ## BÖLÜM 3: Eşzamanlı Çalışma Doğrulaması (Console vs Terraform)
 
 Her iki ortam aynı anda canlıyken aralarındaki farkı ve izolasyonu test edin:

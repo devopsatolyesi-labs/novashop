@@ -43,18 +43,19 @@ resource "aws_instance" "web" {
                   listen 80 default_server;
                   listen [::]:80 default_server;
                   server_name _;
+                  charset utf-8;
 
                   # Sağlık Kontrolü (Healthcheck) Uç Noktası
                   location = /healthz {
                       access_log off;
-                      default_type application/json;
+                      default_type "application/json; charset=utf-8";
                       return 200 '{"status":"UP","layer":"web","provisioner":"terraform","service":"novashop-storefront"}\n';
                   }
 
                   # Ana Sayfa Karşılama Sayfası
                   location / {
-                      default_type text/html;
-                      return 200 '<!DOCTYPE html><html><head><title>NovaShop DevOps Store (Terraform IaC)</title><style>body{font-family:Arial,sans-serif;margin:40px;background:#f5f7fa;color:#333}h1{color:#0066cc}.badge{background:#28a745;color:white;padding:4px 8px;border-radius:4px;font-size:12px}</style></head><body><h1>NovaShop DevOps Store <span class="badge">Terraform ile Kuruldu</span></h1><p>Bu altyapı <strong>Terraform IaC</strong> modülleri ile tam otomatik olarak ayağa kaldırılmıştır.</p><hr/><p><strong>Ortam:</strong> AWS Cloud (EC2 Public Subnet)</p><p><strong>Veritabanı Uç Noktası:</strong> ${var.db_endpoint}</p><p><strong>Sağlık Uç Noktası:</strong> <a href="/healthz">/healthz</a></p></body></html>\n';
+                      default_type "text/html; charset=utf-8";
+                      return 200 '<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>NovaShop DevOps Store (Terraform IaC)</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;margin:40px;background:#f8fafc;color:#1e293b;line-height:1.6}.container{max-width:700px;background:#fff;padding:32px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);border:1px solid #e2e8f0}h1{color:#0f172a;margin-top:0;display:flex;align-items:center;gap:12px;font-size:24px}.badge{background:#10b981;color:white;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600}.card{background:#f1f5f9;padding:16px;border-radius:8px;margin:16px 0;font-size:14px}.card p{margin:6px 0}a{color:#2563eb;text-decoration:none;font-weight:500}a:hover{text-decoration:underline}</style></head><body><div class="container"><h1>NovaShop DevOps Store <span class="badge">Terraform ile Kuruldu</span></h1><p>Bu altyapı <strong>Terraform IaC</strong> modülleri ile tam otomatik olarak ayağa kaldırılmıştır.</p><div class="card"><p><strong>Ortam:</strong> AWS Cloud (EC2 Public Subnet)</p><p><strong>Veritabanı Uç Noktası:</strong> ${var.db_endpoint}</p><p><strong>Sağlık Uç Noktası:</strong> <a href="/healthz">/healthz</a></p></div></div></body></html>\n';
                   }
               }
               CONF

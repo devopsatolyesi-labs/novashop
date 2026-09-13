@@ -43,8 +43,3 @@ Kurumsal bulut mimarileri (AWS), GitOps ve merkezi loglama konularında uzmanla�
 | **[LAB-12](LAB-12/README.md)** | Terraform IaC Enterprise | Modüler Terraform, remote S3 state, dynamoDB locking, cloud-init otomasyonu | [LAB-12 Rehberi](LAB-12/README.md) |
 | **[LAB-13](LAB-13/README.md)** | Amazon EKS Enterprise | Kurumsal AWS EKS kümesi, IRSA, AWS Load Balancer Controller, ADOT | [LAB-13 Rehberi](LAB-13/README.md) |
 | **[LAB-14](LAB-14/README.md)** | AWS ECS & Fargate | Serverless container mimarisi, ALB, ECS Task Definition, GitHub Actions | [LAB-14 Rehberi](LAB-14/README.md) |
-
----
-
-> [!NOTE]
-> Laboratuvar dizinlerindeki tüm yönergeler, sunucunuzdaki port ve IP durumuna göre test edilmiş ve doğrulanmıştır.

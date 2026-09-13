@@ -2,7 +2,7 @@
 
 ## Amaç
 
-Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, GitHub üzerinde kişisel bir uzak depo oluşturup projeyi push etmek, bir feature branch açıp Pull Request (PR) süreci işletmek ve `lab-01/products.json` üzerinde kasıtlı oluşturulmuş bir merge conflict'i hem komut satırında hem de GitHub web arayüzünde gözlemleyip çözmek.
+Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, GitHub üzerinde kişisel bir uzak depo oluşturup projeyi push etmek, bir feature branch açıp Pull Request (PR) süreci işletmek ve `labs/LAB-01/products.json` üzerinde kasıtlı oluşturulmuş bir merge conflict'i hem komut satırında hem de GitHub web arayüzünde gözlemleyip çözmek.
 
 ---
 
@@ -132,8 +132,8 @@ Tarayıcınızda `https://github.com/<GITHUB_USERNAME>/novashop` sayfasını aç
 
 Bu bölümde, ana dalı (`main`) izole tutarak yeni bir feature branch açacak, bir ürün fiyatını güncelleyecek ve GitHub üzerinde Pull Request (PR) oluşturacaksınız.
 
-> **🛡️ Mimari ve Güvenlik Notu (Neden `lab-01/products.json` Kullanıyoruz?):**  
-> Gerçek kurumsal DevOps projelerinde branch, PR ve merge conflict pratikleri yapılırken canlı üretim kaynak kodları (`src/ui/...`) doğrudan riske atılmaz. Bu pratik için özel olarak hazırlanan `lab-01/products.json` dosyasını kullanarak Git çakışma senaryolarını güvenle öğreniriz; böylece sonraki laboratuvarlarda (LAB-03, LAB-04) ayağa kaldıracağımız mikroservis uygulamamızın çalışma ortamı (`src/ui`) her zaman temiz ve hatasız kalır.
+> **🛡️ Mimari ve Güvenlik Notu (Neden `labs/LAB-01/products.json` Kullanıyoruz?):**  
+> Gerçek kurumsal DevOps projelerinde branch, PR ve merge conflict pratikleri yapılırken canlı üretim kaynak kodları (`src/ui/...`) doğrudan riske atılmaz. Bu pratik için özel olarak hazırlanan `labs/LAB-01/products.json` dosyasını kullanarak Git çakışma senaryolarını güvenle öğreniriz; böylece sonraki laboratuvarlarda (LAB-03, LAB-04) ayağa kaldıracağımız mikroservis uygulamamızın çalışma ortamı (`src/ui`) her zaman temiz ve hatasız kalır.
 
 #### 2.1 Yeni Feature Branch Oluşturun
 ```bash
@@ -146,15 +146,15 @@ Switched to a new branch 'feature/update-mug-product'
 ```
 
 #### 2.2 Ürün Fiyatını Güncelleyin
-`lab-01/products.json` dosyasındaki ilk ürünün (`Kubernetes Cluster Mug`) fiyatını `45` yerine `55` yapın:
+`labs/LAB-01/products.json` dosyasındaki ilk ürünün (`Kubernetes Cluster Mug`) fiyatını `45` yerine `55` yapın:
 ```bash
-sed -i 's/"price": 45/"price": 55/' lab-01/products.json
+sed -i 's/"price": 45/"price": 55/' labs/LAB-01/products.json
 ```
 
 #### 2.3 Değişikliği İnceleyin, Commit Edin ve Push Edin
 ```bash
-git diff lab-01/products.json
-git add lab-01/products.json
+git diff labs/LAB-01/products.json
+git add labs/LAB-01/products.json
 git commit -m "feat(catalog): update kubernetes mug price to 55"
 git push -u origin feature/update-mug-product
 ```
@@ -177,7 +177,7 @@ Siz `feature/update-mug-product` dalında fiyatı `55` yapıp PR açmışken, bi
 #### 3.1 `main` Dalına Geri Dönün ve Rakip Değişikliği Push Edin
 ```bash
 git checkout main
-sed -i 's/"price": 45/"price": 50/' lab-01/products.json
+sed -i 's/"price": 45/"price": 50/' labs/LAB-01/products.json
 git commit -am "fix(pricing): adjust kubernetes mug price to 50 on main"
 git push origin main
 ```
@@ -195,15 +195,15 @@ git merge feature/update-mug-product
 
 *Beklenen Çıktı:*
 ```text
-Auto-merging lab-01/products.json
-CONFLICT (content): Merge conflict in lab-01/products.json
+Auto-merging labs/LAB-01/products.json
+CONFLICT (content): Merge conflict in labs/LAB-01/products.json
 Automatic merge failed; fix conflicts and then commit the result.
 ```
 
 #### 3.4 Çakışmayı İnceleyin
 ```bash
 git status
-git diff lab-01/products.json
+git diff labs/LAB-01/products.json
 ```
 Dosyada conflict bloklarını göreceksiniz:
 ```json
@@ -222,24 +222,24 @@ Ekip kararı gereği geçerli fiyatın **`55`** olduğunu kabul ediyoruz. Dosyay
 
 ```bash
 # nano ile açıp elle düzenleyebilirsiniz:
-nano lab-01/products.json
+nano labs/LAB-01/products.json
 ```
 *Veya komut satırından doğrudan temizleyin:*
 ```bash
-sed -i '/<<<<<<< HEAD/d' lab-01/products.json
-sed -i '/"price": 50,/d' lab-01/products.json
-sed -i '/=======/d' lab-01/products.json
-sed -i '/>>>>>>> feature\/update-mug-product/d' lab-01/products.json
+sed -i '/<<<<<<< HEAD/d' labs/LAB-01/products.json
+sed -i '/"price": 50,/d' labs/LAB-01/products.json
+sed -i '/=======/d' labs/LAB-01/products.json
+sed -i '/>>>>>>> feature\/update-mug-product/d' labs/LAB-01/products.json
 ```
 
 **JSON Geçerliliğini Doğrulayın:**
 ```bash
-jq . lab-01/products.json > /dev/null && echo "✅ JSON GEÇERLİ"
+jq . labs/LAB-01/products.json > /dev/null && echo "✅ JSON GEÇERLİ"
 ```
 
 #### 3.6 Merge Commit'ini Tamamlayın ve Push Edin
 ```bash
-git add lab-01/products.json
+git add labs/LAB-01/products.json
 git commit -m "merge: resolve pricing conflict on kubernetes mug (set to 55)"
 git push origin main
 ```

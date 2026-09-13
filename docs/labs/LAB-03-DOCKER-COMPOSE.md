@@ -383,3 +383,84 @@ bash scripts/compose-starter.sh down
 #### 3. Salt-Okunur Dosya Sistemi Hatası (`Read-only file system`)
 - **Neden:** `starter.secure.yml` overlay'i devredeyken uygulamanın `/tmp` dışındaki bir dizine dosya yazmaya çalışması.
 - **Çözüm:** Yazılması gereken ek dizinler varsa (örneğin `/run` veya `/app/logs`), compose dosyasına `tmpfs:` olarak eklenmelidir.
+
+---
+
+### 🎁 Bonus Bölüm: İleri Seviye Dockerfile Optimizasyonu (İmaj Boyutunu %65 Küçültme)
+
+Gerçek kurumsal projelerde 1 GB boyutundaki Java/Spring Boot imajları; ağ transfer süresini uzatır, CI/CD pipeline'larını yavaşlatır ve güvenlik taramalarında (Trivy/Clair) gereksiz işletim sistemi paketlerinden ötürü yüksek CVE riski doğurur.
+
+#### 1. Neden Standart İmaj 1.08 GB Civarındaydı?
+Standart `Dockerfile` incelendiğinde çalışma zamanı (runtime) için tam bir `amazonlinux:2023` dağıtımı üzerine `java-21-amazon-corretto-headless`, `shadow-utils` ve `curl-full` paketleri DNF ile kurulmaktadır. Asıl uygulama JAR dosyası yalnızca **~60 MB** olmasına rağmen, işletim sistemi ve paket yöneticisi kalıntılarıyla birlikte imaj boyutu **~1.08 GB**'a ulaşır.
+
+#### 2. Çözüm: Hafifletilmiş JRE Runtime (Alpine Temurin) ile Multi-Stage Build
+Derleme aşamasını (`build-env`) koruyup, çalışma aşamasında (runtime) sadece Java çalıştırma ortamını içeren hafif bir Alpine tabanı (`eclipse-temurin:21-jre-alpine`) kullanarak imajı **~129 MB indirme (registry transfer) / ~400 MB disk boyutuna** indirebilirsiniz.
+
+**Optimize Edilmiş Dockerfile (`src/ui/Dockerfile.optimized`):**
+```dockerfile
+# Aşama 1: Derleme (Build Stage)
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build-env
+
+RUN dnf --setopt=install_weak_deps=False install -q -y \
+    maven \
+    java-21-amazon-corretto-headless \
+    which tar gzip \
+    && dnf clean all
+
+WORKDIR /
+COPY .mvn .mvn
+COPY mvnw .
+COPY pom.xml .
+RUN ./mvnw dependency:go-offline -B -q
+
+COPY ./src ./src
+RUN ./mvnw -DskipTests package -q && \
+    mv /target/ui-0.0.1-SNAPSHOT.jar /app.jar
+
+# Aşama 2: Hafif Üretim Aşaması (Lightweight Alpine JRE)
+FROM eclipse-temurin:21-jre-alpine
+
+# Actuator sağlık denetimi için curl ve non-root kullanıcı
+RUN apk add --no-cache curl && \
+    addgroup -g 1000 appuser && \
+    adduser -u 1000 -G appuser -s /bin/sh -D -h /app appuser
+
+ENV APPUSER=appuser \
+    APPUID=1000 \
+    APPGID=1000 \
+    SPRING_PROFILES_ACTIVE=prod
+
+WORKDIR /app
+USER appuser
+
+COPY --chown=appuser:appuser --from=build-env /app.jar .
+
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]
+```
+
+#### 3. Optimize İmajı Derleyin ve Karşılaştırın:
+```bash
+cd ~/novashop/src/ui
+
+# Optimize imajı derleyin:
+docker build -t novashop-ui:optimized -f Dockerfile.optimized .
+
+# Boyut farkını kıyaslayın:
+docker images | grep novashop-ui
+```
+
+*Sonuç Karşılaştırması:*
+| İmaj Adı | Disk Boyutu | İndirme / İçerik Boyutu (Registry Transfer) | Tasarruf |
+| :--- | :--- | :--- | :--- |
+| `novashop-ui:v0.1.0` (Orijinal) | **1.08 GB** | ~382 MB | Referans |
+| `novashop-ui:optimized` (Alpine JRE) | **~400 MB** | **~129 MB** | **~%66 Daha Hızlı & Küçük** 🚀 |
+
+#### 4. Optimize İmajı Test Edin:
+```bash
+docker run -d --rm --name test-optimized -p 8889:8080 novashop-ui:optimized
+sleep 15
+curl -i http://localhost:8889/actuator/health
+docker stop test-optimized
+```
+

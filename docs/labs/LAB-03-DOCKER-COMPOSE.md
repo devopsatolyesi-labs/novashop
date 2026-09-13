@@ -343,6 +343,23 @@ docker builder prune -f
 
 ---
 
+### Alternatif Seçenek: Hızlı Kurulum ve Otomasyon (Yardımcı Script ile)
+
+Laboratuvarın temel amacı Docker ve Docker Compose komutlarını manuel olarak deneyimlemektir. Ancak adımları başarıyla tamamladıktan sonra veya sonraki laboratuvarlarda hızlıca ayağa kaldırıp kapatmak istediğinizde, arka planda bu adımları yürüten hazır scripti opsiyonel bir kısayol olarak kullanabilirsiniz:
+
+```bash
+cd ~/novashop
+
+# Hızlı Başlatma (Build + Overlay + Healthcheck)
+bash scripts/compose-starter.sh up
+
+# Hızlı Kapatma
+bash scripts/compose-starter.sh down
+```
+*(Not: Bu bölüm öğrenme amaçlı adımların yerine geçmez, pratik bir alternatif kısayoldur.)*
+
+---
+
 ### Troubleshooting (Sorun Giderme)
 
 #### 1. Port Çakışması (`bind: address already in use: 8888`)

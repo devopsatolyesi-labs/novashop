@@ -263,7 +263,14 @@ Gerçek kurumsal DevOps senaryolarında temel `docker-compose.yml` dosyasına do
    *Açıklama:* Compose, iki YAML dosyasını birleştirir ve nihai birleşik yapılandırmayı ekrana basar.
 
 3. **Güvenli Overlay ile Başlatın:**
+   > **⚠️ Port Çakışması Uyarısı:**  
+   > Adım 6'da `src/ui` dizininde başlattığınız standart `ui-ui-1` konteyneri `8888` portunu dinlemektedir. Yeni bir proje ismiyle (`-p novashop-starter`) başlatmadan önce port çakışmasını önlemek için standart konteyneri durdurun:
    ```bash
+   # 1. Standart UI servisini durdurun (8888 portunu serbest bırakın)
+   cd ~/novashop/src/ui && docker compose down
+
+   # 2. Güvenlik overlay'i ile yeni sertleştirilmiş servisi başlatın
+   cd ~/novashop
    docker compose -p novashop-starter \
      -f src/ui/docker-compose.yml \
      -f deploy/compose/starter.secure.yml \
@@ -271,10 +278,20 @@ Gerçek kurumsal DevOps senaryolarında temel `docker-compose.yml` dosyasına do
    ```
 
 4. **Salt-Okunur Dosya Sistemi Güvenliğini Test Edin:**
+   *Standart Linux izinleri (`Permission denied`) ile Docker Kernel seviyesindeki salt-okunur (`Read-only file system`) koruması arasındaki farkı test edin:*
    ```bash
-   # Konteyner içinde kök dizine yazma denemesi yapın (Read-only olduğu için engellenecektir)
-   docker exec -it novashop-starter-ui-1 touch /root_test.txt 2>&1 || echo "Kök dosya sistemi başarıyla korundu: Salt-Okunur!"
+   # A. Standartta 'appuser' kullanıcısının yazabildiği kendi çalışma dizinine (/app) yazmayı deneyin:
+   docker exec novashop-starter-ui-1 touch /app/saldiri.sh
+   # Beklenen Çıktı: touch: cannot touch '/app/saldiri.sh': Read-only file system
+
+   # B. 'root' (UID 0) olarak kök dizine dosya yazmayı deneyin (Root bile yazamaz!):
+   docker exec -u 0 novashop-starter-ui-1 touch /root_test.txt
+   # Beklenen Çıktı: touch: cannot touch '/root_test.txt': Read-only file system
+
+   # C. Yalnızca overlay içinde tmpfs olarak izin verilen /tmp dizinine yazmayı deneyin (Başarılı olur):
+   docker exec novashop-starter-ui-1 touch /tmp/gecici.txt && echo "Güvenli /tmp dizinine başarıyla yazıldı!"
    ```
+
 
 ---
 

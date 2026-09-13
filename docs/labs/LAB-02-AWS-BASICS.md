@@ -245,7 +245,7 @@ Konsolda 20 dakikadan fazla süren ve onlarca menü gezmeyi gerektiren bu sürec
 NovaShop deposu içinde bu laboratuvara özel hazırlanan modüler Terraform dizini şöyledir:
 
 ```text
-novashop/terraform/lab-02-basic-infra/
+novashop/lab-02/terraform-basic-infra/
 ├── provider.tf                # AWS provider tanımı ve etiketler
 ├── variables.tf               # Genel parametreler ve varsayılan değerler
 ├── main.tf                    # 4 bağımsız modülü bağlayan orkestrasyon dosyası
@@ -283,7 +283,7 @@ aws sts get-caller-identity
 Laboratuvar için özel hazırlanan dizine geçin:
 
 ```bash
-cd ~/novashop/terraform/lab-02-basic-infra
+cd ~/novashop/lab-02/terraform-basic-infra
 
 # Değişken şablonunu kopyalayın
 cp terraform.tfvars.example terraform.tfvars
@@ -416,7 +416,7 @@ AWS Free Tier limitlerini aşmamak ve gereksiz maliyet oluşmasını engellemek 
 Terraform ile oluşturulan tüm kaynaklar (VPC, RDS, EC2 vb.) tek komutla otomatik silinir:
 
 ```bash
-cd ~/novashop/terraform/lab-02-basic-infra
+cd ~/novashop/lab-02/terraform-basic-infra
 terraform destroy -auto-approve
 ```
 

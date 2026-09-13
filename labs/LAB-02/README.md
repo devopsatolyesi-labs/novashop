@@ -4,34 +4,22 @@
 
 ### Amaç
 
-NovaShop e-ticaret altyapısını; AWS üzerinde izole bir sanal ağda (VPC) public subnet'te çalışan bir Nginx web sunucusu (EC2) ile private subnet'te dış dünyaya kapalı bir MySQL veritabanı (RDS) olarak **2-katmanlı mimari (2-Tier: Web Katmanı + Veritabanı Katmanı)** şeklinde ayağa kaldırmaktır.
+NovaShop e-ticaret uygulamasının 2-katmanlı temel bulut altyapısını (Public Subnet'te 1x EC2 Nginx Web Sunucusu ve Private Subnet'te 1x Single-AZ RDS MySQL Veritabanı) hem **AWS Yönetim Konsolu (Web UI)** hem de **HashiCorp Terraform (IaC)** ile kurmayı öğrenmektir.
 
-> [!NOTE]
-> **Mimari Ayrımı (2-Tier vs 3-Tier):**
-> Bu laboratuvarda temel bulut altyapısını öğrenmek için **2-Katmanlı (2-Tier)** bir yapı kuruyoruz:
-> 1. **Katman 1 (Web Tier):** Public subnet'te dış dünyaya açık 1 adet EC2 Nginx web sunucusu (Port 80/22).
-> 2. **Katman 2 (Database Tier):** Private subnet'te dış internete tamamen kapalı 1 adet Single-AZ RDS MySQL veritabanı (Port 3306).
-> 
-> Uygulama/iş mantığı katmanının (Backend API / Spring Boot mikroservisleri) ayrı olarak devreye alındığı tam **3-Katmanlı (3-Tier)** mimari ise [LAB-04](../LAB-04/README.md) laboratuvarında Docker Compose mikroservisleri ile kurulacaktır.
-
-Bu laboratuvarda aynı altyapıyı iki farklı yöntemle kurmayı öğreneceksiniz:
-1. **Bölüm 1:** **AWS Yönetim Konsolu (Web UI)** üzerinden adım adım tıklayarak görsel kurulum (2-Tier).
-2. **Bölüm 2:** **HashiCorp Terraform (IaC)** modülleri ile tek komutla tam otomatik kod tabanlı kurulum (2-Tier).
-
-Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** çalışabilecek şekilde tasarlanmıştır:
-- **AWS Console Kurulumu:** `novashop-console-*` ön eki ve `10.0.0.0/16` IP bloğunu kullanır.
-- **Terraform Kurulumu:** `novashop-tf-*` ön eki ve `10.1.0.0/16` IP bloğunu kullanır.
+Her iki kurulum aynı AWS hesabında bağımsız ve çakışmadan çalışacak şekilde tasarlanmıştır:
+- **AWS Console Kurulumu:** `novashop-console-*` ön eki ve `10.0.0.0/16` IP bloğu
+- **Terraform Kurulumu:** `novashop-tf-*` ön eki ve `10.1.0.0/16` IP bloğu
 
 ---
 
 ### Kazanımlar
 
-- **VPC Mimarisi:** Virtual Private Cloud (VPC), Public Subnet, Private Subnet, Internet Gateway (IGW) ve Route Table mantığını kavramak.
-- **Güvenlik Grupları (Security Groups):** Katmanlı güvenlik ilkesiyle web sunucusuna HTTP/SSH, veritabanına yalnızca EC2 güvenlik grubundan port 3306 erişimi vermek.
-- **EC2 & Cloud-Init:** Ubuntu 22.04 LTS üzerinde `user_data` betiğiyle Nginx web sunucusunu ve `/healthz` sağlık kontrolünü otomatik devreye almak.
-- **RDS MySQL (Private):** DB Subnet Group oluşturarak veritabanını dış internete tamamen kapalı (`PubliclyAccessible: false`) ve Single-AZ olarak konuşlandırmak.
-- **Altyapıyı Kod Olarak Yönetmek (IaC):** Modüler Terraform kodları (`vpc`, `security`, `ec2`, `rds`) ile insan hatasını sıfıra indirmek.
-- **Maliyet ve Temizlik Bilinci:** Laboratuvar bitiminde kaynakları kontrollü biçimde (`terraform destroy` ve Console silme adımları) temizlemek.
+- **VPC Mimarisi:** Virtual Private Cloud (VPC), Public Subnet, Private Subnet, Internet Gateway (IGW) ve Route Table yapılandırması.
+- **Güvenlik Grupları (Security Groups):** Katmanlı güvenlik ilkesiyle web sunucusuna HTTP/SSH, veritabanına yalnızca EC2 güvenlik grubundan port 3306 erişimi verme.
+- **EC2 & Cloud-Init:** Ubuntu 22.04 LTS üzerinde `user_data` ile Nginx web sunucusunu ve `/healthz` sağlık kontrolünü devreye alma.
+- **RDS MySQL (Private):** DB Subnet Group oluşturarak veritabanını dış internete tamamen kapalı (`PubliclyAccessible: false`) ve Single-AZ olarak konuşlandırma.
+- **Terraform IaC:** Modüler kod tabanı (`vpc`, `security`, `ec2`, `rds`) ile insan hatasını sıfırlayarak altyapıyı otomatik kurma.
+- **Maliyet ve Temizlik:** Laboratuvar bitiminde kaynakları kontrollü biçimde (`terraform destroy` ve Console silme adımları) temizleme.
 
 ---
 
@@ -39,12 +27,8 @@ Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** 
 
 - **Önceki Lab:** [LAB-01](../LAB-01/README.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** VPC, EC2 ve RDS oluşturma yetkisine sahip bir AWS IAM kullanıcısı.
-- **Gerekli Araçlar:**
-  - Web Tarayıcısı (AWS Console için)
-  - Ubuntu / Linux geliştirme ortamında: `terraform` (v1.5+), `curl`, `ssh`
-- **AWS API Anahtarları (Bölüm 2 için):**
-  - AWS Console -> Sağ üst kullanıcı adınız -> **Security credentials** -> **Access keys** -> **Create access key**.
-  - `AWS_ACCESS_KEY_ID` ve `AWS_SECRET_ACCESS_KEY` değerlerinizi bir kenara not edin.
+- **Gerekli Araçlar:** Web Tarayıcısı (AWS Console için), `terraform` (v1.5+), `curl`, `ssh`.
+- **AWS API Anahtarları (Bölüm 2 için):** `AWS_ACCESS_KEY_ID` ve `AWS_SECRET_ACCESS_KEY`.
 
 ---
 
@@ -151,9 +135,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
 1. AWS Console arama çubuğuna **EC2** yazın ve **Instances** -> **Launch instances** butonuna tıklayın:
    - **Name:** `novashop-console-web`
    - **Application and OS Images:** `Ubuntu` -> `Ubuntu Server 22.04 LTS (HVM), SSD Volume Type`
-   - **Instance type:** `t3.medium` (2 vCPU, 4 GB RAM) seçin.  
-     > [!IMPORTANT]
-     > Bu laboratuvarda Web katmanında Nginx çalıştırılmaktadır. Sonraki laboratuvarlarda bu sunucu üzerine ek servisler yüklendiğinde bellek tükenmesi (Out of Memory - OOMKilled) yaşanmaması için en az `t3.small` (2 GB RAM) veya önerilen olarak **`t3.medium` (4 GB RAM)** seçilmelidir.
+   - **Instance type:** `t3.medium` (2 vCPU, 4 GB RAM) veya `t3.small` seçin.
    - **Key pair (login):** Mevcut bir `.pem` key pair seçin veya **Create new key pair** diyerek `novashop-key` adıyla oluşturup indirin.
 2. **Network settings** bölümünde **Edit** butonuna tıklayın:
    - **VPC:** `novashop-console-vpc`

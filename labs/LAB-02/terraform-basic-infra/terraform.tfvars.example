@@ -4,7 +4,7 @@
 # Bu dosyayı 'terraform.tfvars' olarak kopyalayarak kendi değerlerinizi girebilirsiniz:
 # cp terraform.tfvars.example terraform.tfvars
 
-aws_region   = "eu-central-1"
+aws_region   = "us-east-1"
 project_name = "novashop-tf"
 
 # AWS Console kurulumu ile (10.0.0.0/16) çakışmaması için 10.1.0.0/16 kullanılmıştır

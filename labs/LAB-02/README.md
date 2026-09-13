@@ -49,7 +49,7 @@ graph TD
     User["Öğrenci / Web Tarayıcısı"] -->|HTTP :80| Web_Console["EC2 Web (Console)<br/>10.0.1.x :80<br/>Public Subnet"]
     User -->|HTTP :80| Web_TF["EC2 Web (Terraform)<br/>10.1.1.x :80<br/>Public Subnet"]
 
-    subgraph AWS_Cloud ["AWS Cloud (eu-central-1 / us-east-1)"]
+    subgraph AWS_Cloud ["AWS Cloud (US East N. Virginia - us-east-1)"]
         subgraph VPC_Console ["VPC 1: novashop-console-vpc (10.0.0.0/16)"]
             Web_Console -->|MySQL :3306| RDS_Console[("RDS MySQL<br/>novashop-console-db<br/>Private Subnet")]
         end
@@ -68,7 +68,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
 
 ### Adım 1.1: VPC ve Subnet'lerin Oluşturulması
 
-1. [AWS Management Console](https://console.aws.amazon.com/)'a giriş yapın ve bölge olarak **Europe (Frankfurt) `eu-central-1`** (veya tercih ettiğiniz bölgeyi) seçin.
+1. [AWS Management Console](https://console.aws.amazon.com/)'a giriş yapın ve bölge olarak **US East (N. Virginia) `us-east-1`** seçin.
 2. Arama çubuğuna **VPC** yazın ve VPC paneline gidin.
 3. Sol menüden **Your VPCs** -> **Create VPC** butonuna tıklayın:
    - **Resources to create:** `VPC only` seçin.
@@ -86,17 +86,17 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
    - **VPC ID:** `novashop-console-vpc` seçin.
    - **Subnet 1 (Public):**
      - Subnet name: `novashop-console-public-1a`
-     - Availability Zone: `eu-central-1a`
+     - Availability Zone: `us-east-1a`
      - IPv4 subnet CIDR block: `10.0.1.0/24`
    - **Add new subnet** butonuna tıklayın.
    - **Subnet 2 (Private 1):**
      - Subnet name: `novashop-console-private-1a`
-     - Availability Zone: `eu-central-1a`
+     - Availability Zone: `us-east-1a`
      - IPv4 subnet CIDR block: `10.0.10.0/24`
    - **Add new subnet** butonuna tıklayın.
    - **Subnet 3 (Private 2 - RDS Gereksinimi):**
      - Subnet name: `novashop-console-private-1b`
-     - Availability Zone: `eu-central-1b`
+     - Availability Zone: `us-east-1b`
      - IPv4 subnet CIDR block: `10.0.11.0/24`
    - **Create subnet** butonuna tıklayın.
 7. **Public Subnet için Otomatik IP Atamasını Açın:**
@@ -187,7 +187,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
    - **Name:** `novashop-console-db-subnet-group`
    - **Description:** `Subnet group for console RDS`
    - **VPC:** `novashop-console-vpc`
-   - **Add subnets:** Availability Zones listesinden `eu-central-1a` ve `eu-central-1b` seçin. Subnets listesinden `10.0.10.0/24` ve `10.0.11.0/24` subnetlerini ekleyin.
+   - **Add subnets:** Availability Zones listesinden `us-east-1a` ve `us-east-1b` seçin. Subnets listesinden `10.0.10.0/24` ve `10.0.11.0/24` subnetlerini ekleyin.
    - **Create** butonuna tıklayın.
 3. Sol menüden **Databases** -> **Create database**:
    - **Choose a database creation method:** `Standard create`
@@ -223,7 +223,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
      *Beklenen yanıt:* `{"status":"UP","layer":"web","provisioner":"aws-console",...}`
 
 2. **EC2 Üzerinden Private RDS Bağlantısını Test Edin:**
-   - RDS panelinden veritabanınızın **Endpoint** adresini kopyalayın (örn: `novashop-console-db.cxxxx.eu-central-1.rds.amazonaws.com`).
+   - RDS panelinden veritabanınızın **Endpoint** adresini kopyalayın (örn: `novashop-console-db.cxxxx.us-east-1.rds.amazonaws.com`).
    - Sunucuya SSH ile bağlanın:
      ```bash
      ssh -i novashop-key.pem ubuntu@<EC2_PUBLIC_IP>
@@ -267,7 +267,7 @@ Ubuntu terminalinizde (Cockpit terminali veya yerel makineniz) AWS kimlik bilgil
 ```bash
 export AWS_ACCESS_KEY_ID="AKIAxxxxxxxxxxxxxxxx"
 export AWS_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-export AWS_DEFAULT_REGION="eu-central-1"
+export AWS_DEFAULT_REGION="us-east-1"
 ```
 
 *Doğrulama:*
@@ -291,7 +291,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 `terraform.tfvars` dosyasını inceleyin. Konsoldaki kurulumla çakışmaması için tüm kaynakların ön eki `novashop-tf` ve VPC ağı `10.1.0.0/16` olarak ayarlanmıştır:
 ```hcl
-aws_region           = "eu-central-1"
+aws_region           = "us-east-1"
 project_name         = "novashop-tf"
 vpc_cidr             = "10.1.0.0/16"
 public_subnet_cidr   = "10.1.1.0/24"
@@ -346,11 +346,11 @@ Apply complete! Resources: 13 added, 0 changed, 0 destroyed.
 
 Outputs:
 
-ec2_public_dns = "ec2-3-120-xx-xx.eu-central-1.compute.amazonaws.com"
-ec2_public_ip = "3.120.xx.xx"
-health_check_url = "http://3.120.xx.xx/healthz"
-rds_endpoint = "novashop-tf-db.cxxxx.eu-central-1.rds.amazonaws.com:3306"
-storefront_url = "http://3.120.xx.xx/"
+ec2_public_dns = "ec2-100-53-xx-xx.compute-1.amazonaws.com"
+ec2_public_ip = "100.53.xx.xx"
+health_check_url = "http://100.53.xx.xx/healthz"
+rds_endpoint = "novashop-tf-db.cxxxx.us-east-1.rds.amazonaws.com:3306"
+storefront_url = "http://100.53.xx.xx/"
 vpc_id = "vpc-0123456789abcdef"
 ```
 

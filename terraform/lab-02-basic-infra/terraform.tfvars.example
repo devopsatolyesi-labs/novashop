@@ -1,0 +1,26 @@
+# ==============================================================================
+# NovaShop LAB-02 Terraform Değişken Değerleri Şablonu
+# ==============================================================================
+# Bu dosyayı 'terraform.tfvars' olarak kopyalayarak kendi değerlerinizi girebilirsiniz:
+# cp terraform.tfvars.example terraform.tfvars
+
+aws_region   = "eu-central-1"
+project_name = "novashop-tf"
+
+# AWS Console kurulumu ile (10.0.0.0/16) çakışmaması için 10.1.0.0/16 kullanılmıştır
+vpc_cidr             = "10.1.0.0/16"
+public_subnet_cidr   = "10.1.1.0/24"
+private_subnet_cidrs = ["10.1.10.0/24", "10.1.11.0/24"]
+
+# Güvenlik: Kendi genel IP adresinizi öğrenip buraya /32 olarak yazabilirsiniz (curl https://checkip.amazonaws.com)
+my_ip = "0.0.0.0/0"
+
+# EC2 Donanımı
+ec2_instance_type = "t3.micro"
+key_name          = "" # Varsa AWS Key Pair adınızı yazınız (örn: "novashop-key")
+
+# RDS MySQL Veritabanı
+db_instance_class = "db.t3.micro"
+db_name           = "catalogdb"
+db_username       = "novashop"
+db_password       = "NovaShopDevOps2026!"

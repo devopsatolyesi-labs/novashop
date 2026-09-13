@@ -97,7 +97,7 @@ http://<UBUNTU_IP>:18080
 
 #### Model B: Kurumsal DNS ve SSL ile Erişim
 ```text
-https://studentXX-jenkins.devopsatolyesi.com
+https://student100-jenkins.devopsatolyesi.com
 ```
 
 1. Açılan ekranda **Administrator password** alanına 4. adımda kopyaladığınız parolayı yapıştırın ve **Continue** butonuna basın.

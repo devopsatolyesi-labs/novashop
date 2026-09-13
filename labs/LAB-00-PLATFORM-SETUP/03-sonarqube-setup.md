@@ -128,7 +128,7 @@ http://<UBUNTU_IP>:19000
 
 #### Model B: Kurumsal DNS ve SSL ile Erişim
 ```text
-https://studentXX-sonarqube.devopsatolyesi.com
+https://student100-sonarqube.devopsatolyesi.com
 ```
 
 1. Giriş bilgileriyle oturum açın:

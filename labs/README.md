@@ -35,7 +35,7 @@ Kurumsal bulut mimarileri (AWS), GitOps ve merkezi loglama konularında uzmanla�
 
 | Laboratuvar | Başlık | Kapsam / Ana Konular | Rehber Bağlantısı |
 | :--- | :--- | :--- | :--- |
-| **[LAB-02](LAB-02/README.md)** | AWS Temel Altyapı | VPC, EC2 Web, Multi-AZ RDS MySQL, Güvenlik Grupları, Terraform IaC | [LAB-02 Rehberi](LAB-02/README.md) |
+| **[LAB-02](LAB-02/README.md)** | AWS 2-Tier Altyapı | VPC, EC2 Web, Single-AZ RDS MySQL, Güvenlik Grupları, Terraform IaC | [LAB-02 Rehberi](LAB-02/README.md) |
 | **[LAB-04](LAB-04/README.md)** | AWS 3-Tier Production | Production compose, Nginx reverse proxy, TLS, CloudWatch loglama | [LAB-04 Rehberi](LAB-04/README.md) |
 | **[LAB-05](LAB-05/README.md)** | GitHub Actions CI/CD | AWS OIDC, ECR imaj dağıtımı, automated release, rollback mekanizması | [LAB-05 Rehberi](LAB-05/README.md) |
 | **[LAB-09](LAB-09/README.md)** | GitOps & Argo CD | Declarative GitOps, continuous reconciliation, self-healing, automated sync | [LAB-09 Rehberi](LAB-09/README.md) |

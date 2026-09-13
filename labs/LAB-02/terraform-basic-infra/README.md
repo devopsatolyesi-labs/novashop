@@ -1,6 +1,6 @@
-# LAB-02 — AWS Temel Altyapı ve Terraform IaC
+# LAB-02 — AWS Temel Altyapı ve Terraform IaC: 2-Katmanlı Mimari (Web & Database)
 
-Bu laboratuvar, NovaShop e-ticaret uygulamasının 3-katmanlı temel altyapısını AWS üzerinde hem AWS Yönetim Konsolu (Web UI) hem de **HashiCorp Terraform** ile modüler olarak kurmanızı sağlar.
+Bu laboratuvar, NovaShop e-ticaret uygulamasının 2-katmanlı temel altyapısını (Web Katmanı ve Veritabanı Katmanı) AWS üzerinde hem AWS Yönetim Konsolu (Web UI) hem de **HashiCorp Terraform** ile modüler olarak kurmanızı sağlar.
 
 ---
 
@@ -9,7 +9,7 @@ Bu laboratuvar, NovaShop e-ticaret uygulamasının 3-katmanlı temel altyapısı
 Kurulan altyapı bileşenleri:
 - **VPC (10.1.0.0/16):** Konsol ortamından (`10.0.0.0/16`) izole edilmiş bağımsız sanal ağ.
 - **Public Subnet (10.1.1.0/24):** İnternet Gateway (IGW) bağlantılı EC2 Web Sunucusu (`t3.medium`, Nginx).
-- **Private Subnets (10.1.10.0/24 & 10.1.11.0/24):** Çoklu Erişilebilirlik Alanlı (Multi-AZ) RDS MySQL (`db.t3.small`).
+- **Private Subnets (10.1.10.0/24 & 10.1.11.0/24):** Dış dünyaya tamamen kapalı Single-AZ RDS MySQL (`db.t3.small`) ve DB Subnet Group.
 - **Güvenlik Grupları (Security Groups):** Dışarıdan sadece HTTP (80) ve SSH (22) erişimi; RDS veritabanına sadece EC2 Web katmanından erişim.
 
 ![NovaShop AWS Mimarisi](../images/lab-02-architecture.jpg)

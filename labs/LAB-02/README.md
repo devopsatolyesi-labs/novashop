@@ -1,14 +1,22 @@
-# LAB-02-AWS-BASICS — AWS Temel Altyapı: AWS Console ve Terraform ile 3-Katmanlı Mimari
+# LAB-02-AWS-BASICS — AWS Temel Altyapı: AWS Console ve Terraform ile 2-Katmanlı Mimari (Web & Database)
 
 ---
 
 ### Amaç
 
-NovaShop e-ticaret altyapısını; AWS üzerinde izole bir sanal ağda (VPC) public subnet'te çalışan bir Nginx web sunucusu (EC2) ile private subnet'te dış dünyaya kapalı bir MySQL veritabanı (RDS) olarak ayağa kaldırmaktır.
+NovaShop e-ticaret altyapısını; AWS üzerinde izole bir sanal ağda (VPC) public subnet'te çalışan bir Nginx web sunucusu (EC2) ile private subnet'te dış dünyaya kapalı bir MySQL veritabanı (RDS) olarak **2-katmanlı mimari (2-Tier: Web Katmanı + Veritabanı Katmanı)** şeklinde ayağa kaldırmaktır.
+
+> [!NOTE]
+> **Mimari Ayrımı (2-Tier vs 3-Tier):**
+> Bu laboratuvarda temel bulut altyapısını öğrenmek için **2-Katmanlı (2-Tier)** bir yapı kuruyoruz:
+> 1. **Katman 1 (Web Tier):** Public subnet'te dış dünyaya açık 1 adet EC2 Nginx web sunucusu (Port 80/22).
+> 2. **Katman 2 (Database Tier):** Private subnet'te dış internete tamamen kapalı 1 adet Single-AZ RDS MySQL veritabanı (Port 3306).
+> 
+> Uygulama/iş mantığı katmanının (Backend API / Spring Boot mikroservisleri) ayrı olarak devreye alındığı tam **3-Katmanlı (3-Tier)** mimari ise [LAB-04](../LAB-04/README.md) laboratuvarında Docker Compose mikroservisleri ile kurulacaktır.
 
 Bu laboratuvarda aynı altyapıyı iki farklı yöntemle kurmayı öğreneceksiniz:
-1. **Bölüm 1:** **AWS Yönetim Konsolu (Web UI)** üzerinden adım adım tıklayarak görsel kurulum.
-2. **Bölüm 2:** **HashiCorp Terraform (IaC)** modülleri ile tek komutla tam otomatik kod tabanlı kurulum.
+1. **Bölüm 1:** **AWS Yönetim Konsolu (Web UI)** üzerinden adım adım tıklayarak görsel kurulum (2-Tier).
+2. **Bölüm 2:** **HashiCorp Terraform (IaC)** modülleri ile tek komutla tam otomatik kod tabanlı kurulum (2-Tier).
 
 Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** çalışabilecek şekilde tasarlanmıştır:
 - **AWS Console Kurulumu:** `novashop-console-*` ön eki ve `10.0.0.0/16` IP bloğunu kullanır.
@@ -21,7 +29,7 @@ Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** 
 - **VPC Mimarisi:** Virtual Private Cloud (VPC), Public Subnet, Private Subnet, Internet Gateway (IGW) ve Route Table mantığını kavramak.
 - **Güvenlik Grupları (Security Groups):** Katmanlı güvenlik ilkesiyle web sunucusuna HTTP/SSH, veritabanına yalnızca EC2 güvenlik grubundan port 3306 erişimi vermek.
 - **EC2 & Cloud-Init:** Ubuntu 22.04 LTS üzerinde `user_data` betiğiyle Nginx web sunucusunu ve `/healthz` sağlık kontrolünü otomatik devreye almak.
-- **RDS MySQL (Private):** DB Subnet Group oluşturarak veritabanını dış internete tamamen kapalı (`PubliclyAccessible: false`) konuşlandırmak.
+- **RDS MySQL (Private):** DB Subnet Group oluşturarak veritabanını dış internete tamamen kapalı (`PubliclyAccessible: false`) ve Single-AZ olarak konuşlandırmak.
 - **Altyapıyı Kod Olarak Yönetmek (IaC):** Modüler Terraform kodları (`vpc`, `security`, `ec2`, `rds`) ile insan hatasını sıfıra indirmek.
 - **Maliyet ve Temizlik Bilinci:** Laboratuvar bitiminde kaynakları kontrollü biçimde (`terraform destroy` ve Console silme adımları) temizlemek.
 
@@ -42,20 +50,25 @@ Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** 
 
 ### Mimari Şema
 
-![NovaShop AWS 3-Katmanlı Mimari Şeması](images/lab-02-architecture.jpg)
+![NovaShop AWS 2-Katmanlı Mimari Şeması](images/lab-02-architecture.jpg)
 
 ```mermaid
 graph TD
-    User["Öğrenci / Web Tarayıcısı"] -->|HTTP :80| Web_Console["EC2 Web (Console)<br/>10.0.1.x :80<br/>Public Subnet"]
-    User -->|HTTP :80| Web_TF["EC2 Web (Terraform)<br/>10.1.1.x :80<br/>Public Subnet"]
+    User["İstemci / Web Tarayıcısı"] -->|HTTP :80| IGW["Internet Gateway (IGW)"]
 
-    subgraph AWS_Cloud ["AWS Cloud (US East N. Virginia - us-east-1)"]
-        subgraph VPC_Console ["VPC 1: novashop-console-vpc (10.0.0.0/16)"]
-            Web_Console -->|MySQL :3306| RDS_Console[("RDS MySQL<br/>novashop-console-db<br/>Private Subnet")]
-        end
+    subgraph AWS_Cloud ["AWS Cloud (us-east-1)"]
+        subgraph VPC_Env ["VPC: novashop-console-vpc (10.0.0.0/16) veya novashop-tf-vpc (10.1.0.0/16)"]
+            IGW --> Web
 
-        subgraph VPC_TF ["VPC 2: novashop-tf-vpc (10.1.0.0/16)"]
-            Web_TF -->|MySQL :3306| RDS_TF[("RDS MySQL<br/>novashop-tf-db<br/>Private Subnet")]
+            subgraph Web_Tier ["Katman 1: Web Tier (Public Subnet)"]
+                Web["1x EC2 Web Sunucusu (Nginx)<br/>Port :80 (HTTP), Port :22 (SSH)<br/>SG: web-sg"]
+            end
+
+            subgraph DB_Tier ["Katman 2: Database Tier (Private Subnets)"]
+                RDS[("1x RDS MySQL 8.0 (Single-AZ)<br/>Port :3306<br/>SG: rds-sg<br/>PubliclyAccessible: false")]
+            end
+
+            Web -->|MySQL :3306 (Yalnızca Web SG)| RDS
         end
     end
 ```
@@ -140,7 +153,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
    - **Application and OS Images:** `Ubuntu` -> `Ubuntu Server 22.04 LTS (HVM), SSD Volume Type`
    - **Instance type:** `t3.medium` (2 vCPU, 4 GB RAM) seçin.  
      > [!IMPORTANT]
-     > Java 21 ve Spring Boot 3 uygulamaları için `t3.micro` (1 GB RAM) yetersiz kalmakta ve bellek tükenmesi (Out of Memory - OOMKilled) nedeniyle çökmektedir. Bu nedenle web ve uygulama katmanı için en az `t3.small` (2 GB RAM) veya önerilen olarak **`t3.medium` (4 GB RAM)** seçilmelidir.
+     > Bu laboratuvarda Web katmanında Nginx çalıştırılmaktadır. Sonraki laboratuvarlarda bu sunucu üzerine ek servisler yüklendiğinde bellek tükenmesi (Out of Memory - OOMKilled) yaşanmaması için en az `t3.small` (2 GB RAM) veya önerilen olarak **`t3.medium` (4 GB RAM)** seçilmelidir.
    - **Key pair (login):** Mevcut bir `.pem` key pair seçin veya **Create new key pair** diyerek `novashop-key` adıyla oluşturup indirin.
 2. **Network settings** bölümünde **Edit** butonuna tıklayın:
    - **VPC:** `novashop-console-vpc`
@@ -296,7 +309,7 @@ project_name         = "novashop-tf"
 vpc_cidr             = "10.1.0.0/16"
 public_subnet_cidr   = "10.1.1.0/24"
 private_subnet_cidrs = ["10.1.10.0/24", "10.1.11.0/24"]
-ec2_instance_type    = "t3.medium" # Java 21 / Spring Boot için 4 GB RAM
+ec2_instance_type    = "t3.medium" # Kararlı web sunucusu için 4 GB RAM
 db_instance_class    = "db.t3.small"  # MySQL 8.0 için 2 GB RAM
 db_name              = "catalogdb"
 db_username          = "novashop"

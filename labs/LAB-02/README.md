@@ -54,21 +54,21 @@ Her iki kurulum aynı AWS hesabında **çakışmadan aynı anda (eşzamanlı)** 
 
 ```mermaid
 graph TD
-    User["İstemci / Web Tarayıcısı"] -->|HTTP :80| IGW["Internet Gateway (IGW)"]
+    User["İstemci / Web Tarayıcısı"] -->|"HTTP :80"| IGW["Internet Gateway - IGW"]
 
-    subgraph AWS_Cloud ["AWS Cloud (us-east-1)"]
-        subgraph VPC_Env ["VPC: novashop-console-vpc (10.0.0.0/16) veya novashop-tf-vpc (10.1.0.0/16)"]
-            IGW --> Web
+    subgraph AWS_Cloud ["AWS Cloud - us-east-1"]
+        subgraph VPC_Env ["VPC: novashop-console-vpc veya novashop-tf-vpc"]
+            IGW -->|"HTTP :80"| Web
 
-            subgraph Web_Tier ["Katman 1: Web Tier (Public Subnet)"]
-                Web["1x EC2 Web Sunucusu (Nginx)<br/>Port :80 (HTTP), Port :22 (SSH)<br/>SG: web-sg"]
+            subgraph Web_Tier ["Katman 1: Web Tier - Public Subnet"]
+                Web["1x EC2 Web Sunucusu - Nginx<br/>Port 80 HTTP, Port 22 SSH<br/>SG: web-sg"]
             end
 
-            subgraph DB_Tier ["Katman 2: Database Tier (Private Subnets)"]
-                RDS[("1x RDS MySQL 8.0 (Single-AZ)<br/>Port :3306<br/>SG: rds-sg<br/>PubliclyAccessible: false")]
+            subgraph DB_Tier ["Katman 2: Database Tier - Private Subnets"]
+                RDS[("1x RDS MySQL 8.0 - Single-AZ<br/>Port 3306<br/>SG: rds-sg<br/>PubliclyAccessible: false")]
             end
 
-            Web -->|MySQL :3306 (Yalnızca Web SG)| RDS
+            Web -->|"MySQL :3306 - Yalnızca Web SG"| RDS
         end
     end
 ```

@@ -4,40 +4,42 @@
 
 ### Amaç
 
-NovaShop mikroservis mimarisini; multi-stage Dockerfile ile optimize ve güvenli (non-root) container imajı olarak derlemek, Docker Compose profilleri ve katı kaynak limitleri (CPU/RAM) altında yerel geliştirme ortamında çalıştırıp sağlık kontrollerini doğrulamak.
+NovaShop mikroservis mimarisinde yer alan servisleri; multi-stage Dockerfile yapısını satır satır inceleyerek güvenli (non-root) bir container imajı olarak derlemek, Docker Compose dosyalarını (`docker-compose.yml`) analiz etmek, yardımcı scriptlere bağımlı kalmadan **doğrudan saf `docker compose` komutlarıyla** servislerin yaşam döngüsünü, port yönlendirmelerini, ağ yapısını ve sağlık kontrollerini yönetmektir.
 
 ---
 
 ### Kazanımlar
 
-- Multi-stage Docker build mimarisi ile minimal ve güvenli Java 21 / Spring Boot container imajı üretmek.
-- Container güvenliği temel ilkelerini (non-root `appuser`, `read_only: true`, `cap_drop: [ALL]`, `no-new-privileges`) uygulamak.
-- Docker Compose üzerinde servis profilleri (`compose`, `full`) tanımlayarak öğrenci VM kaynak sınırlarını (2 vCPU, 16 GB RAM) korumak.
-- Container sağlık kontrollerini (`HEALTHCHECK` / `/actuator/health`) yapılandırmak ve durumlarını izlemek.
-- Docker Compose logları, ağ izolasyonu ve konteyner yaşam döngüsü yönetiminde yetkinlik kazanmak.
+- **Multi-Stage Build Mantığı:** Derleme araçları (Maven, JDK) ile çalışma zamanını (JRE) birbirinden ayırarak minimal, hafif ve güvenli imajlar üretmek.
+- **Dockerfile Güvenlik Standartları:** Root yetkilerini bırakıp non-root (`appuser:1000`) kullanıcısı ile çalışmayı öğrenmek.
+- **Docker İmaj Yaşam Döngüsü:** `docker build`, `docker images`, `docker history` komutlarıyla imajları yönetmek.
+- **Docker Compose Derinlemesine Kullanımı:** `services`, `ports`, `environment`, `mem_limit`, `healthcheck`, `networks` direktiflerini kavramak.
+- **Saf Docker Compose Yönetimi:** Script kullanmadan `docker compose up -d`, `docker compose ps`, `docker compose logs -f`, `docker compose stop/start/down` komutlarıyla konteynerleri denetlemek.
+- **Compose Overlay (Çoklu Dosya) Mimarisi:** Temel compose dosyasına kurumsal güvenlik katmanı (`starter.secure.yml`) eklemeyi öğrenmek.
+- **Mikroservis Ağı ve DNS:** Birden fazla servisin izole bridge network (`novashop-net`) üzerinden birbirleriyle servis isimleri ile nasıl haberleştiğini kavramak.
 
 ---
 
 ### Ön koşullar
 
 - **Önceki Lab:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
-- **İşletim Sistemi:** Ubuntu 22.04 LTS veya macOS/Linux geliştirme ortamı.
+- **İşletim Sistemi:** Linux (Ubuntu 22.04/24.04 LTS) veya macOS geliştirme ortamı.
 - **Yüklü Araçlar:** Docker Engine v24+ (`docker --version`), Docker Compose v2.20+ (`docker compose version`).
-- **Kaynak Gereksinimi:** En az 2 vCPU ve 4 GB boş bellek (PROFILES.md kaynak koruma kuralı).
+- **Kaynak Gereksinimi:** En az 2 vCPU ve 4 GB boş RAM.
 
 ---
 
-### Mimari
+### Mimari ve Akış Şeması
 
 ```mermaid
 graph TD
-    Developer([Öğrenci / Web Tarayıcısı]) -->|HTTP :8888| UI_Container[NovaShop UI Container<br/>Java 21 / Spring Boot 3<br/>Non-Root appuser:1000<br/>Port: 8080]
+    Developer([Öğrenci / Web Tarayıcısı]) -->|HTTP Host Port :8888| UI_Container[NovaShop UI Container<br/>Java 21 / Spring Boot 3<br/>Non-Root appuser:1000<br/>Container Port: 8080]
 
-    subgraph Docker Host (Öğrenci VM)
+    subgraph Docker Host
         subgraph Isolated Bridge Network: novashop-net
             UI_Container
             
-            subgraph Core Compose Profile Opsiyonel
+            subgraph Çoklu Mikroservis Mimarisi Opsiyonel
                 Catalog_Container[Catalog Service<br/>Go Gin / Port: 8080]
                 Catalog_DB[(Catalog DB<br/>MySQL 8.0 / Port: 3306)]
                 UI_Container -.->|HTTP :8080| Catalog_Container
@@ -49,168 +51,258 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
+### Adım Adım Laboratuvar Uygulaması
 
-| Placeholder | Anlamı | Örnek Biçim |
-|---|---|---|
-| `<IMAGE_TAG>` | Derlenecek Docker imaj etiketi | `v0.1.0` veya `v0.3.0` |
-| `<HOST_PORT>` | Yerel makinede açılacak web portu | `8888` |
-| `<CONTAINER_NAME>` | Çalışan konteyner adı | `novashop-ui-dev` |
+#### Adım 1: Docker ve Docker Compose Ortamını Doğrulama
 
----
-
-### Adımlar
-
-#### 1. Docker Ortamını Doğrulama
-
-Docker daemon ve Compose eklentisinin çalıştığından emin olun:
+Öncelikle sisteminizde Docker daemon'ının ve Compose eklentisinin sorunsuz çalıştığını kontrol edin:
 
 ```bash
 docker --version
 docker compose version
-docker info --format '{{.ServerVersion}}'
+docker info --format 'Server Version: {{.ServerVersion}} | Storage Driver: {{.Driver}}'
 ```
-*Açıklama:* Docker sunucu sürümünü ve CLI erişimini doğrular.  
-*Beklenen çıktı:*
-```text
-Docker version 24.x.x...
-Docker Compose version v2.xx.x
-24.x.x
-```
+
+*Beklenen çıktı:* Docker sürümü (24+ veya 26+) ve Docker Compose sürümü (v2.x) hatasız yazdırılmalıdır.
 
 ---
 
-#### 2. Güvenli Multi-Stage Dockerfile İncelemesi
+#### Adım 2: UI Servis Dizinine Geçiş ve Dosyaları İnceleme
 
-`novashop/src/ui/Dockerfile` dosyasını inceleyin. Bu Dockerfile kurumsal güvenlik standartlarına göre iki aşamalı (multi-stage) tasarlanmıştır:
-1. **Derleme Aşaması (Builder):** `public.ecr.aws/amazonlinux/amazonlinux:2023` tabanında `java-21-amazon-corretto-headless` ve `./mvnw clean package` ile JAR üretilir. Derleme araçları nihai imaja taşınmaz.
-2. **Çalıştırma Aşaması (Runtime):** Minimal `amazonlinux:2023` taban imajı ve headless Java 21 çalışma zamanı kullanılır.
-3. **Güvenlik (Non-root):** Dockerfile içinde `USER appuser` (UID 1000, GID 1000) açıkça tanımlanır; süreç asla `root` yetkileriyle çalıştırılmaz.
+NovaShop deposundaki servisler bağımsız mikroservis dizinleri altında yer alır. UI servisine geçerek mevcut dosyaları listeleyin:
+
+```bash
+cd ~/novashop/src/ui
+ls -la
+```
+
+*Dizinde göreceğiniz kritik dosyalar:*
+- `Dockerfile`: Çok aşamalı (multi-stage) konteyner derleme talimatları.
+- `docker-compose.yml`: UI servisinin yerel çalıştırma parametreleri.
+- `pom.xml`: Java / Spring Boot 3 bağımlılık tanım dosyası.
+- `src/`: Java kaynak kodları ve HTML/CSS şablonları.
 
 ---
 
-#### 3. Starter Çalışma Yolu: NovaShop UI İmajını Derleme
+#### Adım 3: Güvenli Multi-Stage Dockerfile'ı Satır Satır İnceleme
 
-UI dizinine geçerek yerel imajı derleyin:
+`Dockerfile` dosyasını terminalde açarak inceleyin:
 
 ```bash
-cd novashop
-docker build -t novashop-ui:v0.1.0 src/ui
-```
-*Açıklama:* UI kaynak kodunu derler ve `novashop-ui:v0.1.0` etiketiyle yerel Docker kayıt defterine ekler.  
-*Beklenen çıktı:*
-```text
-[+] Building ...
- => => naming to docker.io/library/novashop-ui:v0.1.0
+cat Dockerfile
 ```
 
-**Derlenen İmajı Doğrulama:**
+Bu dosya iki temel aşamadan (`stage`) oluşur:
+
+| Aşama | Kod Bloğu / Direktif | Görevi ve Önemi |
+| :--- | :--- | :--- |
+| **Aşama 1: Builder** | `FROM public.ecr.aws/amazonlinux/amazonlinux:2023 AS build-env` | Derleme ortamı hazırlanır. Maven ve JDK 21 kurulur. |
+| **Önbellek Optimizasyonu** | `COPY pom.xml .` <br/> `RUN ./mvnw dependency:go-offline -B -q` | Kaynak kod değişse bile bağımlılıkların her seferinde yeniden indirilmesi önlenir (Docker Layer Cache). |
+| **Paketleme** | `COPY ./src ./src` <br/> `RUN ./mvnw -DskipTests package -q` | Uygulama derlenir ve çalıştırılabilir `/app.jar` üretilir. |
+| **Aşama 2: Runtime** | `FROM public.ecr.aws/amazonlinux/amazonlinux:2023` | Sıfırdan temiz bir taban imaj açılır. **Maven ve kaynak kodlar burada yer almaz.** Yalnızca JRE yüklenir. |
+| **Güvenlik (Non-Root)** | `RUN useradd --uid 1000 appuser`<br/>`USER appuser` | Konteyner asla `root` yetkisiyle çalıştırılmaz; UID 1000 yetkisiz `appuser` kullanıcısına devredilir. |
+| **Uygulama Transferi** | `COPY --from=build-env /app.jar .` | Yalnızca 1. aşamada üretilen derlenmiş JAR dosyası son imaja kopyalanır. İmaj boyutu yüzlerce megabayt küçülür. |
+| **Giriş Noktası** | `EXPOSE 8080`<br/>`ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/app.jar"]` | 8080 portu deklare edilir ve Spring Boot uygulaması başlatılır. |
+
+---
+
+#### Adım 4: Dockerfile ile İmajı Manuel Olarak Derleme
+
+Şimdi `src/ui` dizinindeyken Docker CLI komutunu kullanarak imajınızı oluşturun:
+
 ```bash
+# Bulunduğunuz dizindeki (src/ui) Dockerfile ile novashop-ui imajını derleyin
+docker build -t novashop-ui:v0.1.0 .
+```
+
+*Açıklama:* `.` işareti geçerli dizini build context olarak belirler.  
+*Beklenen çıktı:* `build-env` katmanları ve ardından son runtime katmanı başarıyla tamamlanarak `naming to docker.io/library/novashop-ui:v0.1.0` mesajı görülür.
+
+**Derlenen İmajı ve Katmanlarını Doğrulayın:**
+```bash
+# Üretilen imajı boyutunu ve etiketini kontrol edin
 docker images novashop-ui:v0.1.0
+
+# İmajın katman geçmişini ve boyut dağılımını inceleyin
+docker history novashop-ui:v0.1.0
 ```
-*Beklenen çıktı:* Yaklaşık 250-300MB boyutunda `novashop-ui` imajı listelenir.
 
 ---
 
-#### 4. Güvenli Docker Compose Başlatma Seçenekleri (Starter vs Full)
+#### Adım 5: `docker-compose.yml` Dosyasını İnceleme
 
-NovaShop, öğrenci VM kaynaklarını (2 vCPU / 16 GB RAM) korumak ve güvenliği sağlamak için iki ayrı çalışma yolu sunar:
-
-- **Starter Çalışma Yolu (Önerilen):** Yalnızca UI ve dahili mock verileri ayağa kaldırır. `deploy/compose/starter.secure.yml` overlay'i ile kök dosya sistemi salt-okunur (`read_only: true`), `no-new-privileges: true`, CPU sınırı (0.50) ve 64 MiB kısıtlı `tmpfs /tmp` uygular.
-- **Full Çalışma Yolu (Üretim Simülasyonu):** 11 mikroservisin tamamını içerir; repo kökündeki Git-dışı `.env` dosyasından `DB_PASSWORD` okuyarak `scripts/compose-full.sh` üzerinden çalışır.
-
-##### Seçenek A: NovaShop Starter Compose Helper (Önerilen)
-1. **Güvenli Overlay ile Yapılandırmayı Çözümleme:**
-   ```bash
-   bash scripts/compose-starter.sh config
-   ```
-   *Beklenen çıktı:* `read_only: true`, `security_opt: [no-new-privileges:true]`, `mem_limit: 536870912`, `cpus: 0.50`, `healthcheck` alanlarını içeren Compose konfigürasyonu.
-
-2. **Konteyneri Başlatma:**
-   ```bash
-   bash scripts/compose-starter.sh up
-   ```
-
-##### Seçenek B: Full Compose için Yerel Secret Dosyası
-
-Starter profilinde parola gerekmez. Full profil veya gözlemlenebilirlik profili çalıştırmadan önce, örnek dosyayı yalnızca yerel `.env` olarak kopyalayın ve placeholder değerleri değiştirin:
+Şimdi aynı dizindeki `docker-compose.yml` dosyasını terminalde görüntüleyin:
 
 ```bash
-cp config/project.env.example .env
-chmod 600 .env
-nano .env
+cat docker-compose.yml
 ```
 
-`.env` içindeki en az `DB_PASSWORD` değerini gerçek bir yerel parola ile değiştirin. Bu dosya `.gitignore` kapsamındadır; `git add .env` çalıştırmayın.
+**Dosyanın Temel Bölümleri:**
+```yaml
+services:
+  ui:
+    build:
+      context: .
+    ports:
+      - 8888:8080                  # Host portu 8888 -> Container portu 8080
+    environment:
+      - JAVA_OPTS=-XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/urandom
+      - SERVER_TOMCAT_ACCESSLOG_ENABLED=true
+      - RETAIL_UI_SEARCH_ENABLED=false
+    mem_limit: 512m                # Bellek tüketim sınırı (OOM koruması)
+    cap_drop:
+      - ALL                        # Linux çekirdek yetkilerini tamamen düşür
+    healthcheck:                   # Otomatik servis sağlığı denetimi
+      test: ["CMD-SHELL", "curl -s -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: always
+```
 
-Ardından önce çözümlemeyi, sonra full stack'i başlatın:
+---
+
+#### Adım 6: Doğrudan Saf Docker Compose ile Konteyneri Başlatma
+
+Yardımcı bir script kullanmadan, doğrudan `docker compose` komutuyla konteyneri arka planda (detached) ayağa kaldırın:
 
 ```bash
-bash scripts/compose-full.sh config
-bash scripts/compose-full.sh up
+# src/ui dizinindeyken servisi başlatın
+docker compose up -d
 ```
 
-*Beklenen çıktı:* İlk komut secret değeri yazdırmadan Compose yapılandırmasını doğrular; ikinci komut 11 servisi `novashop-full` proje adıyla başlatır.
-
-##### Seçenek C: Doğrudan Docker CLI ile Çalıştırma
-```bash
-docker run -d \
-  --name novashop-ui-starter \
-  -p 8888:8080 \
-  --memory=512m \
-  --cpus=0.5 \
-  --read-only \
-  --security-opt no-new-privileges:true \
-  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
-  novashop-ui:v0.1.0
-```
-
-**Konteyner Durumunu Kontrol Etme:**
-```bash
-docker ps --filter "name=novashop-ui"
-```
 *Beklenen çıktı:*
 ```text
-CONTAINER ID   IMAGE                  STATUS         PORTS                    NAMES
-a1b2c3d4e5f6   novashop-ui:v0.1.0     Up 5 seconds   0.0.0.0:8888->8080/tcp   novashop-ui-starter
+[+] Running 2/2
+ ✔ Network ui_default  Created
+ ✔ Container ui-ui-1   Started
 ```
 
 ---
 
-#### 5. Sağlık Kontrolü, Marka Doğrulama ve Otomatik Test
+#### Adım 7: Konteyner Durumunu ve Sağlık Durumunu İnceleme
 
-Konteynerin canlılığını ve NovaShop marka kimliğini test edin:
-
-```bash
-# 1. Spring Boot Actuator Sağlık Kontrolü
-curl -s http://localhost:8888/actuator/health
-```
-*Beklenen çıktı:*
-```json
-{"status":"UP"}
-```
+Konteynerin çalışıp çalışmadığını ve sağlık kontrolü sürecini native komutlarla takip edin:
 
 ```bash
-# 2. NovaShop Marka Başlığı Kontrolü
+# 1. Compose ile çalışan servisleri listeleyin
+docker compose ps
+
+# 2. Canlı log akışını görüntüleyin (Çıkmak için Ctrl+C tuşlayın)
+docker compose logs -f ui
+```
+
+*Not:* İlk 10-15 saniyede durum `starting` olarak görünür; Spring Boot ayağa kalkıp `/actuator/health` başarılı olduğunda durum **`(healthy)`** olarak güncellenir.
+
+```bash
+# 3. Docker inspect ile detaylı sağlık durumunu sorgulayın
+docker inspect $(docker compose ps -q ui) --format 'Sağlık Durumu: {{.State.Health.Status}} (Hata Sayısı: {{.State.Health.FailingStreak}})'
+```
+
+---
+
+#### Adım 8: Uygulama Uç Noktalarını Test Etme
+
+Web servisine terminal üzerinden HTTP istekleri göndererek çalıştığını doğrulayın:
+
+```bash
+# 1. Spring Boot Actuator Sağlık Uç Noktası (HTTP 200 döner)
+curl -i http://localhost:8888/actuator/health
+
+# 2. NovaShop Mağaza Ana Sayfa Başlığı Kontrolü
 curl -s http://localhost:8888/ | grep -o "NovaShop DevOps Store"
-```
-*Beklenen çıktı:*
-```text
-NovaShop DevOps Store
-```
 
-```bash
-# 3. Favicon HTTP Durum Kodu Kontrolü
+# 3. Favicon HTTP Durum Kodu (200 OK)
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8888/favicon.ico
 ```
-*Beklenen çıktı:* `200`
+
+> **Tarayıcıdan İnceleme:**  
+> Web tarayıcınızdan **`http://<SUNUCU_IP_ADRESINIZ>:8888`** adresine giderek NovaShop e-ticaret arayüzünü canlı olarak görüntüleyin.
+
+---
+
+#### Adım 9: Docker Compose Yaşam Döngüsü Yönetimi (CLI Deneyimi)
+
+Konteynerleri yönetmek için temel Docker Compose komutlarını uygulayın:
 
 ```bash
-# 4. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma (Canlı Smoke Testi)
-# Bu betik canlı konteynerin Actuator UP, Marka Başlığı ve Favicon durumunu zorunlu kılar; hata durumunda fail-fast (exit 1) verir.
+# Servisi geçici olarak durdurun
+docker compose stop
+
+# Durumun durdurulduğunu (Exited) görün
+docker compose ps -a
+
+# Servisi yeniden başlatın
+docker compose start
+
+# Servisin durumunu kontrol edin
+docker compose ps
+```
+
+---
+
+#### Adım 10: İleri Seviye — Çoklu Compose Dosyası ile Güvenlik Overlay Mantığı (Overlay Pattern)
+
+Gerçek kurumsal DevOps senaryolarında temel `docker-compose.yml` dosyasına dokunulmadan, ortama özel güvenlik sertleştirmeleri (`starter.secure.yml`) ek bir overlay dosyası olarak uygulanır.
+
+1. **Güvenlik Overlay Dosyasını İnceleyin:**
+   ```bash
+   cat ~/novashop/deploy/compose/starter.secure.yml
+   ```
+   *İçerik:* `read_only: true` (kök dosya sistemi salt-okunur), `no-new-privileges: true` (yetki yükseltme engeli), `cpus: 0.50` (CPU sınırı) ve `tmpfs /tmp` tanımlarını içerir.
+
+2. **İki Dosyayı Birleştirerek Nihai Yapılandırmayı Çözümleyin (`config`):**
+   ```bash
+   cd ~/novashop
+   docker compose \
+     -f src/ui/docker-compose.yml \
+     -f deploy/compose/starter.secure.yml \
+     config
+   ```
+   *Açıklama:* Compose, iki YAML dosyasını birleştirir ve nihai birleşik yapılandırmayı ekrana basar.
+
+3. **Güvenli Overlay ile Başlatın:**
+   ```bash
+   docker compose -p novashop-starter \
+     -f src/ui/docker-compose.yml \
+     -f deploy/compose/starter.secure.yml \
+     up -d
+   ```
+
+4. **Salt-Okunur Dosya Sistemi Güvenliğini Test Edin:**
+   ```bash
+   # Konteyner içinde kök dizine yazma denemesi yapın (Read-only olduğu için engellenecektir)
+   docker exec -it novashop-starter-ui-1 touch /root_test.txt 2>&1 || echo "Kök dosya sistemi başarıyla korundu: Salt-Okunur!"
+   ```
+
+---
+
+#### Adım 11: Bütünsel Mimari — Çoklu Mikroservis `docker-compose.yml` (Repo Kökü)
+
+NovaShop'un çoklu servis mimarisinde servislerin birbirini nasıl bulduğunu görmek için ana dosyayı inceleyin:
+
+```bash
+cd ~/novashop
+head -n 55 docker-compose.yml
+```
+
+**Kilit Kavramlar:**
+- **Service Discovery (DNS):** `ui` servisi, `catalog` servisine IP adresiyle değil `http://catalog:8080` servis adı üzerinden erişir. Docker'ın dahili DNS motoru servis adını otomatik çözer.
+- **Networks (`novashop-net`):** Tüm servisler izole bir bridge ağına (`novashop-net`) bağlıdır. Dış dünyadan yalnızca `ui` servisinin `8888` portu açılır; veritabanı portları dışarıya kapalı tutulur.
+
+---
+
+#### Adım 12: Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+
+Tüm yapılandırmanın ve çalışan canlı servisin doğruluğunu test edin:
+
+```bash
+cd ~/novashop
 bash scripts/verify/verify-lab-03.sh
 ```
-*Beklenen çıktı:*
+
+*Beklenen Çıktı:*
 ```text
 === [LAB-03] Doğrulama Başlatılıyor (localhost:8888 | Mod: live) ===
 ✅ Güvenlik overlay dosyası mevcut (deploy/compose/starter.secure.yml).
@@ -225,102 +317,52 @@ bash scripts/verify/verify-lab-03.sh
 === [LAB-03] Canlı Smoke ve Güvenlik Doğrulaması Başarılı (PASS) ===
 ```
 
-*(Opsiyonel Çevrimdışı Mod: Yalnızca Docker Compose overlay ve Dockerfile non-root statik denetimi için: `bash scripts/verify/verify-lab-03.sh --config-only`)*
-
 ---
 
-#### 6. Konteyner Loglarını İnceleme
+#### Adım 13: Temizlik (Cleanup)
 
-Uygulamanın başlangıç günlüklerini ve NovaShop terminal bannerını görüntüleyin:
+Laboratuvar çalışması bittiğinde oluşturulan konteynerleri ve kaynakları temizleyin:
 
 ```bash
-docker logs novashop-ui-starter | head -n 25
-```
-*Beklenen çıktı:* `NOVASHOP DEVOPS STORE` ASCII karşılama bannerı ve `Started UiApplication in ... seconds`.
+# 1. Overlay ile açılan veya UI dizinindeki konteynerleri durdurup kaldırın
+cd ~/novashop
+docker compose -p novashop-starter \
+  -f src/ui/docker-compose.yml \
+  -f deploy/compose/starter.secure.yml \
+  down
 
----
+# Veya src/ui dizininde doğrudan:
+cd ~/novashop/src/ui && docker compose down
 
-#### 7. Konteyneri Temizleme
-
-Starter konteynerini durdurup kaldırın:
-
-```bash
-docker stop novashop-ui-starter
-docker rm novashop-ui-starter
-```
-
----
-
-### Troubleshooting
-
-#### Senaryo 1: Port Çakışması (`bind: address already in use: 8888`)
-- **Belirti:** `docker run` çalıştırıldığında `Error response from daemon: driver failed programming external connectivity ... bind: address already in use` hatası alınması.
-- **Muhtemel Neden:** 8888 portunun başka bir süreç veya önceki bir konteyner tarafından kullanılıyor olması.
-- **Teşhis Komutu:**
-  ```bash
-  lsof -i :8888 || netstat -tulpn | grep 8888
-  docker ps -a --filter "publish=8888"
-  ```
-- **Güvenli Çözüm:** Portu kullanan eski konteyneri durdurun veya farklı bir host portu kullanın (`-p 8889:8080`).
-
-#### Senaryo 2: Yetersiz Bellek Nedeniyle Konteynerin Çökmesi (OOMKilled - Exit Code 137)
-- **Belirti:** Konteyner başladıktan birkaç saniye sonra aniden duruyor ve `docker ps -a` çıktısında `Exited (137)` görünüyor.
-- **Muhtemel Neden:** Java Sanal Makinesi (JVM) bellek ihtiyacının verilen `--memory=512m` sınırını aşması.
-- **Teşhis Komutu:**
-  ```bash
-  docker inspect novashop-ui-starter --format '{{.State.OOMKilled}}'
-  ```
-- **Güvenli Çözüm:** JVM heap alanını container sınırına uygun yapılandırın:
-  ```bash
-  docker run -d --name novashop-ui-starter -p 8888:8080 \
-    --memory=768m --cpus=0.5 \
-    -e JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0" \
-    novashop-ui:v0.1.0
-  ```
-
-#### Senaryo 3: Salt-Okunur Dosya Sistemi Yazma Hatası (`Read-only file system`)
-- **Belirti:** Konteyner loglarında `java.io.IOException: Read-only file system` hatası çıkması.
-- **Muhtemel Neden:** Spring Boot veya Tomcat'in `/tmp` dışındaki bir dizine yazmaya çalışması.
-- **Teşhis Komutu:**
-  ```bash
-  docker logs novashop-ui-starter | grep -i "Read-only file system"
-  ```
-- **Güvenli Çözüm:** İlgili yazma dizinini `tmpfs` olarak container'a mount edin: `--tmpfs /tmp --tmpfs /run`.
-
----
-
-### Güvenlik Notu
-
-1. **Non-Root Kullanıcı:**
-   - İmaj içindeki süreç asla `root` kullanıcısı ile çalıştırılamaz. Dockerfile'da `USER 1000:1000` tanımlanmalıdır.
-2. **`latest` Tag Yasağı:**
-   - İmaj adlandırmalarında asla `novashop-ui:latest` kullanılmaz. Sabit semantik versiyon (`v0.1.0`) kullanılır.
-3. **Docker Socket Yasağı:**
-   - `/var/run/docker.sock` kesinlikle uygulama konteynerlerine bağlanamaz.
-4. **Kaynak Sınırları:**
-   - Öğrenci makinesinin kilitlenmesini önlemek için hiçbir konteyner sınırsız bellek/CPU ile çalıştırılamaz.
-
----
-
-### Cleanup / Rollback
-
-Lab sonunda yerel kaynakları temizlemek için:
-
-```bash
-# 1. Konteyneri durdur ve sil
-docker rm -f novashop-ui-starter 2>/dev/null || true
-
-# 2. Üretilen test imajını sil (disk alanından tasarruf)
+# 2. Oluşturulan test imajını silin (disk tasarrufu için)
 docker rmi novashop-ui:v0.1.0 2>/dev/null || true
 
-# 3. Askıda kalan derleme önbelleğini temizle
+# 3. Kullanılmayan derleme önbelleğini temizleyin
 docker builder prune -f
 ```
 
 ---
 
-### Pratik Uygulama Görevi
+### Troubleshooting (Sorun Giderme)
 
-1. `docker run` komutuna `-e SPRING_PROFILES_ACTIVE=production` ortam değişkenini ekleyerek konteyneri başlatın.
-2. Loglarda profilin aktifleştiğini `docker logs` ile doğrulayın.
-3. Sağlık durumunun `UP` olduğunu teyit edin.
+#### 1. Port Çakışması (`bind: address already in use: 8888`)
+- **Neden:** 8888 portu başka bir işlem veya arka planda kalan eski bir konteyner tarafından kullanılıyor olabilir.
+- **Çözüm:**
+  ```bash
+  # 8888 portunu dinleyen süreci tespit edin
+  sudo ss -tulpn | grep 8888
+  # Portu işgal eden eski konteyneri durdurun
+  docker ps --filter "publish=8888" -q | xargs -r docker stop
+  ```
+
+#### 2. Konteyner Çökmesi (Exit Code 137 / OOMKilled)
+- **Neden:** JVM bellek ihtiyacı Compose dosyasındaki `mem_limit: 512m` sınırını aştığında Linux OOM Killer konteyneri sonlandırır.
+- **Teşhis:**
+  ```bash
+  docker inspect <container_id> --format 'OOMKilled: {{.State.OOMKilled}}'
+  ```
+- **Çözüm:** `JAVA_OPTS` içinde `-XX:MaxRAMPercentage=75.0` parametresinin verildiğinden veya compose dosyasında bellek limitinin artırıldığından emin olun.
+
+#### 3. Salt-Okunur Dosya Sistemi Hatası (`Read-only file system`)
+- **Neden:** `starter.secure.yml` overlay'i devredeyken uygulamanın `/tmp` dışındaki bir dizine dosya yazmaya çalışması.
+- **Çözüm:** Yazılması gereken ek dizinler varsa (örneğin `/run` veya `/app/logs`), compose dosyasına `tmpfs:` olarak eklenmelidir.

@@ -36,8 +36,8 @@ variable "my_ip" {
 
 variable "ec2_instance_type" {
   type        = string
-  description = "EC2 sunucu donanım sınıfı"
-  default     = "t3.micro"
+  description = "EC2 sunucu donanım sınıfı (Java 21 / Spring Boot için 4 GB RAM sunan t3.medium önerilir)"
+  default     = "t3.medium"
 }
 
 variable "key_name" {
@@ -48,8 +48,8 @@ variable "key_name" {
 
 variable "db_instance_class" {
   type        = string
-  description = "RDS MySQL instance sınıfı (Free Tier / Düşük maliyet)"
-  default     = "db.t3.micro"
+  description = "RDS MySQL instance sınıfı (Kararlı çalışma için db.t3.small önerilir)"
+  default     = "db.t3.small"
 }
 
 variable "db_name" {

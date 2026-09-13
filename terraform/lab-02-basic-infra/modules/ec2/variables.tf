@@ -21,8 +21,8 @@ variable "security_group_id" {
 
 variable "instance_type" {
   type        = string
-  description = "EC2 sunucu donanım tipi"
-  default     = "t3.micro"
+  description = "EC2 sunucu donanım tipi (Java 21 / Spring Boot için t3.medium önerilir)"
+  default     = "t3.medium"
 }
 
 variable "key_name" {

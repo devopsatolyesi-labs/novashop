@@ -16,8 +16,8 @@ variable "security_group_id" {
 
 variable "db_instance_class" {
   type        = string
-  description = "RDS MySQL sunucu sınıfı (Maliyet tasarrufu için db.t3.micro)"
-  default     = "db.t3.micro"
+  description = "RDS MySQL sunucu sınıfı (Kararlı çalışma için db.t3.small önerilir, minimum db.t3.micro)"
+  default     = "db.t3.small"
 }
 
 variable "db_name" {

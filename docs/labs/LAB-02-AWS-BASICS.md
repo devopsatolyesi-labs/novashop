@@ -136,7 +136,9 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
 1. AWS Console arama çubuğuna **EC2** yazın ve **Instances** -> **Launch instances** butonuna tıklayın:
    - **Name:** `novashop-console-web`
    - **Application and OS Images:** `Ubuntu` -> `Ubuntu Server 22.04 LTS (HVM), SSD Volume Type`
-   - **Instance type:** `t3.micro` (Free Tier uygun)
+   - **Instance type:** `t3.medium` (2 vCPU, 4 GB RAM) seçin.  
+     > [!IMPORTANT]
+     > Java 21 ve Spring Boot 3 uygulamaları için `t3.micro` (1 GB RAM) yetersiz kalmakta ve bellek tükenmesi (Out of Memory - OOMKilled) nedeniyle çökmektedir. Bu nedenle web ve uygulama katmanı için en az `t3.small` (2 GB RAM) veya önerilen olarak **`t3.medium` (4 GB RAM)** seçilmelidir.
    - **Key pair (login):** Mevcut bir `.pem` key pair seçin veya **Create new key pair** diyerek `novashop-key` adıyla oluşturup indirin.
 2. **Network settings** bölümünde **Edit** butonuna tıklayın:
    - **VPC:** `novashop-console-vpc`
@@ -193,7 +195,7 @@ Bu bölümde AWS Web Konsolu arayüzünü kullanarak altyapıyı adım adım olu
      - DB instance identifier: `novashop-console-db`
      - Master username: `novashop`
      - Master password: `NovaShopDevOps2026!` (onaylayarak tekrar girin)
-   - **Instance configuration:** `db.t3.micro`
+   - **Instance configuration:** `db.t3.small` (2 vCPU, 2 GB RAM - kararlı çalışma için) veya Free Tier için `db.t3.micro` seçin.
    - **Storage:** `gp3`, 20 GiB allocated storage (Enable storage autoscaling kutusunu kaldırabilirsiniz).
    - **Connectivity:**
      - Virtual private cloud (VPC): `novashop-console-vpc`
@@ -292,8 +294,8 @@ project_name         = "novashop-tf"
 vpc_cidr             = "10.1.0.0/16"
 public_subnet_cidr   = "10.1.1.0/24"
 private_subnet_cidrs = ["10.1.10.0/24", "10.1.11.0/24"]
-ec2_instance_type    = "t3.micro"
-db_instance_class    = "db.t3.micro"
+ec2_instance_type    = "t3.medium" # Java 21 / Spring Boot için 4 GB RAM
+db_instance_class    = "db.t3.small"  # MySQL 8.0 için 2 GB RAM
 db_name              = "catalogdb"
 db_username          = "novashop"
 db_password          = "NovaShopDevOps2026!"

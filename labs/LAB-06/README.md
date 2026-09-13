@@ -4,26 +4,30 @@
 
 ### Amaç
 
-Öğrenci sanal makinesi üzerinde Kind (Kubernetes IN Docker) ile çok düğümlü (1 control-plane, 2 worker) yerel bir Kubernetes kümesi kurmak; NovaShop mikroservislerini Helm paket yöneticisi ile liveness/readiness probları, kaynak kısıtları (requests/limits) ve ConfigMap/Secret soyutlamalarıyla dağıtıp kesintisiz güncelleme (rolling update) ve geri alma (rollout undo) süreçlerini doğrulamak.
+Öğrenci sanal makinesinde bağımsız bir çalışma dizininde Kind (Kubernetes IN Docker) ile çok düğümlü (1 control-plane, 2 worker) yerel bir Kubernetes kümesi kurmak; NovaShop mikroservis imajını Harbor Registry'den (veya yerel küme yüklemesiyle) çekerek Helm paket yöneticisi ile dağıtmak, sağlık problarını doğrulamak ve kesintisiz sürüm güncelleme (`helm upgrade`) ile geri alma (`helm rollback`) adımlarını uygulamak.
 
 ---
 
 ### Kazanımlar
 
-- Kind ile çok düğümlü yerel Kubernetes kümesi kurup `kubectl` ile düğüm ve pod yaşam döngüsünü yönetmek.
-- Üretim düzeyi Kubernetes kaynaklarını (Deployment, Service, ConfigMap, Secret, Ingress) kavramak ve yapılandırmak.
-- Container sağlık problarını (`livenessProbe` ve `readinessProbe`) Spring Boot Actuator endpoint'leri ile entegre etmek.
-- Öğrenci VM bellek sınırlarını korumak için pod bazlı `resources.requests` ve `resources.limits` tanımlamak (PROFILES.md kaynak sınırları).
-- Helm chart şablonlama (templating), `values.yaml` parametrelendirmesi ve Helm sürüm yönetimi (`helm install/upgrade/rollback`) uygulamak.
+- Kind ile çok düğümlü yerel Kubernetes kümesini bağımsız bir dizinde kurup `kubectl` ile yönetmek.
+- İmajları yerel Harbor OCI Registry üzerinden Kubernetes ortamına taşımak (veya `kind load` mekanizmasını kullanmak).
+- Helm Chart yapısını (`Chart.yaml`, `values.yaml`, `templates/`) kavramak ve ortama özel `values-dev.yaml` ile dağıtım yapmak.
+- Container sağlık problarını (`livenessProbe` ve `readinessProbe`) Spring Boot Actuator endpoint'leri ile doğrulamak.
+- Helm ile kesintisiz sürüm güncelleme (`helm upgrade`), revizyon takibi (`helm history`) ve geri alma (`helm rollback`) süreçlerini uygulamak.
 
 ---
 
-### Ön koşullar
+### Ön Koşullar
 
-- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
-- **İşletim Sistemi:** Linux (Ubuntu 22.04 LTS) veya macOS geliştirme ortamı.
-- **Yüklü Araçlar:** Docker Engine v24+, `kubectl` v1.28+, `kind` v0.20+, `helm` v3.12+.
-- **Kaynak Gereksinimi:** En az 2 vCPU ve 6 GB boş RAM (`k8s-core` profili).
+1. **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
+2. **Harbor Registry (Zorunlu Ön Koşul):** [Platform Hazırlık - Harbor Kurulumu](../LAB-00-PLATFORM-SETUP/02-harbor-setup.md) tamamlanmış olmalıdır.
+   - Harbor Web Erişimi: `http://<UBUNTU_IP>:18082`
+   - Proje Adı: `novashop` (Public olarak açılmış olmalıdır)
+   - Docker Girişi: `docker login <UBUNTU_IP>:18082 -u admin -p Harbor12345`
+   - *(Not: Ortamınızda Harbor henüz hazır değilse, Adım 3'teki alternatif `kind load` yöntemiyle devam edebilirsiniz).*
+3. **Yüklü Araçlar:** Docker v24+, `kubectl`, `kind`, `helm` v3+.
+4. **Sistem Kaynağı:** En az 2 vCPU ve 6 GB boş RAM.
 
 ---
 
@@ -31,106 +35,146 @@
 
 ```mermaid
 graph TD
-    User([Öğrenci / Web Tarayıcısı]) -->|HTTP :8888| Ingress[Kind NodePort / Ingress Controller]
+    User([Öğrenci / Web Tarayıcısı]) -->|HTTP :8888| HostPort[Host Port: 8888]
+    HostPort -->|Port Eşleme| NodePort[Kind NodePort: 30080]
 
-    subgraph Kind Kubernetes Cluster: novashop-cluster
+    subgraph Kind Cluster: novashop-cluster
         subgraph Control-Plane Node
             APIServer[kube-apiserver]
         end
 
         subgraph Worker Node 1
-            UI_Pod1[Pod: novashop-ui-1<br/>Port: 8080<br/>Liveness & Readiness Probes]
-            Catalog_Pod1[Pod: novashop-catalog-1<br/>Port: 8080]
+            UI_Pod1[Pod: novashop-ui-1<br/>Port: 8080<br/>Liveness / Readiness]
         end
 
         subgraph Worker Node 2
-            UI_Pod2[Pod: novashop-ui-2<br/>Port: 8080<br/>Rolling Update & Replica]
+            UI_Pod2[Pod: novashop-ui-2<br/>Port: 8080<br/>Liveness / Readiness]
         end
-        
-        Ingress -->|Service: novashop-ui| UI_Pod1
-        Ingress -->|Service: novashop-ui| UI_Pod2
-        UI_Pod1 -.->|Service: novashop-catalog| Catalog_Pod1
+
+        NodePort -->|Service: novashop-ui| UI_Pod1
+        NodePort -->|Service: novashop-ui| UI_Pod2
     end
+
+    Registry[(Harbor Registry<br/>:18082 / novashop)] -.->|Image Pull| UI_Pod1
+    Registry -.->|Image Pull| UI_Pod2
 ```
 
 ---
 
-### Kullanılan placeholder'lar
+### Kullanılan Değişkenler
 
-| Placeholder | Anlamı | Örnek Biçim |
+| Değişken | Açıklama | Örnek |
 |---|---|---|
-| `<CLUSTER_NAME>` | Kind Kubernetes küme adı | `novashop-cluster` |
-| `<NAMESPACE>` | Uygulama Kubernetes isim alanı | `novashop` |
-| `<RELEASE_NAME>` | Helm release adı | `novashop-core` |
+| `<UBUNTU_IP>` | Sanal makinenizin yerel IP adresi | `192.168.1.100` veya `10.0.2.15` |
+| `<CLUSTER_NAME>` | Kind küme adı | `novashop-cluster` |
+| `<NAMESPACE>` | Kubernetes isim alanı | `novashop` |
 
 ---
 
 ### Adımlar
 
-#### 1. Gerekli CLI Araçlarının Kurulumu ve Doğrulanması
+#### Adım 1: CLI Araçlarının Doğrulanması
 
-`kubectl`, `kind` ve `helm` araçlarının kurulu olduğunu teyit edin:
+Gerekli araçların kurulu olduğunu teyit edin:
 
 ```bash
-# kubectl kontrolü
-kubectl version --client --output=yaml | head -n 5
-
-# kind kontrolü
+kubectl version --client
 kind version
-
-# helm kontrolü
 helm version --short
 ```
-*Beklenen çıktı:* Tüm araçların versiyon bilgileri hatasız görüntülenmelidir.
+
+*Beklenen çıktı:* Tüm araçların sürüm numaraları hatasız listelenmelidir.
 
 ---
 
-#### 2. Kind Çok Düğümlü Küme Konfigürasyonu ve Başlatma
+#### Adım 2: Bağımsız Dizin Üzerinde Kind Kümesini Başlatma
 
-Öğrenci VM'inde çalışan 1 control-plane ve 2 worker düğümlü hafif bir küme tanımlayın (`kind-config.yaml`):
+> [!IMPORTANT]
+> Kind küme konfigürasyonu proje reposunun içine konulmamalı, bağımsız bir dizinde (`~/kind`) yönetilmelidir.
 
-```bash
-cat << 'EOF' > kind-config.yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-name: novashop-cluster
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 30080
-    hostPort: 8888
-    listenAddress: "0.0.0.0"
-- role: worker
-- role: worker
-EOF
+1. Bağımsız `~/kind` dizinini oluşturun ve içine geçin:
+   ```bash
+   cd ~
+   mkdir -p ~/kind && cd ~/kind
+   ```
 
-kind create cluster --config kind-config.yaml
-```
-*Açıklama:* Host'un 8888 portunu Kubernetes'in 30080 NodePort portuna eşleyerek dış dünyadan doğrudan erişim sağlar.  
-*Beklenen çıktı:*
-```text
-Creating cluster "novashop-cluster" ...
- ✓ Ensuring node image (kindest/node:v1.28.0) 🖼
- ✓ Preparing nodes 📦 📦 📦 
- ✓ Writing configuration 📜 
- ✓ Starting control-plane 🕹️ 
- ✓ Installing CNI 🔌 
- ✓ Installing StorageClass 💾 
- ✓ Joining worker nodes 🚜 
-Set kubectl context to "kind-novashop-cluster"
-```
+2. 1 control-plane ve 2 worker düğümlü hafif küme konfigürasyonunu (`kind-config.yaml`) oluşturun:
+   ```bash
+   cat << 'EOF' > kind-config.yaml
+   kind: Cluster
+   apiVersion: kind.x-k8s.io/v1alpha4
+   name: novashop-cluster
+   nodes:
+   - role: control-plane
+     extraPortMappings:
+     - containerPort: 30080
+       hostPort: 8888
+       listenAddress: "0.0.0.0"
+   - role: worker
+   - role: worker
+   EOF
+   ```
+   *Açıklama:* Host makinenin `8888` portu, Kubernetes içerisindeki `30080` NodePort portuna eşlenir.
 
-**Düğüm Durumlarını Doğrulama:**
-```bash
-kubectl get nodes -o wide
-```
-*Beklenen çıktı:* 1 control-plane ve 2 worker düğümü `Ready` durumunda olmalıdır.
+3. Kind kümesini oluşturun:
+   ```bash
+   kind create cluster --config kind-config.yaml
+   ```
+
+4. Düğümlerin hazır olduğunu doğrulayın:
+   ```bash
+   kubectl get nodes
+   ```
+   *Beklenen çıktı:* 1 control-plane ve 2 worker düğümü `Ready` durumunda görünmelidir.
 
 ---
 
-#### 3. Kubernetes Namespace (İsim Alanı) Oluşturma
+#### Adım 3: İmajın Hazırlanması ve Kümeye Sağlanması
 
-İzolasyon için `novashop` adında özel bir isim alanı oluşturun:
+NovaShop UI mikroservis imajını hazırlayın.
+
+1. Proje dizinine geçin:
+   ```bash
+   cd ~/novashop
+   ```
+
+2. İmajı yerel olarak derleyin (LAB-03'te derlemediyseniz):
+   ```bash
+   docker build -t novashop-ui:v0.1.0 src/ui
+   ```
+
+##### Seçenek A: Harbor Registry ile Dağıtım (Ön Koşul — Standart Yol)
+
+Harbor kurulu ve çalışır durumdaysa:
+
+1. İmajı Harbor formatında etiketleyin (`<UBUNTU_IP>` yerine sunucu IP'nizi yazın):
+   ```bash
+   docker tag novashop-ui:v0.1.0 <UBUNTU_IP>:18082/novashop/ui:v0.1.0
+   ```
+
+2. İmajı Harbor'a gönderin:
+   ```bash
+   docker push <UBUNTU_IP>:18082/novashop/ui:v0.1.0
+   ```
+
+3. Kind kümesinin imajı anında ve sorunsuz görebilmesi için küme düğümlerine yükleyin:
+   ```bash
+   kind load docker-image <UBUNTU_IP>:18082/novashop/ui:v0.1.0 --name novashop-cluster
+   ```
+
+##### Seçenek B: Harbor Yoksa Doğrudan Kind'a Yükleme (Alternatif)
+
+Harbor ortamınız henüz hazır değilse, imajı doğrudan Kind kümesine yükleyerek devam edebilirsiniz:
+
+```bash
+kind load docker-image novashop-ui:v0.1.0 --name novashop-cluster
+```
+
+---
+
+#### Adım 4: Kubernetes İsim Alanı (Namespace) Oluşturma
+
+Uygulama kaynaklarını izole etmek için `novashop` isim alanını oluşturun:
 
 ```bash
 kubectl create namespace novashop
@@ -139,198 +183,130 @@ kubectl config set-context --current --namespace=novashop
 
 ---
 
-#### 4. NovaShop Helm Chart Şablonunun İncelenmesi
+#### Adım 5: Helm Chart ile NovaShop Mikroservisini Dağıtma
 
-NovaShop UI ve Catalog mikroservisleri için standart bir Helm Chart yapısı kullanılır:
+1. Repo içindeki Helm chart dizinini inceleyin:
+   ```bash
+   cd ~/novashop
+   ls -la charts/novashop/
+   ```
 
-```text
-charts/novashop/
-├── Chart.yaml
-├── values.yaml
-└── templates/
-    ├── configmap.yaml
-    ├── secret.yaml
-    ├── ui-deployment.yaml
-    ├── ui-service.yaml
-    ├── catalog-deployment.yaml
-    └── catalog-service.yaml
-```
+2. Dağıtım için `values-dev.yaml` dosyasını oluşturun:
 
-**Değerler Dosyası (`values.yaml`) Özeti:**
-```yaml
-global:
-  environment: local-kind
+   **Seçenek A (Harbor Kullanıyorsanız):**
+   ```bash
+   cat << 'EOF' > values-dev.yaml
+   catalog:
+     enabled: false
 
-ui:
-  replicaCount: 2
-  image:
-    repository: public.ecr.aws/aws-containers/retail-store-sample-ui
-    tag: v1.6.2
-    pullPolicy: IfNotPresent
-  service:
-    type: NodePort
-    nodePort: 30080
-    port: 8080
-  resources:
-    limits:
-      cpu: 500m
-      memory: 512Mi
-    requests:
-      cpu: 250m
-      memory: 256Mi
-  livenessProbe:
-    httpGet:
-      path: /actuator/health/liveness
-      port: 8080
-    initialDelaySeconds: 30
-    periodSeconds: 10
-  readinessProbe:
-    httpGet:
-      path: /actuator/health/readiness
-      port: 8080
-    initialDelaySeconds: 20
-    periodSeconds: 5
-```
+   ui:
+     enabled: true
+     replicaCount: 2
+     image:
+       repository: <UBUNTU_IP>:18082/novashop/ui
+       tag: v0.1.0
+       pullPolicy: IfNotPresent
+   EOF
+   ```
+   *(Not: `<UBUNTU_IP>` yerine sunucu IP adresinizi yazınız).*
 
----
+   **Seçenek B (Harbor Yoksa / Yerel `kind load` ile Devam Ediyorsanız):**
+   ```bash
+   cat << 'EOF' > values-dev.yaml
+   catalog:
+     enabled: false
 
-#### 5. Helm ile NovaShop Mikroservislerini Dağıtma
+   ui:
+     enabled: true
+     replicaCount: 2
+     image:
+       repository: novashop-ui
+       tag: v0.1.0
+       pullPolicy: IfNotPresent
+   EOF
+   ```
 
-Uygulamayı yerel Kind kümesine dağıtın:
+3. Helm ile uygulamayı dağıtın (`helm install`):
+   ```bash
+   helm install novashop ./charts/novashop -f values-dev.yaml -n novashop
+   ```
 
-```bash
-# Helm Chart dizinine gidin veya doğrudan parametrelerle yükleyin
-cat << 'EOF' > values-dev.yaml
-ui:
-  replicaCount: 2
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: 500m
-    requests:
-      memory: 256Mi
-      cpu: 200m
-EOF
-
-# Örnek hazır chart veya yerel manifest ile deploy
-kubectl apply -f - << 'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: novashop-ui
-  namespace: novashop
-  labels:
-    app: novashop-ui
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: novashop-ui
-  template:
-    metadata:
-      labels:
-        app: novashop-ui
-    spec:
-      containers:
-      - name: ui
-        image: public.ecr.aws/aws-containers/retail-store-sample-ui:v1.6.2
-        ports:
-        - containerPort: 8080
-        resources:
-          limits:
-            cpu: "500m"
-            memory: "512Mi"
-          requests:
-            cpu: "200m"
-            memory: "256Mi"
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 25
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 8080
-          initialDelaySeconds: 15
-          periodSeconds: 5
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: novashop-ui-service
-  namespace: novashop
-spec:
-  type: NodePort
-  selector:
-    app: novashop-ui
-  ports:
-  - port: 8080
-    targetPort: 8080
-    nodePort: 30080
-EOF
-```
+4. Dağıtım durumunu Helm üzerinden kontrol edin:
+   ```bash
+   helm list -n novashop
+   ```
+   *Beklenen çıktı:* `STATUS: deployed`, `REVISION: 1` görünmelidir.
 
 ---
 
-#### 6. Pod, Servis ve Sağlık Durumlarını Doğrulama
+#### Adım 6: Pod ve Servis Sağlık Durumlarını Doğrulama
 
-Pod'ların ayağa kalkışını ve probların durumunu takip edin:
+1. Pod'ların ayağa kalktığını ve `Running` durumunda olduğunu kontrol edin:
+   ```bash
+   kubectl get pods -n novashop -o wide
+   ```
+   *Beklenen çıktı:* 2 adet `novashop-ui-...` pod'u `1/1 Running` olmalıdır.
 
-```bash
-kubectl get pods -l app=novashop-ui -w
-```
-*Beklenen çıktı:*
-```text
-NAME                           READY   STATUS    RESTARTS   AGE
-novashop-ui-7d9b9f8fbc-abcd1   1/1     Running   0          35s
-novashop-ui-7d9b9f8fbc-abcd2   1/1     Running   0          35s
-```
+2. Servisin oluşturulduğunu ve NodePort'u doğrulayın:
+   ```bash
+   kubectl get svc -n novashop
+   ```
+   *Beklenen çıktı:* `novashop-ui` servisi `NodePort` tipinde ve `8080:30080/TCP` port eşlemesiyle görünmelidir.
 
-**Dış Dünyadan Erişim Testi (NodePort Mapping):**
-```bash
-curl -s http://localhost:8888/actuator/health
-```
-*Beklenen çıktı:*
-```json
-{"status":"UP"}
-```
-
----
-
-#### 7. Sıfır Kesintili Rolling Update ve Rollback Testi
-
-**1. Sürüm Güncelleme (Rolling Update):**
-Uygulama imajını güncelleyin ve pod'ların teker teker yenilendiğini izleyin:
-
-```bash
-kubectl set image deployment/novashop-ui ui=public.ecr.aws/aws-containers/retail-store-sample-ui:v1.6.2 --record
-kubectl rollout status deployment/novashop-ui
-```
-*Beklenen çıktı:* `deployment "novashop-ui" successfully rolled out`.
-
-**2. Rollout Geçmişini İnceleme:**
-```bash
-kubectl rollout history deployment/novashop-ui
-```
-
-**3. Hata Durumunda Rollback (Geri Alma):**
-```bash
-kubectl rollout undo deployment/novashop-ui
-kubectl rollout status deployment/novashop-ui
-```
-*Açıklama:* Bir önceki stabil dağıtım revizyonuna kesintisiz geri dönüş yapar.
+3. Dış dünyadan sağlık endpoint'ini test edin (Host 8888 -> NodePort 30080):
+   ```bash
+   curl -s http://localhost:8888/actuator/health
+   ```
+   *Beklenen çıktı:*
+   ```json
+   {"status":"UP"}
+   ```
 
 ---
 
-#### 8. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+#### Adım 7: Helm ile Sıfır Kesintili Güncelleme ve Geri Alma (Rollback)
 
-Helm chart yapısını, sağlık problarını ve güvenlik/kaynak sınırlarını otomatik test betiği ile doğrulayın:
+1. **Sürüm Güncelleme (`helm upgrade`):**  
+   Replica sayısını 2'den 3'e yükseltin:
+   ```bash
+   helm upgrade novashop ./charts/novashop -f values-dev.yaml --set ui.replicaCount=3 -n novashop
+   ```
+
+2. Pod'ların kesintisiz olarak 3'e yükseldiğini doğrulayın:
+   ```bash
+   kubectl rollout status deployment/novashop-ui -n novashop
+   kubectl get pods -n novashop
+   ```
+
+3. **Helm Dağıtım Geçmişini İnceleme (`helm history`):**
+   ```bash
+   helm history novashop -n novashop
+   ```
+   *Beklenen çıktı:* 2 adet revizyon (`REVISION 1` ve `REVISION 2`) listelenmelidir.
+
+4. **Hata Durumunda Geri Alma (`helm rollback`):**  
+   Revizyon 1'e geri dönün:
+   ```bash
+   helm rollback novashop 1 -n novashop
+   ```
+
+5. Pod sayısının tekrar 2'ye indiğini doğrulayın:
+   ```bash
+   kubectl rollout status deployment/novashop-ui -n novashop
+   kubectl get pods -n novashop
+   ```
+
+---
+
+#### Adım 8: Otomatik Doğrulama Betiğini Çalıştırma
+
+Tüm lab gereksinimlerini otomatik test betiği ile doğrulayın:
 
 ```bash
+cd ~/novashop
 bash scripts/verify/verify-lab-06.sh
 ```
+
 *Beklenen çıktı:*
 ```text
 === [LAB-06] Kubernetes ve Helm Doğrulama Başlatılıyor ===
@@ -339,65 +315,27 @@ bash scripts/verify/verify-lab-06.sh
 ✅ Liveness ve Readiness sağlık probları tanımlı.
 ✅ Kaynak sınırları (resources.limits) tanımlı.
 ✅ Non-root kullanıcı güvenlik kuralı (runAsNonRoot: true) tanımlı.
+✅ Helm lint başarıyla tamamlandı.
+✅ Kubernetes kümesine erişim sağlandı.
 === [LAB-06] Kubernetes ve Helm Doğrulaması Tamamlandı! ===
 ```
 
 ---
 
-### Troubleshooting
+### Temizlik (Cleanup)
 
-#### Senaryo 1: Pod'lar `CrashLoopBackOff` veya `OOMKilled` Durumuna Geçiyor
-- **Belirti:** `kubectl get pods` çıktısında `OOMKilled` veya `CrashLoopBackOff` görülmesi.
-- **Muhtemel Neden:** Java JVM bellek tüketiminin `resources.limits.memory: 512Mi` sınırını aşması.
-- **Teşhis Komutu:**
-  ```bash
-  kubectl describe pod <POD_NAME> | grep -E "(OOMKilled|Exit Code)"
-  ```
-- **Güvenli Çözüm:** Bellek sınırını `768Mi` seviyesine yükseltin ve `JAVA_OPTS="-XX:MaxRAMPercentage=75.0"` ortam değişkenini ekleyin.
-
-#### Senaryo 2: Problar Başarısız Oluyor (`Readiness probe failed: HTTP probe failed with statuscode: 503`)
-- **Belirti:** Pod `Running` durumunda ancak `READY` sütununda `0/1` görünüyor ve trafik alamıyor.
-- **Muhtemel Neden:** `initialDelaySeconds` değerinin uygulamanın ayağa kalkış süresinden daha kısa tutulması.
-- **Teşhis Komutu:**
-  ```bash
-  kubectl describe pod <POD_NAME> | grep -A 5 "Readiness"
-  ```
-- **Güvenli Çözüm:** Spring Boot'un başlatılabilmesi için `initialDelaySeconds: 30` olarak güncelleyin.
-
----
-
-### Güvenlik Notu
-
-1. **Root Olmayan Konteyner:**
-   - Pod tanımlarında `securityContext.runAsNonRoot: true` ve `securityContext.runAsUser: 1000` uygulanmalıdır.
-2. **Kapasite ve Kaynak Kontrolü:**
-   - Sınırsız (`unlimited`) kaynak kullanımı yasaktır; her pod için `cpu` ve `memory` limitleri tanımlanmalıdır.
-3. **Gizli Bilgiler:**
-   - Hassas değişkenler doğrudan manifest'e yazılmaz; Kubernetes `Secret` kaynakları ile yönetilir.
-
----
-
-### Cleanup / Rollback
-
-Lab sonunda öğrenci makinesindeki RAM ve CPU kaynaklarını serbest bırakmak için:
+Laboratuvar çalışması bittiğinde öğrenci makinesindeki sistem kaynaklarını serbest bırakın:
 
 ```bash
-# 1. Kind kümesini tamamen sil
+# 1. Helm dağıtımını kaldırın
+helm uninstall novashop -n novashop
+
+# 2. Kind kümesini silin
 kind delete cluster --name novashop-cluster
 
-# 2. Askıda kalan yapılandırma bağlamını temizle
-kubectl config unset contexts.kind-novashop-cluster 2>/dev/null || true
+# 3. Kind geçici dizinini temizleyin
+rm -rf ~/kind
 
-# 3. Docker önbelleğini temizle
-docker system prune -f
+# 4. Yerel test imajlarını temizleyin (isteğe bağlı)
+docker rmi novashop-ui:v0.1.0 2>/dev/null || true
 ```
-
----
-
-### Pratik Uygulama Görevi
-
-1. `novashop-ui` Deployment'ının replica sayısını `2`'den `3`'e çıkarın:
-   ```bash
-   kubectl scale deployment novashop-ui --replicas=3
-   ```
-2. 3 pod'un da `Running` ve `1/1 READY` durumuna geçtiğini `kubectl get pods -o wide` ile doğrulayın.

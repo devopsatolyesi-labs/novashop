@@ -72,9 +72,16 @@ git config --global credential.helper store
 
 Bu bölümde, NovaShop kod tabanını sunucuda temiz bir Git geçmişiyle başlatıp kendi GitHub deponuza göndereceksiniz.
 
-#### 1.1 Proje Dizinine Geçin ve Git Deposu Başlatın
+#### 1.1 Depoyu Klonlayın ve Sıfır Git Geçmişiyle Başlatın
 ```bash
+# 1. NovaShop başlangıç reposunu home dizinine klonlayın:
+cd ~
+git clone https://github.com/devopsatolyesi-labs/novashop.git
+
+# 2. Proje dizinine geçin:
 cd ~/novashop
+
+# 3. Mevcut Git geçmişini silerek projeyi sıfırdan kendi main dalınızla başlatın:
 rm -rf .git
 git init -b main
 ```

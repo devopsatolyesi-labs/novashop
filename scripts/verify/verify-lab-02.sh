@@ -13,10 +13,7 @@ if [ -z "$EC2_HOST" ] || [ "$EC2_HOST" = "--config-only" ]; then
     # 1. Dokümantasyon ve Mimari Kılavuzu Varlık Kontrolü
     LAB02_DOC="$REPO_ROOT/labs/LAB-02/README.md"
     if [ ! -f "$LAB02_DOC" ]; then
-        LAB02_DOC="$REPO_ROOT/docs/labs/LAB-02-AWS-BASICS.md"
-    fi
-    if [ ! -f "$LAB02_DOC" ]; then
-        echo "❌ HATA: LAB-02 kılavuzu bulunamadı!" >&2
+        echo "❌ HATA: LAB-02 kılavuzu bulunamadı ($LAB02_DOC)!" >&2
         exit 1
     fi
     echo "✅ LAB-02 mimari ve uygulama kılavuzu mevcut ($LAB02_DOC)."

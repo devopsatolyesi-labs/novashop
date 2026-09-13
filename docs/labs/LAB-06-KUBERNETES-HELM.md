@@ -1,1 +1,0 @@
-../../labs/LAB-06/README.md

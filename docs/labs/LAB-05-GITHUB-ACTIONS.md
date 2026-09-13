@@ -20,7 +20,7 @@ NovaShop UI mikroservisini; GitHub Actions iş akışı (workflow) kullanarak ot
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) ve [LAB-04-AWS-3TIER.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-04-AWS-3TIER.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) ve [LAB-04-AWS-3TIER.md](./LAB-04-AWS-3TIER.md) tamamlanmış olmalıdır.
 - **GitHub Reposu:** Öğrencinin kendi GitHub hesabı altındaki `novashop` reposu (Admin yetkili).
 - **AWS Hesabı:** ECR ve IAM rolü oluşturma yetkisine sahip AWS kullanıcısı.
 - **Çalışan EC2 Sunucusu:** Docker ve Docker Compose kurulu, public subnet'teki EC2 instance'ı.

@@ -20,7 +20,7 @@ AWS üzerindeki 3-katmanlı NovaShop altyapısını (VPC, Subnetler, Security Gr
 
 ### Ön koşullar
 
-- **Önceki Lab:** [LAB-02-AWS-BASICS.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-02-AWS-BASICS.md) tamamlanmış olmalıdır.
+- **Önceki Lab:** [LAB-02-AWS-BASICS.md](./LAB-02-AWS-BASICS.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** VPC, EC2 ve RDS oluşturma yetkisine sahip AWS kullanıcısı veya ortam değişkenleri (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` veya IAM Rolü).
 - **Yüklü Araçlar:** Terraform v1.5+ (`terraform -version`), AWS CLI v2, Git.
 

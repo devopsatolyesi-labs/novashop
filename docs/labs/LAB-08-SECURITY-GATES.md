@@ -20,7 +20,7 @@ NovaShop kod tabanında statik kod analizi (SonarQube/SAST), bağımlılık ve k
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) ve [LAB-05-GITHUB-ACTIONS.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-05-GITHUB-ACTIONS.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) ve [LAB-05-GITHUB-ACTIONS.md](./LAB-05-GITHUB-ACTIONS.md) tamamlanmış olmalıdır.
 - **Yüklü Araçlar:** Docker Engine, `trivy` CLI, Java 21 JDK, Git.
 - **Kaynak Gereksinimi:** `security-gates` profili (en az 2 vCPU, 4 GB boş RAM).
 

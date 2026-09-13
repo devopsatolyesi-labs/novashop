@@ -20,7 +20,7 @@ Kubernetes kümesi üzerinde Argo CD GitOps operatörünü kurarak; Git reposunu
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) ve [LAB-06-KUBERNETES-HELM.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-06-KUBERNETES-HELM.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) ve [LAB-06-KUBERNETES-HELM.md](./LAB-06-KUBERNETES-HELM.md) tamamlanmış olmalıdır.
 - **Çalışan Kubernetes Kümesi:** Kind veya bulut üzerinde Kubernetes kümesi (`kubectl get nodes` erişilebilir olmalıdır).
 - **Yüklü Araçlar:** `kubectl`, `argocd` CLI veya `curl`, Git.
 - **Kaynak Gereksinimi:** `gitops-argo` profili (en az 2 vCPU, 6.5 GB boş RAM).

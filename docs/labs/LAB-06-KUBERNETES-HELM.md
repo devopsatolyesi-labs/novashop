@@ -20,7 +20,7 @@
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) ve [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) ve [LAB-03-DOCKER-COMPOSE.md](./LAB-03-DOCKER-COMPOSE.md) tamamlanmış olmalıdır.
 - **İşletim Sistemi:** Linux (Ubuntu 22.04 LTS) veya macOS geliştirme ortamı.
 - **Yüklü Araçlar:** Docker Engine v24+, `kubectl` v1.28+, `kind` v0.20+, `helm` v3.12+.
 - **Kaynak Gereksinimi:** En az 2 vCPU ve 6 GB boş RAM (`k8s-core` profili).

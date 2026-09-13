@@ -20,7 +20,7 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'teki EC2 üzerinde Docker
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-02-AWS-BASICS.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-02-AWS-BASICS.md) ve [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-02-AWS-BASICS.md](./LAB-02-AWS-BASICS.md) ve [LAB-03-DOCKER-COMPOSE.md](./LAB-03-DOCKER-COMPOSE.md) tamamlanmış olmalıdır.
 - **Aktif AWS Kaynakları:**
   - Çalışır durumda 1 adet VPC (10.0.0.0/16) ve Internet Gateway.
   - Public Subnet içinde 1 adet EC2 Ubuntu 22.04 LTS sunucusu (`novashop-web-sg` grubunda).

@@ -22,7 +22,7 @@ NovaShop mikroservislerini sunucusuz (Serverless) konteyner altyapısı olan **A
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md), [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) ve [LAB-12-TERRAFORM-IAC.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-12-TERRAFORM-IAC.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md), [LAB-03-DOCKER-COMPOSE.md](./LAB-03-DOCKER-COMPOSE.md) ve [LAB-12-TERRAFORM-IAC.md](./LAB-12-TERRAFORM-IAC.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** ECS, ALB, CloudWatch ve ECR izinlerine sahip AWS IAM kimliği.
 - **Yüklü Araçlar:** AWS CLI v2, Terraform v1.5+, `curl`, Git.
 

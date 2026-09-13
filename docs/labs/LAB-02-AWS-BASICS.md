@@ -21,7 +21,7 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'te bağımsız statik tes
 
 ### Ön koşullar
 
-- **Önceki Lab:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
+- **Önceki Lab:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** Geçerli bir AWS hesabı ve IAM kullanıcısı/rolü (VPC, EC2, RDS oluşturma yetkileri).
 - **Maliyet Farkındalığı:** `db.t3.micro` ve `t3.micro` kaynakları yeni hesaplarda AWS Free Tier kapsamında olabilir; ancak hesabınızın Free Tier süresi dolmuşsa veya bölgeye bağlı olarak düşük miktarda ücret yansıyabilir. Lab sonunda temizlik adımlarını uygulamak zorunludur.
 - **Yerel Araçlar:** AWS CLI v2 (`aws --version`), OpenSSH istemcisi (`ssh`).

@@ -20,7 +20,7 @@ NovaShop mikroservis ekosisteminde; OpenTelemetry (OTel) Collector ile dağıtı
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) veya [LAB-06-KUBERNETES-HELM.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-06-KUBERNETES-HELM.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-03-DOCKER-COMPOSE.md](./LAB-03-DOCKER-COMPOSE.md) veya [LAB-06-KUBERNETES-HELM.md](./LAB-06-KUBERNETES-HELM.md) tamamlanmış olmalıdır.
 - **Kaynak Gereksinimi:** `observability` profili (en az 2 vCPU, 4 GB boş RAM).
 - **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`.
 

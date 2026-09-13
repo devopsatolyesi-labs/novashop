@@ -20,7 +20,7 @@ NovaShop mikroservis ekosisteminde; Fluent Bit günlük (log) toplayıcısı, El
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-03-DOCKER-COMPOSE.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-03-DOCKER-COMPOSE.md) ve [LAB-10-OBSERVABILITY.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-10-OBSERVABILITY.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-03-DOCKER-COMPOSE.md](./LAB-03-DOCKER-COMPOSE.md) ve [LAB-10-OBSERVABILITY.md](./LAB-10-OBSERVABILITY.md) tamamlanmış olmalıdır.
 - **Kaynak Gereksinimi:** `logging-elk` profili (en az 2 vCPU, 6 GB boş RAM).
 - **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`.
 

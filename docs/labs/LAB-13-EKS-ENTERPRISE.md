@@ -21,7 +21,7 @@ AWS üzerinde yönetilen kurumsal Kubernetes servisi olan Amazon EKS (Elastic Ku
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-06-KUBERNETES-HELM.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-06-KUBERNETES-HELM.md), [LAB-09-ARGOCD-GITOPS.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-09-ARGOCD-GITOPS.md) ve [LAB-12-TERRAFORM-IAC.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-12-TERRAFORM-IAC.md) tamamlanmış olmalıdır.
+- **Önceki Lablar:** [LAB-06-KUBERNETES-HELM.md](./LAB-06-KUBERNETES-HELM.md), [LAB-09-ARGOCD-GITOPS.md](./LAB-09-ARGOCD-GITOPS.md) ve [LAB-12-TERRAFORM-IAC.md](./LAB-12-TERRAFORM-IAC.md) tamamlanmış olmalıdır.
 - **Yüklü Araçlar:** `aws` CLI v2, `kubectl` v1.28+, `eksctl` v0.160+, `helm` v3.12+.
 - **AWS İzinleri:** EKS, CloudFormation, EC2, IAM, VPC oluşturma yetkileri.
 

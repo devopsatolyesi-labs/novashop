@@ -20,7 +20,7 @@ NovaShop mikroservis mimarisini; multi-stage Dockerfile ile optimize ve güvenli
 
 ### Ön koşullar
 
-- **Önceki Lab:** [LAB-01-GIT-GITHUB.md](file:///Users/hakan/novashop-workspace/novashop/docs/labs/LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
+- **Önceki Lab:** [LAB-01-GIT-GITHUB.md](./LAB-01-GIT-GITHUB.md) tamamlanmış olmalıdır.
 - **İşletim Sistemi:** Ubuntu 22.04 LTS veya macOS/Linux geliştirme ortamı.
 - **Yüklü Araçlar:** Docker Engine v24+ (`docker --version`), Docker Compose v2.20+ (`docker compose version`).
 - **Kaynak Gereksinimi:** En az 2 vCPU ve 4 GB boş bellek (PROFILES.md kaynak koruma kuralı).

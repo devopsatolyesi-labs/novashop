@@ -17,6 +17,41 @@
         "x": 0,
         "y": 0
       },
+      "id": 98,
+      "title": "NovaShop Alarmları ve Sistem Sağlık Durumu (Alerting)",
+      "type": "row"
+    },
+    {
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 99,
+      "options": {
+        "maxItems": 10,
+        "sortOrder": 1,
+        "unifiedAlertStates": [
+          "Normal",
+          "Pending",
+          "Alerting",
+          "NoData",
+          "Error"
+        ],
+        "viewMode": "list"
+      },
+      "title": "🚨 Sistem ve Servis Alarmları Durumu (Alert List)",
+      "type": "alertlist"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 7
+      },
       "id": 100,
       "title": "NovaShop Business Metrics (İş Metrikleri)",
       "type": "row"
@@ -35,7 +70,10 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "blue", "value": null }
+              {
+                "color": "blue",
+                "value": null
+              }
             ]
           }
         }
@@ -44,7 +82,7 @@
         "h": 4,
         "w": 8,
         "x": 0,
-        "y": 1
+        "y": 8
       },
       "id": 1,
       "options": {
@@ -53,7 +91,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -62,7 +102,10 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "sum(checkout_attempt_total) or vector(0)",
           "legendFormat": "Attempts",
           "refId": "A"
@@ -83,7 +126,10 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null }
+              {
+                "color": "green",
+                "value": null
+              }
             ]
           }
         }
@@ -92,7 +138,7 @@
         "h": 4,
         "w": 8,
         "x": 8,
-        "y": 1
+        "y": 8
       },
       "id": 2,
       "options": {
@@ -101,7 +147,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -110,7 +158,10 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "sum(checkout_success_total) or vector(0)",
           "legendFormat": "Success",
           "refId": "A"
@@ -131,8 +182,14 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 1 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
             ]
           }
         }
@@ -141,7 +198,7 @@
         "h": 4,
         "w": 8,
         "x": 16,
-        "y": 1
+        "y": 8
       },
       "id": 3,
       "options": {
@@ -150,7 +207,9 @@
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": {
-          "calcs": ["lastNotNull"],
+          "calcs": [
+            "lastNotNull"
+          ],
           "fields": "",
           "values": false
         }
@@ -159,7 +218,10 @@
       "type": "stat",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "sum(payment_failure_total) or vector(0)",
           "legendFormat": "Failures",
           "refId": "A"
@@ -172,7 +234,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 12
       },
       "id": 101,
       "title": "RED Metrikleri (Rate, Errors, Duration)",
@@ -196,14 +258,17 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 6
+        "y": 13
       },
       "id": 4,
       "title": "Servis İstek Hacmi (Request Rate / RPS)",
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "sum by (job) (rate(http_server_requests_seconds_count[1m]))",
           "legendFormat": "{{job}} RPS",
           "refId": "A"
@@ -225,8 +290,14 @@
           "thresholds": {
             "mode": "absolute",
             "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 2 }
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 2
+              }
             ]
           }
         }
@@ -235,14 +306,17 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 6
+        "y": 13
       },
       "id": 5,
       "title": "HTTP 5xx Hata Yüzdesi (Error Ratio % - SLO Hedefi < %2)",
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "sum by (job) (rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) / sum by (job) (rate(http_server_requests_seconds_count[1m])) * 100",
           "legendFormat": "{{job}} 5xx %",
           "refId": "A"
@@ -267,14 +341,17 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 21
       },
       "id": 6,
       "title": "Servis Yanıt Gecikmesi (p95 Latency)",
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket[1m])))",
           "legendFormat": "{{job}} p95",
           "refId": "A"
@@ -299,14 +376,17 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 21
       },
       "id": 7,
       "title": "Servis Yanıt Gecikmesi (p99 Latency)",
       "type": "timeseries",
       "targets": [
         {
-          "datasource": { "type": "prometheus", "uid": "Prometheus" },
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
           "expr": "histogram_quantile(0.99, sum by (job, le) (rate(http_server_requests_seconds_bucket[1m])))",
           "legendFormat": "{{job}} p99",
           "refId": "A"
@@ -316,7 +396,11 @@
   ],
   "refresh": "5s",
   "schemaVersion": 39,
-  "tags": ["novashop", "red", "business"],
+  "tags": [
+    "novashop",
+    "red",
+    "business"
+  ],
   "time": {
     "from": "now-15m",
     "to": "now"
@@ -325,5 +409,5 @@
   "timezone": "browser",
   "title": "NovaShop — Microservices RED & Business Overview",
   "uid": "novashop-services-overview",
-  "version": 1
+  "version": 2
 }

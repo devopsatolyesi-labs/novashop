@@ -159,7 +159,7 @@ Harbor HTTP üzerinde çalıştığı için Docker daemon varsayılan olarak gü
 
 ### Model B: Kurumsal DNS ve SSL Olduğunda (Nginx Edge Modu)
 
-Eğer [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) adımı ile `student100` için SSL Edge ayağa kaldırıldıysa:
+Eğer [05-nginx-ssl-setup.md](05-nginx-ssl-setup.md) adımı ile `student100` için SSL Edge ayağa kaldırıldıysa:
 
 1. Docker CLI standart port 443 (HTTPS) üzerinden Harbor'a bağlanır:
    ```bash

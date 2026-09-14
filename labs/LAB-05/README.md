@@ -56,9 +56,9 @@ sequenceDiagram
 
 ---
 
-### Kullanılan placeholder'lar
+### ⚙️ Ortam Değişkenleri ve Parametreler
 
-| Placeholder | Anlamı | Örnek Biçim |
+| Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<AWS_ACCOUNT_ID>` | 12 haneli AWS hesap numarası | `123456789012` |
 | `<AWS_REGION>` | Çalışılan AWS bölgesi | `eu-central-1` |

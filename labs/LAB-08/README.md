@@ -50,7 +50,9 @@ graph TD
 
 ---
 
-| Placeholder | Anlamı | Örnek Biçim |
+### ⚙️ Ortam Değişkenleri ve Parametreler
+
+| Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<SONAR_HOST_URL>` | SonarQube sunucu adresi | Model A: `http://127.0.0.1:19000` \| Model B: `https://studentXX-sonarqube.devopsatolyesi.com` |
 | `<SONAR_TOKEN>` | SonarQube kullanıcı / analiz tokeni | `squ_...` (Arayüzden veya API ile üretilir) |

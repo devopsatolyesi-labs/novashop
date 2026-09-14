@@ -4,6 +4,9 @@ NovaShop e-ticaret platformu üzerinde adım adım uygulanan, kurumsal standartl
 
 Tüm laboratuvarlar **Ubuntu sunucusu** üzerinde koşar ve iki erişim modelini (`Doğrudan IP:Port` ve `Kurumsal DNS+SSL`) destekler.
 
+> 👨‍🏫 **Eğitmenler İçin Ders Anlatım ve Mülakat Rehberi:**  
+> Ders anlatımı sırasında öğrencilere aktarılacak motivasyonel hikayeler, mimari kararlar, soru-cevap köşeleri, prodüksiyon best practice'leri ve sektörel mülakat soruları için **[Eğitmen Ders Anlatım Kitapçığı](../docs/instructor/INSTRUCTOR_TEACHING_GUIDE.md)** dökümanını inceleyin.
+
 ---
 
 ## 🧭 Laboratuvar Yol Haritası (LAB-00 - LAB-11)

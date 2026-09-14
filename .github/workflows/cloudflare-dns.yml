@@ -14,7 +14,7 @@ on:
       services:
         description: 'Eklenecek Servisler (virgülle ayrılmış)'
         required: true
-        default: 'novashop,gitlab,harbor,sonarqube,jenkins'
+        default: 'novashop,gitlab,harbor,sonarqube,jenkins,prometheus,grafana,jaeger,kibana,elastic,argocd,kind'
       action:
         description: 'İşlem Tipi'
         required: true

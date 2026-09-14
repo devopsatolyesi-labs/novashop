@@ -64,9 +64,17 @@ graph TD
 
 | Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
 | :--- | :--- | :--- | :---: | :---: |
-| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com` | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Single-Node Dev Modu) |
-| **Elasticsearch API** | `https://studentXX-elastic.devopsatolyesi.com` | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
+| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com`<br/>*(veya Cloudflare Proxy: `https://studentXX-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Single-Node Dev Modu) |
+| **Elasticsearch API** | `https://studentXX-elastic.devopsatolyesi.com`<br/>*(veya Cloudflare Proxy: `https://studentXX-k8s-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
 | **Fluent Bit Forward** | - | `http://<UBUNTU_IP>:24224` | - | Fluentd Forwarding Portu |
+
+> **💡 Kod ile Adım Adım Yerel DNS Çözümleme:**
+> `studentXX-kibana` ve diğer alt alan adlarının bilgisayarınızda doğrudan ve kesintisiz çözümlenmesi için depodaki otomatik yerel DNS betiğini çalıştırabilirsiniz:
+> ```bash
+> sudo bash scripts/setup-local-dns.sh <SUNUCU_IP> <STUDENT_ID>
+> # Örnek: sudo bash scripts/setup-local-dns.sh 34.77.187.127 student100
+> ```
+> Bu betik `/etc/hosts` dosyasını otomatik olarak yapılandırır ve tarayıcınızdan `https://student100-kibana.devopsatolyesi.com` adresinin anında açılmasını sağlar.
 
 ---
 

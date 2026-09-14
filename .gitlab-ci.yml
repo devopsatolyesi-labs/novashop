@@ -45,7 +45,7 @@ deploy-to-kind:
     - kubectl get nodes
     - kubectl create namespace novashop --dry-run=client -o yaml | kubectl apply -f -
     - kind load docker-image ${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME}:latest --name ${KIND_CLUSTER_NAME} || true
-    - helm upgrade --install novashop charts/novashop -n novashop --set ui.image.repository=${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME} --set ui.image.tag=latest --set ui.image.pullPolicy=IfNotPresent
+    - helm upgrade --install novashop charts/novashop -n novashop --set ui.image.repository=${HARBOR_HOST}/${HARBOR_PROJECT}/${IMAGE_NAME} --set ui.image.tag=latest --set ui.image.pullPolicy=IfNotPresent --set ui.service.type=ClusterIP
     - kubectl rollout status deployment/novashop-ui -n novashop --timeout=120s
     - kubectl get pods,svc -n novashop
     - echo "NovaShop basariyla Kind Kubernetes kumesine dagitildi"

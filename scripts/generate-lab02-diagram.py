@@ -14,13 +14,13 @@ html_content = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <style>
-  * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }}
+  * {{ box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }}
   body {{
-    width: 1540px;
-    height: 980px;
+    width: 1200px;
+    height: 720px;
     background-color: #ffffff;
     color: #16191f;
-    padding: 24px 32px;
+    padding: 24px 36px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -32,111 +32,105 @@ html_content = f"""<!DOCTYPE html>
     justify-content: space-between;
     align-items: center;
     border-bottom: 2px solid #eaeded;
-    padding-bottom: 14px;
+    padding-bottom: 12px;
   }}
   .header-left {{
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
   }}
-  .aws-logo-badge {{
+  .aws-badge {{
     background: #232f3e;
     color: #ff9900;
-    font-weight: 900;
-    font-size: 17px;
-    padding: 7px 16px;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 6px 14px;
     border-radius: 6px;
-    letter-spacing: 1px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    letter-spacing: 0.5px;
   }}
-  .aws-logo-badge span {{ color: #ffffff; font-weight: 500; }}
-  .title-block h1 {{
-    font-size: 23px;
+  .aws-badge span {{ color: #ffffff; font-weight: normal; }}
+  .title-group h1 {{
+    font-size: 21px;
     font-weight: 800;
     color: #16191f;
-    letter-spacing: -0.3px;
   }}
-  .title-block p {{
-    font-size: 13.5px;
+  .title-group p {{
+    font-size: 13px;
     color: #545b64;
-    margin-top: 3px;
+    margin-top: 2px;
   }}
-  .header-right {{
+  .header-badges {{
     display: flex;
-    gap: 10px;
-    align-items: center;
+    gap: 8px;
   }}
   .badge {{
-    padding: 7px 14px;
+    padding: 6px 12px;
     border-radius: 6px;
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
+  }}
+  .badge-az {{
+    background: #e8f5e9;
+    color: #1b5e20;
+    border: 1px solid #a5d6a7;
   }}
   .badge-region {{
     background: #f2f3f3;
-    border: 1px solid #d5dbdb;
     color: #16191f;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }}
-  .badge-single-az {{
-    background: #e8f5e9;
-    border: 1px solid #a5d6a7;
-    color: #1b5e20;
+    border: 1px solid #d5dbdb;
   }}
 
-  /* Internet Bar */
-  .internet-bar {{
+  /* Main Diagram Layout */
+  .diagram-body {{
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    margin: 4px 0 2px 0;
-    position: relative;
+    gap: 12px;
+    flex-grow: 1;
+    margin: 12px 0;
   }}
-  .internet-cloud-box {{
+
+  /* Internet / Client Bar */
+  .client-bar {{
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: #ffffff;
     border: 2px solid #0073bb;
-    padding: 8px 30px;
+    padding: 8px 32px;
     border-radius: 30px;
-    box-shadow: 0 3px 8px rgba(0, 115, 187, 0.12);
-    z-index: 2;
+    box-shadow: 0 2px 6px rgba(0, 115, 187, 0.12);
   }}
-  .cloud-icon {{ font-size: 26px; }}
-  .cloud-text {{ font-size: 13.5px; font-weight: 800; color: #16191f; }}
-  .cloud-sub {{ font-size: 11px; color: #545b64; }}
+  .client-bar .icon {{ font-size: 24px; }}
+  .client-bar .text {{ font-size: 13.5px; font-weight: 800; color: #16191f; }}
+  .client-bar .sub {{ font-size: 11px; color: #545b64; }}
 
-  /* SVG Ingress Connector */
-  .ingress-svg {{
-    width: 100%;
-    height: 28px;
-    display: block;
-    margin: -6px 0 -4px 0;
+  /* Ingress Flow Arrow */
+  .ingress-arrow {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0073bb;
+    gap: 2px;
   }}
-
-  /* Main Comparison Grid: Console vs Terraform */
-  .vpcs-container {{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    flex-grow: 1;
-    margin: 4px 0 10px 0;
+  .arrow-line {{
+    width: 2px;
+    height: 16px;
+    background: #0073bb;
   }}
 
   /* VPC Box */
-  .vpc-card {{
+  .vpc-box {{
+    width: 100%;
     border: 2px solid #248814;
     border-radius: 12px;
     background: #ffffff;
-    padding: 16px;
+    padding: 16px 24px;
     display: flex;
     flex-direction: column;
+    gap: 14px;
     position: relative;
     box-shadow: 0 4px 12px rgba(36, 136, 20, 0.08);
   }}
@@ -144,38 +138,38 @@ html_content = f"""<!DOCTYPE html>
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
     padding-bottom: 8px;
     border-bottom: 1px solid #e1e4e8;
   }}
-  .vpc-title-group {{
+  .vpc-label {{
     display: flex;
     align-items: center;
     gap: 8px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #16191f;
   }}
-  .vpc-icon-tag {{
+  .vpc-tag {{
     background: #248814;
     color: white;
     font-size: 11px;
     font-weight: 800;
     padding: 3px 8px;
     border-radius: 4px;
-    letter-spacing: 0.5px;
   }}
-  .vpc-name {{
-    font-size: 15.5px;
-    font-weight: 800;
-    color: #16191f;
-  }}
-  .vpc-cidr {{
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  .vpc-tags-right {{
+    display: flex;
+    gap: 8px;
     font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 600;
+  }}
+  .tag-pill {{
     background: #f1f8f1;
     border: 1px solid #c8e6c9;
     color: #1b5e20;
-    padding: 3px 9px;
+    padding: 2px 8px;
     border-radius: 4px;
-    font-weight: 700;
   }}
 
   /* IGW Bar */
@@ -186,204 +180,179 @@ html_content = f"""<!DOCTYPE html>
     background: #fff8e1;
     border: 1.5px solid #ffe082;
     border-radius: 8px;
-    padding: 7px 14px;
-    margin-bottom: 12px;
+    padding: 8px 16px;
   }}
-  .igw-left {{
+  .igw-title {{
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12.5px;
+    font-size: 13px;
     font-weight: 800;
     color: #b78103;
   }}
-  .igw-flow {{
-    font-size: 11.5px;
+  .igw-info {{
+    font-size: 12px;
+    font-weight: 600;
     color: #795548;
-    font-weight: 700;
   }}
 
-  /* AZ Grid inside VPC */
-  .az-layout {{
-    display: grid;
-    grid-template-columns: 2.15fr 1fr;
-    gap: 12px;
-    flex-grow: 1;
-  }}
-
-  /* AZ Box (Dashed AWS boundary) */
+  /* Availability Zone (Tek AZ) */
   .az-box {{
     border: 2px dashed #0073bb;
     border-radius: 10px;
     background: #fafbfc;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    position: relative;
-  }}
-  .az-box.az-primary {{
-    border-color: #0073bb;
-  }}
-  .az-box.az-secondary {{
-    border-color: #90a4ae;
-    background: #fbfcfc;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 20px;
   }}
   .az-header {{
+    grid-column: 1 / -1;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 800;
     color: #0073bb;
-    padding-bottom: 5px;
+    padding-bottom: 8px;
     border-bottom: 1px dashed #d0d7de;
+    margin-bottom: 4px;
   }}
-  .az-header.secondary-header {{
-    color: #546e7a;
-  }}
-  .az-tag {{
-    font-size: 10.5px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 4px;
+  .az-badge-active {{
     background: #e1f5fe;
     color: #0277bd;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 800;
   }}
 
   /* Subnet Cards */
   .subnet-card {{
     border-radius: 8px;
-    padding: 10px 12px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
+    background: #ffffff;
   }}
   .public-subnet {{
-    border: 1.5px solid #2e7d32;
-    background: #ffffff;
+    border: 2px solid #2e7d32;
   }}
   .private-subnet {{
-    border: 1.5px solid #1565c0;
-    background: #ffffff;
+    border: 2px solid #1565c0;
   }}
-  .secondary-subnet {{
-    border: 1.5px dashed #78909c;
-    background: #ffffff;
-    height: calc(100% - 24px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }}
-
-  .subnet-top-label {{
+  .subnet-head {{
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11.5px;
+    font-size: 12px;
     font-weight: 800;
   }}
-  .public-subnet .subnet-top-label {{ color: #2e7d32; }}
-  .private-subnet .subnet-top-label {{ color: #1565c0; }}
-  .secondary-subnet .subnet-top-label {{ color: #546e7a; }}
-
-  .subnet-cidr-tag {{
+  .public-subnet .subnet-head {{ color: #2e7d32; }}
+  .private-subnet .subnet-head {{ color: #1565c0; }}
+  .subnet-cidr {{
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 11px;
-    font-weight: 700;
     background: #f0f0f0;
     padding: 2px 6px;
     border-radius: 3px;
     color: #333;
   }}
 
-  /* Resource Instances inside Subnet */
-  .instance-row {{
+  /* Resource Row */
+  .resource-row {{
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     background: #f8f9fa;
     border: 1px solid #e9ecef;
-    border-radius: 6px;
-    padding: 8px 12px;
+    border-radius: 8px;
+    padding: 10px 14px;
   }}
-  .aws-service-icon {{
-    width: 48px;
-    height: 48px;
-    border-radius: 6px;
+  .res-icon {{
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
     object-fit: cover;
-    flex-shrink: 0;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   }}
-
-  .instance-meta {{
+  .res-meta {{
     flex-grow: 1;
   }}
-  .instance-title {{
-    font-size: 13.5px;
+  .res-title {{
+    font-size: 14.5px;
     font-weight: 800;
     color: #16191f;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
   }}
-  .instance-sub {{
-    font-size: 11.5px;
+  .res-sub {{
+    font-size: 12px;
     color: #545b64;
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     margin-top: 2px;
   }}
-  .instance-badge-row {{
+  .res-badges {{
     display: flex;
     gap: 6px;
-    margin-top: 4px;
-    font-size: 10.5px;
+    margin-top: 5px;
+    font-size: 11px;
     font-weight: 700;
   }}
-  .badge-port {{
+  .pill-port {{
     background: #e3f2fd;
     color: #1565c0;
-    padding: 2px 7px;
-    border-radius: 3px;
+    padding: 2px 8px;
+    border-radius: 4px;
   }}
-  .badge-ssh {{
+  .pill-ssh {{
     background: #f5f5f5;
     color: #424242;
-    padding: 2px 7px;
-    border-radius: 3px;
+    padding: 2px 8px;
+    border-radius: 4px;
   }}
-  .badge-private-only {{
+  .pill-private {{
     background: #ffebee;
     color: #c62828;
-    padding: 2px 7px;
-    border-radius: 3px;
+    padding: 2px 8px;
+    border-radius: 4px;
   }}
 
-  /* Intra-AZ Connection Arrow */
-  .intra-az-flow {{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 8px;
-    background: #e8f0fe;
-    border: 1.5px dashed #1a73e8;
-    border-radius: 6px;
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #1a73e8;
-  }}
-
-  /* SG Info Pills */
-  .sg-info-row {{
+  /* SG / Route Notes */
+  .info-bar {{
     display: flex;
     justify-content: space-between;
     font-size: 11px;
     color: #555;
     background: #ffffff;
-    padding: 4px 8px;
-    border-radius: 4px;
     border: 1px solid #e0e0e0;
+    padding: 5px 10px;
+    border-radius: 4px;
+  }}
+
+  /* Intra-AZ Connection Flow */
+  .intra-flow {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    padding: 0 4px;
+  }}
+  .flow-pill {{
+    background: #e8f0fe;
+    border: 1.5px dashed #1a73e8;
+    color: #1a73e8;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 6px;
+    white-space: nowrap;
+  }}
+  .flow-arrow-h {{
+    font-size: 20px;
+    color: #1a73e8;
+    font-weight: bold;
   }}
 
   /* Footer */
@@ -407,302 +376,136 @@ html_content = f"""<!DOCTYPE html>
   <!-- Top Header -->
   <div class="header">
     <div class="header-left">
-      <div class="aws-logo-badge">
-        AWS <span>Cloud</span>
-      </div>
-      <div class="title-block">
-        <h1>NovaShop 2-Katmanlı Altyapı: Tek AZ (Single-AZ) Mimarisi</h1>
-        <p>LAB-02 — Web (EC2) ve Veritabanı (RDS) Katmanlarının Aynı Availability Zone (us-east-1a) İçinde Konuşlandırılması</p>
+      <div class="aws-badge">AWS <span>Cloud</span></div>
+      <div class="title-group">
+        <h1>NovaShop 2-Katmanlı Temel Bulut Mimarisi (Web &amp; Database)</h1>
+        <p>LAB-02 — Tek Availability Zone (Single-AZ) İçinde Public Web ve Private Database Katmanları</p>
       </div>
     </div>
-    <div class="header-right">
-      <div class="badge badge-single-az">✓ Single-AZ (Tek AZ'de 2 Katman)</div>
-      <div class="badge badge-region">📍 us-east-1 (N. Virginia)</div>
+    <div class="header-badges">
+      <span class="badge badge-az">✓ Tek AZ (Single-AZ)</span>
+      <span class="badge badge-region">📍 Bölge: us-east-1 (N. Virginia)</span>
     </div>
   </div>
 
-  <!-- Internet & Clients -->
-  <div class="internet-bar">
-    <div class="internet-cloud-box">
-      <span class="cloud-icon">🌐</span>
+  <!-- Main Architecture Area -->
+  <div class="diagram-body">
+
+    <!-- Internet & Client -->
+    <div class="client-bar">
+      <span class="icon">🌐</span>
       <div>
-        <div class="cloud-text">İstemci / Web Tarayıcısı (Internet Users)</div>
-        <div class="cloud-sub">HTTP Port 80 (Web İstekleri) &bull; SSH Port 22 (Yönetim Erişimi)</div>
+        <span class="text">İstemci / Web Tarayıcısı (Internet Users)</span>
+        <span class="sub">&bull; HTTP :80 (Web Ziyaretçileri) &bull; SSH :22 (Yönetici)</span>
       </div>
     </div>
-  </div>
 
-  <!-- SVG Ingress Connector Lines -->
-  <svg class="ingress-svg" viewBox="0 0 1476 28">
-    <!-- Center drop -->
-    <line x1="738" y1="0" x2="738" y2="12" stroke="#0073bb" stroke-width="2" />
-    <!-- Horizontal spread -->
-    <line x1="369" y1="12" x2="1107" y2="12" stroke="#0073bb" stroke-width="2" />
-    <!-- Left drop to Console IGW -->
-    <line x1="369" y1="12" x2="369" y2="28" stroke="#0073bb" stroke-width="2" marker-end="url(#arrow)" />
-    <!-- Right drop to TF IGW -->
-    <line x1="1107" y1="12" x2="1107" y2="28" stroke="#0073bb" stroke-width="2" marker-end="url(#arrow)" />
-    <defs>
-      <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M 0 0 L 10 5 L 0 10 z" fill="#0073bb"/>
-      </marker>
-    </defs>
-  </svg>
+    <!-- Arrow down to VPC -->
+    <div class="ingress-arrow">
+      <div class="arrow-line"></div>
+      <div>▼ HTTP :80 Girişi</div>
+    </div>
 
-  <!-- VPCs Container (Console vs Terraform) -->
-  <div class="vpcs-container">
-
-    <!-- LEFT: AWS CONSOLE VPC -->
-    <div class="vpc-card">
+    <!-- VPC Box -->
+    <div class="vpc-box">
       <div class="vpc-header">
-        <div class="vpc-title-group">
-          <span class="vpc-icon-tag">VPC</span>
-          <span class="vpc-name">novashop-console-vpc</span>
+        <div class="vpc-label">
+          <span class="vpc-tag">VPC</span>
+          <span>Sanal Özel Bulut (Virtual Private Cloud)</span>
         </div>
-        <span class="vpc-cidr">10.0.0.0/16 (Bölüm 1: Web UI)</span>
+        <div class="vpc-tags-right">
+          <span class="tag-pill">Console: novashop-console-vpc (10.0.0.0/16)</span>
+          <span class="tag-pill">Terraform: novashop-tf-vpc (10.1.0.0/16)</span>
+        </div>
       </div>
 
       <!-- IGW -->
       <div class="igw-bar">
-        <div class="igw-left">
+        <div class="igw-title">
           <span>🚪</span>
-          <span>novashop-console-igw (Internet Gateway)</span>
+          <span>Internet Gateway (IGW) &mdash; novashop-*-igw</span>
         </div>
-        <div class="igw-flow">0.0.0.0/0 &rarr; HTTP (:80) Girişi</div>
+        <div class="igw-info">0.0.0.0/0 Dış Ağ Çıkışı ve Giriş Kapısı</div>
       </div>
 
-      <!-- AZ Layout -->
-      <div class="az-layout">
-        
-        <!-- Primary AZ (us-east-1a): CONTAINS BOTH WEB AND RDS -->
-        <div class="az-box az-primary">
-          <div class="az-header">
-            <span>Availability Zone: us-east-1a</span>
-            <span class="az-tag">TEK AZ (Aktif Altyapı)</span>
-          </div>
-
-          <!-- Katman 1: Public Subnet (Web) -->
-          <div class="subnet-card public-subnet">
-            <div class="subnet-top-label">
-              <span>🔒 Katman 1: Public Subnet (web-subnet)</span>
-              <span class="subnet-cidr-tag">10.0.1.0/24</span>
-            </div>
-            <div class="instance-row">
-              <img src="{ec2_b64}" class="aws-service-icon" alt="EC2">
-              <div class="instance-meta">
-                <div class="instance-title">
-                  <span>1x EC2 Web Sunucusu</span>
-                  <span style="font-size:11px; font-weight:800; color:#2e7d32;">Public IP</span>
-                </div>
-                <div class="instance-sub">novashop-console-web &bull; Ubuntu 22.04</div>
-                <div class="instance-badge-row">
-                  <span class="badge-port">HTTP :80 (Nginx)</span>
-                  <span class="badge-ssh">SSH :22</span>
-                  <span style="color:#555; font-size:10px;">SG: web-sg</span>
-                </div>
-              </div>
-            </div>
-            <div class="sg-info-row">
-              <span>Route Table: 0.0.0.0/0 &rarr; IGW</span>
-              <span style="color:#2e7d32; font-weight:700;">Dış İnternete Açık</span>
-            </div>
-          </div>
-
-          <!-- Arrow between Web and RDS inside SAME AZ -->
-          <div class="intra-az-flow">
-            <span>⬇️</span>
-            <span>Aynı AZ İçi MySQL Port 3306 (Özel Ağ İletişimi - Yalnızca web-sg)</span>
-            <span>⬇️</span>
-          </div>
-
-          <!-- Katman 2: Private Subnet (RDS Database) -->
-          <div class="subnet-card private-subnet">
-            <div class="subnet-top-label">
-              <span>🗄️ Katman 2: Private Subnet 1 (db-subnet-1a)</span>
-              <span class="subnet-cidr-tag">10.0.10.0/24</span>
-            </div>
-            <div class="instance-row">
-              <img src="{rds_b64}" class="aws-service-icon" alt="RDS">
-              <div class="instance-meta">
-                <div class="instance-title">
-                  <span>1x RDS MySQL Instance (Single-AZ)</span>
-                </div>
-                <div class="instance-sub">novashop-console-db &bull; MySQL 8.0 &bull; db.t3.small</div>
-                <div class="instance-badge-row">
-                  <span class="badge-port">MySQL :3306</span>
-                  <span class="badge-private-only">Dışa Kapalı (Private)</span>
-                  <span style="color:#555; font-size:10px;">SG: rds-sg</span>
-                </div>
-              </div>
-            </div>
-            <div class="sg-info-row">
-              <span>Route Table: Sadece Yerel Ağ (Local Only)</span>
-              <span style="color:#c62828; font-weight:800;">Dış İnternet Doğrudan Erişim: YASAK</span>
-            </div>
-          </div>
-
+      <!-- Single AZ Box (us-east-1a) -->
+      <div class="az-box">
+        <div class="az-header">
+          <span>Availability Zone: us-east-1a</span>
+          <span class="az-badge-active">TEK AZ (Aktif Altyapı)</span>
         </div>
 
-        <!-- Secondary AZ (us-east-1b): RDS DB Subnet Group Requirement -->
-        <div class="az-box az-secondary">
-          <div class="az-header secondary-header">
-            <span>AZ: us-east-1b</span>
-            <span style="font-size:10.5px; color:#546e7a;">Standby AZ</span>
+        <!-- Katman 1: Public Subnet (Web) -->
+        <div class="subnet-card public-subnet">
+          <div class="subnet-head">
+            <span>🔒 Katman 1: Public Subnet (Web Tier)</span>
+            <span class="subnet-cidr">10.0.1.0/24 (Console) | 10.1.1.0/24 (TF)</span>
           </div>
 
-          <div class="subnet-card secondary-subnet">
-            <div class="subnet-top-label">
-              <span>Private Subnet 2</span>
-              <span class="subnet-cidr-tag">10.0.11.0/24</span>
-            </div>
-            <div style="text-align:center; padding:20px 8px;">
-              <div style="font-size:32px; margin-bottom:8px;">💤</div>
-              <div style="font-size:12.5px; font-weight:800; color:#37474f;">DB Subnet Group</div>
-              <div style="font-size:11px; color:#78909c; margin-top:6px; line-height:1.4;">
-                AWS RDS şartı gereği 2. AZ tanımlıdır.<br/>
-                <strong>Single-AZ</strong> olduğu için aktif veritabanı <code>us-east-1a</code>'dadır.
+          <div class="resource-row">
+            <img src="{ec2_b64}" class="res-icon" alt="EC2">
+            <div class="res-meta">
+              <div class="res-title">1x EC2 Web Sunucusu (Nginx)</div>
+              <div class="res-sub">Ubuntu 22.04 LTS &bull; t3.medium</div>
+              <div class="res-badges">
+                <span class="pill-port">HTTP :80 (Nginx)</span>
+                <span class="pill-ssh">SSH :22</span>
+                <span style="color:#2e7d32; font-weight:700;">Public IP</span>
               </div>
             </div>
-            <div class="sg-info-row" style="background:#f8f9fa;">
-              <span>Standby / Boş</span>
-              <span style="color:#78909c;">Trafik Yok</span>
+          </div>
+
+          <div class="info-bar">
+            <span>Security Group: <strong>web-sg</strong></span>
+            <span style="color:#2e7d32; font-weight:700;">Dış İnternete Açık (IGW Rotası)</span>
+          </div>
+        </div>
+
+        <!-- Intra-AZ Connection Flow -->
+        <div class="intra-flow">
+          <div class="flow-pill">MySQL Port 3306</div>
+          <div class="flow-arrow-h">&rarr;</div>
+          <div style="font-size:10.5px; color:#545b64; font-weight:600;">Aynı AZ İçi<br/>Özel Ağ İletişimi</div>
+        </div>
+
+        <!-- Katman 2: Private Subnet (Database) -->
+        <div class="subnet-card private-subnet">
+          <div class="subnet-head">
+            <span>🗄️ Katman 2: Private Subnet (Database Tier)</span>
+            <span class="subnet-cidr">10.0.10.0/24 (Console) | 10.1.10.0/24 (TF)</span>
+          </div>
+
+          <div class="resource-row">
+            <img src="{rds_b64}" class="res-icon" alt="RDS">
+            <div class="res-meta">
+              <div class="res-title">1x RDS MySQL 8.0 Instance</div>
+              <div class="res-sub">MySQL 8.0 &bull; db.t3.small &bull; Single-AZ</div>
+              <div class="res-badges">
+                <span class="pill-port">MySQL :3306</span>
+                <span class="pill-private">Dışa Kapalı (Private)</span>
+              </div>
             </div>
+          </div>
+
+          <div class="info-bar">
+            <span>Security Group: <strong>rds-sg</strong> (Yalnızca web-sg)</span>
+            <span style="color:#c62828; font-weight:800;">Dış İnternet Erişimi: YASAK</span>
           </div>
         </div>
 
       </div>
-    </div>
 
-    <!-- RIGHT: TERRAFORM IAC VPC -->
-    <div class="vpc-card">
-      <div class="vpc-header">
-        <div class="vpc-title-group">
-          <span class="vpc-icon-tag" style="background:#5c4ee5;">IaC</span>
-          <span class="vpc-name">novashop-tf-vpc</span>
-        </div>
-        <span class="vpc-cidr" style="background:#ede7f6; border-color:#d1c4e9; color:#4527a0;">10.1.0.0/16 (Bölüm 2: Terraform)</span>
-      </div>
-
-      <!-- IGW -->
-      <div class="igw-bar" style="background:#f3e5f5; border-color:#e1bee7;">
-        <div class="igw-left" style="color:#6a1b9a;">
-          <span>🚪</span>
-          <span>novashop-tf-igw (Internet Gateway)</span>
-        </div>
-        <div class="igw-flow" style="color:#4a148c;">0.0.0.0/0 &rarr; HTTP (:80) Girişi</div>
-      </div>
-
-      <!-- AZ Layout -->
-      <div class="az-layout">
-        
-        <!-- Primary AZ (us-east-1a): CONTAINS BOTH WEB AND RDS -->
-        <div class="az-box az-primary">
-          <div class="az-header">
-            <span>Availability Zone: us-east-1a</span>
-            <span class="az-tag">TEK AZ (Aktif Altyapı)</span>
-          </div>
-
-          <!-- Katman 1: Public Subnet (Web) -->
-          <div class="subnet-card public-subnet">
-            <div class="subnet-top-label">
-              <span>🔒 Katman 1: Public Subnet (public-1a)</span>
-              <span class="subnet-cidr-tag">10.1.1.0/24</span>
-            </div>
-            <div class="instance-row">
-              <img src="{ec2_b64}" class="aws-service-icon" alt="EC2">
-              <div class="instance-meta">
-                <div class="instance-title">
-                  <span>1x EC2 Web Sunucusu</span>
-                  <span style="font-size:11px; font-weight:800; color:#2e7d32;">Public IP</span>
-                </div>
-                <div class="instance-sub">novashop-tf-web &bull; Ubuntu 22.04</div>
-                <div class="instance-badge-row">
-                  <span class="badge-port">HTTP :80 (Nginx)</span>
-                  <span class="badge-ssh">SSH :22</span>
-                  <span style="color:#555; font-size:10px;">SG: web-sg</span>
-                </div>
-              </div>
-            </div>
-            <div class="sg-info-row">
-              <span>Route Table: 0.0.0.0/0 &rarr; IGW</span>
-              <span style="color:#2e7d32; font-weight:700;">Dış İnternete Açık</span>
-            </div>
-          </div>
-
-          <!-- Arrow between Web and RDS inside SAME AZ -->
-          <div class="intra-az-flow">
-            <span>⬇️</span>
-            <span>Aynı AZ İçi MySQL Port 3306 (Özel Ağ İletişimi - Yalnızca web-sg)</span>
-            <span>⬇️</span>
-          </div>
-
-          <!-- Katman 2: Private Subnet (RDS Database) -->
-          <div class="subnet-card private-subnet">
-            <div class="subnet-top-label">
-              <span>🗄️ Katman 2: Private Subnet 1 (private-1a)</span>
-              <span class="subnet-cidr-tag">10.1.10.0/24</span>
-            </div>
-            <div class="instance-row">
-              <img src="{rds_b64}" class="aws-service-icon" alt="RDS">
-              <div class="instance-meta">
-                <div class="instance-title">
-                  <span>1x RDS MySQL Instance (Single-AZ)</span>
-                </div>
-                <div class="instance-sub">novashop-tf-db &bull; MySQL 8.0 &bull; db.t3.small</div>
-                <div class="instance-badge-row">
-                  <span class="badge-port">MySQL :3306</span>
-                  <span class="badge-private-only">Dışa Kapalı (Private)</span>
-                  <span style="color:#555; font-size:10px;">SG: rds-sg</span>
-                </div>
-              </div>
-            </div>
-            <div class="sg-info-row">
-              <span>Route Table: Sadece Yerel Ağ (Local Only)</span>
-              <span style="color:#c62828; font-weight:800;">Dış İnternet Doğrudan Erişim: YASAK</span>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Secondary AZ (us-east-1b): RDS DB Subnet Group Requirement -->
-        <div class="az-box az-secondary">
-          <div class="az-header secondary-header">
-            <span>AZ: us-east-1b</span>
-            <span style="font-size:10.5px; color:#546e7a;">Standby AZ</span>
-          </div>
-
-          <div class="subnet-card secondary-subnet">
-            <div class="subnet-top-label">
-              <span>Private Subnet 2 (private-1b)</span>
-              <span class="subnet-cidr-tag">10.1.11.0/24</span>
-            </div>
-            <div style="text-align:center; padding:20px 8px;">
-              <div style="font-size:32px; margin-bottom:8px;">💤</div>
-              <div style="font-size:12.5px; font-weight:800; color:#37474f;">DB Subnet Group</div>
-              <div style="font-size:11px; color:#78909c; margin-top:6px; line-height:1.4;">
-                AWS RDS şartı gereği 2. AZ tanımlıdır.<br/>
-                <strong>Single-AZ</strong> olduğu için aktif veritabanı <code>us-east-1a</code>'dadır.
-              </div>
-            </div>
-            <div class="sg-info-row" style="background:#f8f9fa;">
-              <span>Standby / Boş</span>
-              <span style="color:#78909c;">Trafik Yok</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
     </div>
 
   </div>
 
-  <!-- Footer Note -->
+  <!-- Footer -->
   <div class="footer-note">
     <div>
-      <strong>Mimari Kuralı:</strong> LAB-02 altyapısı <span class="footer-highlight">Tek AZ (Single-AZ: us-east-1a)</span> üzerinde 2-katmanlıdır (Public Web + Private Database).
+      <strong>Mimari Kuralı:</strong> LAB-02 altyapısı <span class="footer-highlight">2-Katmanlıdır (1x Web + 1x RDS)</span>. Her iki kaynak da aynı Availability Zone (us-east-1a) içinde koşar.
     </div>
     <div>
-      RDS DB Subnet Group en az 2 AZ gerektirdiği için <code>us-east-1b</code> tanımlanmıştır; ancak aktif veritabanı <code>us-east-1a</code>'dadır.
+      3-Katmanlı Mikroservis Mimarisi (Web + Catalog API + RDS) <strong>LAB-04</strong>'te devreye alınır.
     </div>
   </div>
 
@@ -710,9 +513,9 @@ html_content = f"""<!DOCTYPE html>
 </html>
 """
 
-html_path = "/tmp/lab02_arch_v2.html"
-png_path = "/tmp/lab02_arch_v2.png"
-jpg_path = "/tmp/lab02_arch_v2.jpg"
+html_path = "/tmp/clean_lab02.html"
+png_path = "/tmp/clean_lab02.png"
+jpg_path = "/tmp/clean_lab02.jpg"
 
 with open(html_path, "w", encoding="utf-8") as f:
     f.write(html_content)
@@ -721,15 +524,15 @@ chrome_cmd = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "--headless",
     "--disable-gpu",
-    "--window-size=1540,980",
+    "--window-size=1200,720",
     "--screenshot=" + png_path,
     "file://" + html_path
 ]
 
-print("Rendering HTML with Chrome...")
+print("Rendering clean 2-tier architecture diagram...")
 subprocess.run(chrome_cmd, check=True)
 
 im = Image.open(png_path)
 rgb_im = im.convert("RGB")
 rgb_im.save(jpg_path, quality=95)
-print(f"Generated {jpg_path} with size {rgb_im.size}")
+print(f"Generated clean diagram at {jpg_path}")

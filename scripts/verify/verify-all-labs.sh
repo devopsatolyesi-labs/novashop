@@ -30,7 +30,7 @@ run_test() {
     shift 2
     TOTAL=$((TOTAL + 1))
     echo ""
-    echo "▶ Test [$TOTAL/11]: $desc ($script)"
+    echo "▶ Test [$TOTAL/14]: $desc ($script)"
     if bash "$SCRIPT_DIR/$script" "$@" >/dev/null 2>&1; then
         echo "  [PASS] $desc"
         PASSED=$((PASSED + 1))
@@ -40,7 +40,7 @@ run_test() {
     fi
 }
 
-# LAB-01'den LAB-11'e kadar tüm laboratuvar doğrulamaları
+# LAB-01'den LAB-14'e kadar tüm laboratuvar doğrulamaları
 run_test "verify-lab-01.sh" "LAB-01 Git & GitHub Doğrulaması"
 run_test "verify-lab-02.sh" "LAB-02 AWS Temel Altyapı ve Nginx Doğrulaması" --config-only
 if [ "$MODE" = "--live" ]; then
@@ -60,6 +60,9 @@ else
     run_test "verify-lab-10.sh" "LAB-10 Gözlemlenebilirlik ve Metrik Doğrulaması" --config-only
 fi
 run_test "verify-lab-11.sh" "LAB-11 Merkezi Günlükleme Doğrulaması"
+run_test "verify-lab-12.sh" "LAB-12 Terraform IaC Doğrulaması"
+run_test "verify-lab-13.sh" "LAB-13 Kurumsal Amazon EKS Doğrulaması"
+run_test "verify-lab-14.sh" "LAB-14 Amazon ECS Fargate Doğrulaması"
 
 echo ""
 echo "========================================================"

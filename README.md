@@ -113,8 +113,9 @@ Her bağlantı, öğrencinin izleyeceği eksiksiz manuel kurulum kılavuzudur. S
 
 | Lab | Manuel olarak öğrenilecek ana konu | Hızlandırma / doğrulama |
 |---|---|---|
+| [LAB-00](labs/LAB-00-PLATFORM-SETUP/README.md) | Platform kurulumu: GitLab CE, Harbor, SonarQube, Jenkins ve Nginx SSL | Manuel kurulum rehberleri |
 | [LAB-01](labs/LAB-01/README.md) | Git, branch, PR ve conflict çözümü | `bash scripts/verify/verify-lab-01.sh` |
-| [LAB-02](labs/LAB-02/README.md) | AWS Console ve Terraform ile VPC, EC2, private RDS ve TLS | `bash scripts/verify/verify-lab-02.sh --config-only` |
+| [LAB-02](labs/LAB-02/README.md) | AWS 2-Tier altyapı: VPC, EC2 Web, Single-AZ RDS MySQL ve Terraform IaC | `bash scripts/verify/verify-lab-02.sh --config-only` |
 | [LAB-03](labs/LAB-03/README.md) | Dockerfile, Docker CLI ve Compose | `bash scripts/compose-starter.sh up`; `bash scripts/verify/verify-lab-03.sh` |
 | [LAB-04](labs/LAB-04/README.md) | EC2 üzerinde 3-tier Compose, Nginx ve TLS | `bash scripts/compose-3tier.sh up`; `bash scripts/verify/verify-lab-04.sh` |
 | [LAB-05](labs/LAB-05/README.md) | GitHub Actions, OIDC, ECR ve rollback | `bash scripts/verify/verify-lab-05.sh` |
@@ -123,7 +124,10 @@ Her bağlantı, öğrencinin izleyeceği eksiksiz manuel kurulum kılavuzudur. S
 | [LAB-08](labs/LAB-08/README.md) | SonarQube, Trivy, Gitleaks ve SBOM | `bash scripts/generate-sbom.sh`; `bash scripts/verify/verify-lab-08.sh` |
 | [LAB-09](labs/LAB-09/README.md) | Argo CD ve GitOps uzlaştırması | `bash scripts/verify/verify-lab-09.sh` |
 | [LAB-10](labs/LAB-10/README.md) | Prometheus, Grafana, OTel, Jaeger ve Alertmanager | `bash scripts/compose-observability.sh up`; `bash scripts/verify/verify-lab-10.sh` |
-| [LAB-11](labs/LAB-11/README.md) | Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
+| [LAB-11](labs/LAB-11/README.md) | Merkezi loglama (ELK Stack): Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
+| [LAB-12](labs/LAB-12/README.md) | Terraform modülleri, remote S3 state ve DynamoDB locking | `bash scripts/verify/verify-lab-12.sh` |
+| [LAB-13](labs/LAB-13/README.md) | EKS, IRSA ve AWS Load Balancer Controller | `bash scripts/verify/verify-lab-13.sh` |
+| [LAB-14](labs/LAB-14/README.md) | ECS Fargate, ALB ve CI/CD | `bash scripts/verify/verify-lab-14.sh` |
 
 Tüm yapılandırmaları hızlı ön kontrolden geçirmek için, servisler kapalıyken bile şu komut kullanılabilir:
 

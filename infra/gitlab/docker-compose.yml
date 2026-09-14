@@ -16,7 +16,7 @@ services:
         sidekiq['concurrency'] = 5
         prometheus_monitoring['enable'] = false
     ports:
-      - "8929:80"
+      - "8929:8929"
       - "2224:22"
     volumes:
       - gitlab_config:/etc/gitlab

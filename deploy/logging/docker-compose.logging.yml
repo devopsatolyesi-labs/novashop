@@ -40,6 +40,8 @@ services:
     container_name: novashop-fluent-bit
     volumes:
       - ./fluent-bit.conf:/fluent-bit/etc/fluent-bit.conf:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
     ports:
       - "24224:24224"
       - "24224:24224/udp"

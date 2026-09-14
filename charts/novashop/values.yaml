@@ -52,7 +52,7 @@ ui:
 
 # 2. Catalog Mikroservisi (Go Gin)
 catalog:
-  enabled: true
+  enabled: false
   replicaCount: 1
   image:
     repository: public.ecr.aws/aws-containers/retail-store-sample-catalog

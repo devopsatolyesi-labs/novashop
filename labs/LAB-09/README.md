@@ -73,8 +73,9 @@ graph TD
 Argo CD için özel isim alanı oluşturun ve resmi kurulum manifestolarını uygulayın:
 
 ```bash
-kubectl create namespace argocd
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+# Not: Argo CD CRD'lerinin 256KB limitini aşmaması ve çakışmaları ezmesi için --server-side ve --force-conflicts kullanılır:
+kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # Pod'ların hazır duruma gelmesini bekleyin (yaklaşık 1-2 dakika)
 kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -n argocd
@@ -83,7 +84,7 @@ kubectl wait --for=condition=available --timeout=300s deployment/argocd-server -
 
 ---
 
-#### 2. Başlangıç Yönetici Parolasını Alma ve Port Yönlendirme
+#### 2. Başlangıç Yönetici Parolasını Alma ve Erişim Seçenekleri
 
 Argo CD web paneline erişmek için başlangıç admin şifresini çekin:
 
@@ -91,11 +92,18 @@ Argo CD web paneline erişmek için başlangıç admin şifresini çekin:
 # Otomatik üretilen başlangıç parolasını çöz
 ARGOCD_PASS=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 echo "Argo CD Admin Parolası: $ARGOCD_PASS"
-
-# Port yönlendirmesi başlat (Arka planda)
-kubectl port-forward svc/argocd-server -n argocd 8080:443 > /dev/null 2>&1 &
 ```
-Tarayıcınızdan `https://localhost:8080` adresine giderek kullanıcı adı `admin` ve yukarıdaki parola ile giriş yapın.
+
+##### Model A: Doğrudan Port-Forward (Lokal IP)
+```bash
+# Sunucunun tüm arayüzlerinde dinlemek için --address 0.0.0.0 ile port yönlendirme:
+kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 > /dev/null 2>&1 &
+```
+Tarayıcınızdan `https://<UBUNTU_IP>:8080` veya `https://localhost:8080` adresine giderek kullanıcı adı `admin` ve yukarıdaki parola ile giriş yapın.
+
+##### Model B: Kurumsal DNS ve SSL ile Erişim
+Eğer eğitmen tarafından alan adınız tanımlandıysa:
+`https://studentXX-argocd.devopsatolyesi.com` üzerinden güvenli HTTPS ile erişebilirsiniz.
 
 ---
 

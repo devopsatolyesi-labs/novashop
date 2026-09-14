@@ -50,13 +50,11 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
-
 | Placeholder | Anlamı | Örnek Biçim |
 |---|---|---|
-| `<SONAR_HOST_URL>` | SonarQube sunucu adresi | `http://localhost:9000` |
-| `<SONAR_TOKEN>` | SonarQube proje kimlik belirteci | `sqp_1a2b3c4d5e...` |
-| `<IMAGE_NAME>` | Taranacak Docker imajı | `novashop-ui:v0.1.0` |
+| `<SONAR_HOST_URL>` | SonarQube sunucu adresi | Model A: `http://127.0.0.1:19000` \| Model B: `https://studentXX-sonarqube.devopsatolyesi.com` |
+| `<SONAR_TOKEN>` | SonarQube kullanıcı / analiz tokeni | `squ_...` (Arayüzden veya API ile üretilir) |
+| `<IMAGE_NAME>` | Taranacak Docker imajı | `127.0.0.1:18082/novashop/ui:v0.1.0` veya `novashop-ui:v0.1.0` |
 
 ---
 

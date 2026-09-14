@@ -9,3 +9,12 @@ providers:
     editable: true
     options:
       path: /etc/grafana/provisioning/dashboards/json
+
+  - name: 'NovaShop Alert Dashboards'
+    orgId: 1
+    folder: 'NovaShop Alerts'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/alerts_json

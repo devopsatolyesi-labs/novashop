@@ -25,7 +25,7 @@ unit-tests:
     - echo "=== [Stage 1: Kod Doğrulama ve Birim Testler] ==="
     - cd src/ui
     - chmod +x ./mvnw
-    - ./mvnw test -Dtest=*Test || true
+    - "./mvnw test -Dtest=*Test || true"
     - echo "Birim testler ve kod doğrulaması tamamlandı."
 
 build-and-push-harbor:

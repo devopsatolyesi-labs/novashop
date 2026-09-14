@@ -70,6 +70,13 @@ graph TD
 
 #### 1. Argo CD'yi Kubernetes Kümesine Kurma
 
+**Seçenek 1 (Önerilen — Otomatik Tek Komutla Kurulum):**
+Tüm kurulumu, olası NodePort 30080 çakışma temizliğini ve GitOps Application dağıtımını tek seferde çalıştırmak için:
+```bash
+bash scripts/deploy-argocd.sh
+```
+
+**Seçenek 2 (Adım Adım Manuel Kurulum):**
 Argo CD için özel isim alanı oluşturun ve resmi kurulum manifestolarını uygulayın:
 
 ```bash
@@ -107,37 +114,21 @@ Eğer eğitmen tarafından alan adınız tanımlandıysa:
 
 ---
 
-#### 3. Argo CD Application Kaynağını Tanımlama
+#### 3. Argo CD Application Kaynağını Tanımlama ve Çakışmaları Temizleme
 
-NovaShop UI uygulamasını Git deposuna bağlayan bildirimsel `Application` manifestini (`argocd-app.yaml`) oluşturun:
+LAB-06'da yapılan manuel Helm kurulumunun NodePort `30080` portunu kilitlemesini önlemek için önce eski manuel servisi temizleyin:
 
 ```bash
-cat << 'EOF' > argocd-app.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: novashop-ui-gitops
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/devopsatolyesi-labs/novashop.git
-    targetRevision: HEAD
-    path: charts/novashop
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: novashop
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-EOF
+# LAB-06 manuel Helm kurulumundan kalan çakışan servisi temizle (NodePort 30080'i serbest bırakır):
+helm uninstall novashop -n novashop 2>/dev/null || true
+kubectl delete svc novashop-ui -n novashop --ignore-not-found 2>/dev/null || true
+```
 
-kubectl apply -f argocd-app.yaml
+Ardından hazır GitOps manifestosunu uygulayın:
+
+```bash
+kubectl apply -f deploy/gitops/application.yaml
+```
 ```
 *Açıklama:*
 - `automated.selfHeal: true`: Canlı kümedeki manuel değişiklikleri otomatik olarak tespit edip Git deposundaki durumla ezer.

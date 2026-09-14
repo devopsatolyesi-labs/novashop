@@ -15,6 +15,7 @@ spec:
     targetRevision: HEAD
     path: charts/novashop
     helm:
+      releaseName: novashop-gitops
       valueFiles:
         - values.yaml
   destination:
@@ -27,6 +28,8 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ApplyOutOfSyncOnly=true
+      - ServerSideApply=true
+      - Replace=true
     retry:
       limit: 5
       backoff:

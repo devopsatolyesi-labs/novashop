@@ -64,7 +64,7 @@ Herhangi bir harici `.env` dosyasına ihtiyaç duymayan, kendi kendine yeten (se
 cat << 'COMPOSE_EOF' > docker-compose.yml
 services:
   sonarqube:
-    image: sonarqube:lts-community
+    image: sonarqube:community
     container_name: sonarqube
     restart: always
     depends_on:

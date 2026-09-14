@@ -103,7 +103,7 @@ case "${ACTION}" in
     apply)
         STUDENT_ID="${2:-}"
         STUDENT_IP="${3:-}"
-        SERVICES_INPUT="${4:-novashop,gitlab,harbor,sonarqube,jenkins}"
+        SERVICES_INPUT="${4:-novashop,gitlab,harbor,sonarqube,jenkins,prometheus,grafana,jaeger,kibana,elastic,argocd,kind}"
 
         if [[ -z "${STUDENT_ID}" || -z "${STUDENT_IP}" ]]; then
             echo "Kullanım: $0 apply <student_id> <student_ip> [servis1,servis2,...]"

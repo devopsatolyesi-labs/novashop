@@ -152,22 +152,22 @@ Switched to a new branch 'feature/update-mug-product'
 #### 2.2 Ürün Fiyatını Güncelleyin
 `labs/LAB-01/products.json` dosyasındaki ilk ürünün (`Kubernetes Cluster Mug`) fiyatını `45` yerine `55` yapın:
 ```bash
-sed -i 's/"price": 45/"price": 55/' labs/LAB-01/products.json
+sed -i 's/"price": 35/"price": 85/' labs/LAB-01/products.json
 ```
 
 #### 2.3 Değişikliği İnceleyin, Commit Edin ve Push Edin
 ```bash
 git diff labs/LAB-01/products.json
 git add labs/LAB-01/products.json
-git commit -m "feat(catalog): update kubernetes mug price to 55"
+git commit -m "feat(catalog): update kubernetes mug price to 85"
 git push -u origin feature/update-mug-product
 ```
 
 #### 2.4 GitHub Üzerinde Pull Request (PR) Açın
 1. GitHub'da `https://github.com/<GITHUB_USERNAME>/novashop` sayfasına gidin.
 2. Sayfanın üstünde sarı kutuda **`Compare & pull request`** butonunu göreceksiniz. Butona tıklayın.
-3. PR başlığı: `feat(catalog): update kubernetes mug price to 55`
-4. **Files changed** sekmesine tıklayıp satır farkını (`-45` -> `+55`) inceleyin.
+3. PR başlığı: `feat(catalog): update kubernetes mug price to 85`
+4. **Files changed** sekmesine tıklayıp satır farkını (`-45` -> `+85`) inceleyin.
 5. Yeşil **`Create pull request`** butonuna tıklayın.
 6. ⚠️ **DİKKAT:** PR'ı henüz merge etmeyin! Bir sonraki bölümde bu PR üzerinden çakışma senaryosu simüle edilecektir.
 
@@ -176,13 +176,13 @@ git push -u origin feature/update-mug-product
 ### Bölüm 3: Kontrollü Merge Conflict Simülasyonu ve Çözümü
 
 #### Senaryo:
-Siz `feature/update-mug-product` dalında fiyatı `55` yapıp PR açmışken, bir ekip arkadaşınız `main` dalında aynı ürünün fiyatını acil olarak `50` olarak değiştirip `main` dalına push etmiştir.
+Siz `feature/update-mug-product` dalında fiyatı `85` yapıp PR açmışken, bir ekip arkadaşınız `main` dalında aynı ürünün fiyatını acil olarak `80` olarak değiştirip `main` dalına push etmiştir.
 
 #### 3.1 `main` Dalına Geri Dönün ve Rakip Değişikliği Push Edin
 ```bash
 git checkout main
-sed -i 's/"price": 45/"price": 50/' labs/LAB-01/products.json
-git commit -am "fix(pricing): adjust kubernetes mug price to 50 on main"
+sed -i 's/"price": 45/"price": 80/' labs/LAB-01/products.json
+git commit -am "fix(pricing): adjust kubernetes mug price to 80 on main"
 git push origin main
 ```
 
@@ -212,17 +212,17 @@ git diff labs/LAB-01/products.json
 Dosyada conflict bloklarını göreceksiniz:
 ```json
 <<<<<<< HEAD
-    "price": 50,
+    "price": 80,
 =======
-    "price": 55,
+    "price": 85,
 >>>>>>> feature/update-mug-product
 ```
-- `<<<<<<< HEAD`: Mevcut daldaki (`main`) değer (`50`).
+- `<<<<<<< HEAD`: Mevcut daldaki (`main`) değer (`80`).
 - `=======`: Ayrım çizgisi.
-- `>>>>>>> feature/...`: Gelen daldaki değer (`55`).
+- `>>>>>>> feature/...`: Gelen daldaki değer (`85`).
 
 #### 3.5 Çakışmayı Çözün
-Ekip kararı gereği geçerli fiyatın **`55`** olduğunu kabul ediyoruz. Dosyayı düzenleyerek işaretçileri kaldırın ve sadece doğru satırı bırakın:
+Ekip kararı gereği geçerli fiyatın **`85`** olduğunu kabul ediyoruz. Dosyayı düzenleyerek işaretçileri kaldırın ve sadece doğru satırı bırakın:
 
 ```bash
 # nano ile açıp elle düzenleyebilirsiniz:
@@ -231,7 +231,7 @@ nano labs/LAB-01/products.json
 *Veya komut satırından doğrudan temizleyin:*
 ```bash
 sed -i '/<<<<<<< HEAD/d' labs/LAB-01/products.json
-sed -i '/"price": 50,/d' labs/LAB-01/products.json
+sed -i '/"price": 80,/d' labs/LAB-01/products.json
 sed -i '/=======/d' labs/LAB-01/products.json
 sed -i '/>>>>>>> feature\/update-mug-product/d' labs/LAB-01/products.json
 ```
@@ -244,7 +244,7 @@ jq . labs/LAB-01/products.json > /dev/null && echo "✅ JSON GEÇERLİ"
 #### 3.6 Merge Commit'ini Tamamlayın ve Push Edin
 ```bash
 git add labs/LAB-01/products.json
-git commit -m "merge: resolve pricing conflict on kubernetes mug (set to 55)"
+git commit -m "merge: resolve pricing conflict on kubernetes mug (set to 85)"
 git push origin main
 ```
 

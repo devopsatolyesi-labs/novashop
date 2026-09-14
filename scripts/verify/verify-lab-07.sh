@@ -29,22 +29,27 @@ if [ "$FOUND_PIPELINE" = false ]; then
     echo "ℹ️ Bilgi: Kök dizinde Jenkinsfile veya .gitlab-ci.yml henüz oluşturulmamış."
 fi
 
-# 2. Canlı Harbor Registry Kontrolü (Argüman Verilmişse)
-if [ -n "$HARBOR_HOST" ]; then
-    echo "2. Harbor canlı servis kontrolü yapılıyor: $HARBOR_HOST"
-    PING_RESP=$(curl -s --connect-timeout 5 "http://${HARBOR_HOST}/api/v2.0/ping" 2>/dev/null || echo "")
-    if [ "$PING_RESP" = "pong" ]; then
-        echo "✅ Harbor API ping başarılı (pong)."
-    else
-        echo "⚠️ UYARI: Harbor API /api/v2.0/ping yanıt vermedi. Port/IP kontrol edin."
-    fi
-
-    HEALTH_RESP=$(curl -s --connect-timeout 5 "http://${HARBOR_HOST}/api/v2.0/health" 2>/dev/null || echo "")
-    if echo "$HEALTH_RESP" | grep -q '"status":"healthy"'; then
-        echo "✅ Harbor genel sağlık durumu: healthy."
-    fi
+# 2. Canlı Harbor Registry Kontrolü (Verilmişse veya Yerel 18082)
+HARBOR_TARGET="${HARBOR_HOST:-127.0.0.1:18082}"
+if [[ "$HARBOR_TARGET" =~ ^https?:// ]]; then
+    HARBOR_BASE="$HARBOR_TARGET"
+elif [[ "$HARBOR_TARGET" =~ \.devopsatolyesi\.com ]]; then
+    HARBOR_BASE="https://${HARBOR_TARGET}"
 else
-    echo "ℹ️ Harbor canlı denetimi için kullanım: $0 <HARBOR_HOST:PORT> (Örn: $0 localhost:80)"
+    HARBOR_BASE="http://${HARBOR_TARGET}"
+fi
+
+echo "2. Harbor canlı servis kontrolü yapılıyor: $HARBOR_BASE"
+PING_RESP=$(curl -sSL -k --connect-timeout 5 "${HARBOR_BASE}/api/v2.0/ping" 2>/dev/null || echo "")
+if echo "$PING_RESP" | grep -qi "pong"; then
+    echo "✅ Harbor API ping başarılı (pong)."
+else
+    echo "⚠️ UYARI: Harbor API /api/v2.0/ping yanıt vermedi ($HARBOR_BASE). Port/IP kontrol edin."
+fi
+
+HEALTH_RESP=$(curl -sSL -k --connect-timeout 5 "${HARBOR_BASE}/api/v2.0/health" 2>/dev/null || echo "")
+if echo "$HEALTH_RESP" | grep -q '"status":"healthy"'; then
+    echo "✅ Harbor genel sağlık durumu: healthy."
 fi
 
 echo "=== [LAB-07] Kurumsal CI/CD Doğrulama Tamamlandı ==="

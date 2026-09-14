@@ -60,12 +60,10 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
-
 | Placeholder | Anlamı | Örnek Biçim |
 |---|---|---|
-| `<HARBOR_URL>` | Harbor Registry erişim adresi | `harbor.novashop.local` veya `localhost:8443` |
-| `<ROBOT_NAME>` | Harbor robot hesap adı | `robot$novashop-cicd` |
+| `<HARBOR_URL>` | Harbor Registry erişim adresi | Model A: `127.0.0.1:18082` \| Model B: `studentXX-harbor.devopsatolyesi.com` |
+| `<ROBOT_NAME>` | Harbor robot hesap adı | `robot$novashop+novashop-cicd` |
 | `<ROBOT_SECRET>` | Harbor robot hesap gizli belirteci | Token dizesi |
 | `<IMAGE_TAG>` | Üretilen sürüm veya commit SHA etiketi | `v0.1.0` veya `sha-1a2b3c4` |
 
@@ -111,7 +109,8 @@ pipeline {
     agent any
 
     environment {
-        HARBOR_REGISTRY = 'harbor.novashop.local:8443'
+        // Model A: '127.0.0.1:18082' veya Model B: 'studentXX-harbor.devopsatolyesi.com'
+        HARBOR_REGISTRY = "${env.HARBOR_HOST ?: '127.0.0.1:18082'}"
         HARBOR_PROJECT  = 'novashop'
         IMAGE_NAME      = 'novashop-ui'
         HARBOR_CREDS    = credentials('harbor-robot-secret') // Jenkins Credentials Store
@@ -193,7 +192,8 @@ stages:
   - build-and-push
 
 variables:
-  HARBOR_URL: "harbor.novashop.local:8443"
+  # Model A: "127.0.0.1:18082" veya Model B: "studentXX-harbor.devopsatolyesi.com"
+  HARBOR_URL: "127.0.0.1:18082"
   IMAGE_NAME: "$HARBOR_URL/novashop/novashop-ui"
 
 unit-tests:
@@ -223,15 +223,16 @@ Harbor üzerinde aynı etiketle ikinci kez imaj yüklemeye çalışarak sistemin
 
 ```bash
 # İlk push başarılı olur:
-docker push harbor.novashop.local:8443/novashop/novashop-ui:v0.1.0
+docker push <HARBOR_URL>/novashop/novashop-ui:v0.1.0
 
-# Aynı etiketle tekrar push denemesi:
-docker push harbor.novashop.local:8443/novashop/novashop-ui:v0.1.0
+# Farklı bir imajı aynı etiketle tekrar push etmeyi deneyin (örneğin alpine imajı):
+docker pull alpine:latest
+docker tag alpine:latest <HARBOR_URL>/novashop/novashop-ui:v0.1.0
+docker push <HARBOR_URL>/novashop/novashop-ui:v0.1.0
 ```
 *Beklenen çıktı:*
 ```text
-denied: The tag is immutable and cannot be overwritten
-Error: failed to push some refs to 'harbor.novashop.local:8443/novashop/novashop-ui:v0.1.0'
+error from registry: Failed to process request due to 'ui:v0.1.0' configured as immutable.
 ```
 Bu hata, üretim ortamlarında versiyon karmaşasını ve kötü niyetli kod enjeksiyonunu kesin olarak önler.
 
@@ -240,7 +241,7 @@ Bu hata, üretim ortamlarında versiyon karmaşasını ve kötü niyetli kod enj
 #### 6. Harbor Zafiyet Raporunu İnceleme
 
 1. Harbor konsolunda **novashop > Repositories > novashop-ui** sayfasına girin.
-2. `sha-...` etiketli imajın yanındaki **Vulnerabilities** sütununu inceleyin.
+2. `sha-...` veya `v0.1.0` etiketli imajın yanındaki **Vulnerabilities** sütununu inceleyin.
 3. Trivy tarayıcısının `Total`, `Critical`, `High`, `Medium` ve `Low` seviyeli CVE bulgularını listelediğini ve imajın güvenlik durumunu raporladığını teyit edin.
 
 ---
@@ -250,7 +251,11 @@ Bu hata, üretim ortamlarında versiyon karmaşasını ve kötü niyetli kod enj
 CI/CD pipeline dosyalarını ve Harbor Registry erişilebilirliğini otomatik test betiği ile doğrulayın:
 
 ```bash
-bash scripts/verify/verify-lab-07.sh harbor.novashop.local:8443
+# Model A: Yerel Harbor Kontrolü (Varsayılan)
+bash scripts/verify/verify-lab-07.sh
+
+# Model B: Kurumsal Domain ile Kontrol
+bash scripts/verify/verify-lab-07.sh studentXX-harbor.devopsatolyesi.com
 ```
 *Beklenen çıktı:*
 ```text

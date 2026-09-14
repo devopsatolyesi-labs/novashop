@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        HARBOR_HOST = 'harbor.novashop.local:8443'
+        // Model A: 127.0.0.1:18082 veya Model B: studentXX-harbor.devopsatolyesi.com
+        HARBOR_HOST = "${env.HARBOR_HOST ?: '127.0.0.1:18082'}"
         HARBOR_PROJECT = 'novashop'
         IMAGE_NAME = "${HARBOR_HOST}/${HARBOR_PROJECT}/novashop-ui"
         // Harbor robot hesabı kimlik bilgileri Jenkins Credentials Store'da tanımlıdır

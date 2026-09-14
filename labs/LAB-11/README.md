@@ -303,11 +303,26 @@ Kibana **Discover** ekranına (`http://localhost:5601/app/discover`) gidin ve so
 ### ADIM 8: Kibana Dashboard Tasarımı ve Komutla Yükleme
 
 #### Yöntem A: Terminalden Otomatik İçe Aktarma (CLI)
+Kibana Saved Objects API üzerinden doğrudan eksiksiz, Lens panelleri (Toplam Log, Hata Sayacı, Donut Kaynak Dağılımı) içeren panomuzu tek komutla yükleyin:
+
 ```bash
 bash scripts/import-kibana-dashboard.sh
 ```
-*Kibana Saved Objects API kullanılarak "NovaShop — Merkezi Log ve Sistem Analiz Panosu" otomatik oluşturulur.*
-Tarayıcıdan doğrudan açın: `http://localhost:5601/app/dashboards#/view/novashop-central-logging`
+*Bu betik, `deploy/logging/kibana/novashop-central-logging-dashboard.json` şablon dosyasını kullanarak `novashop-central-logging` panosunu eksiksiz tanımlar.*
+
+Tarayıcıdan doğrudan açın:
+`http://localhost:5601/app/dashboards#/view/novashop-central-logging`
+*(veya SSL üzerinden: `https://studentXX-kibana.devopsatolyesi.com/app/dashboards#/view/novashop-central-logging`)*
+
+> **⚠️ Kritik Kibana Hata Teşhisi: `Cannot read properties of undefined (reading 'searchSourceJSON')`:**
+> - **Neden Olur?** Kibana 8.x dashboard mimarisinde, panonun arama bağlamını yöneten `kibanaSavedObjectMeta.searchSourceJSON`, `optionsJSON` veya `panelsJSON` alanları eksik bırakıldığında ya da hatalı tırnak kaçışları (escaping) olduğunda Kibana dashboard render motoru çöker.
+> - **Kalıcı Çözüm:** `deploy/logging/kibana/novashop-central-logging-dashboard.json` dosyasında tüm `kibanaSavedObjectMeta` ve `optionsJSON` alanları şablon olarak doğrulanmıştır. `bash scripts/import-kibana-dashboard.sh` çalıştırıldığında bu şablon hatasız olarak Kibana'ya yazılır.
+
+#### Panoları Canlı Verilerle Doldurma:
+Dashboard'un metriklerini ve grafiklerini hemen canlı sayılarla görmek için trafik ve log jeneratörümüzü çalıştırın:
+```bash
+bash scripts/simulate-traffic.sh --burst 30
+```
 
 #### Yöntem B: Kibana Lens ile Sıfırdan Grafik Tasarlama (UI)
 1. Sol menüden **Analytics ➔ Dashboard** sekmesine gidin.

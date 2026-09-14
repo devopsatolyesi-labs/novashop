@@ -239,6 +239,23 @@ for i in {1..50}; do curl -s http://localhost:8888/api/invalid-endpoint > /dev/n
 2. Alertmanager panelinde (`http://localhost:9093`) alarm bildiriminin üretildiğini teyit edin.
 3. Grafana **Alerting > Alert rules** altında kuralın durumunun `Firing (Kırmızı)` olduğunu gözlemleyin.
 
+##### 5.4. Çok Kanallı Alarm Bildirimleri: E-posta, Slack ve Telegram Entegrasyonu
+
+Alertmanager (`deploy/observability/alertmanager.yml`) ve Grafana Alerting ([`contactpoints.yaml`](file:///Users/hakan/devops-workspace/student-novashop/deploy/observability/grafana/provisioning/alerting/contactpoints.yaml)) aynı anda 3 farklı iletişim kanalına bildirim gönderecek şekilde yapılandırılmıştır:
+
+1. **E-posta Bildirimi (Gmail SMTP / `devopsatolyesi@gmail.com`):**
+   - Alertmanager, `smtp.gmail.com:587` üzerinden TLS ile e-posta gönderir.
+   - **Kurulum:** Google Hesabı > Güvenlik > 2 Adımlı Doğrulama > **Uygulama Şifreleri (App Passwords)** bölümünden 16 haneli parola üretip `alertmanager.yml` dosyasındaki `smtp_auth_password` alanına yapıştırın.
+
+2. **Slack Webhook Entegrasyonu:**
+   - Slack çalışma alanınızda **Incoming WebHooks** uygulamasını ekleyin ve `#novashop-alerts` kanalını seçin.
+   - Üretilen Webhook URL'sini `alertmanager.yml` veya Grafana Contact Points içindeki `api_url` alanına ekleyin. Alarmlar zenginleştirilmiş metin ve renkli severity etiketleriyle kanala düşer.
+
+3. **Telegram Bot Entegrasyonu:**
+   - Telegram'da `@BotFather` ile yeni bir bot oluşturup API token alın.
+   - Bildirimlerin gideceği grup veya kanalın Chat ID'sini (`@userinfobot` veya `@getidsbot` ile) öğrenin.
+   - `alertmanager.yml` içindeki `telegram_configs` bloğuna `bot_token` ve `chat_id` değerlerini yazın. Alarmlar HTML formatında anlık bildirim olarak telefonunuza gelir.
+
 ---
 
 #### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma

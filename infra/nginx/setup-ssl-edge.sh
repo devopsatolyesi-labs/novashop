@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # NovaShop — Nginx Edge & Wildcard Origin SSL Aktivasyon Betiği
-# Bu betik öğrenci makinesinde Cloudflare Full SSL uyumlu yerel Wildcard
-# Origin sertifikasını üretir ve Nginx üzerinden 443 SSL yayınını başlatır.
 # ==============================================================================
 set -euo pipefail
 
@@ -51,13 +49,13 @@ sudo tee "${CONF_PATH}" > /dev/null << NGINX_CONF
 # HTTP -> HTTPS Yönlendirmesi (Port 80 -> 443)
 server {
     listen 80;
-    server_name ${STUDENT_ID}-*.${DOMAIN_NAME};
+    server_name ~^${STUDENT_ID}-.*\\.${DOMAIN_NAME}\$;
     return 301 https://\$host\$request_uri;
 }
 
 # 1. NovaShop Web UI -> Port 8888
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${STUDENT_ID}-novashop.${DOMAIN_NAME};
 
     ssl_certificate ${SSL_DIR}/origin.crt;
@@ -75,7 +73,7 @@ server {
 
 # 2. GitLab CE -> Port 8929
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${STUDENT_ID}-gitlab.${DOMAIN_NAME};
 
     ssl_certificate ${SSL_DIR}/origin.crt;
@@ -94,7 +92,7 @@ server {
 
 # 3. Harbor OCI Registry -> Port 18082
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${STUDENT_ID}-harbor.${DOMAIN_NAME};
 
     ssl_certificate ${SSL_DIR}/origin.crt;
@@ -115,7 +113,7 @@ server {
 
 # 4. SonarQube -> Port 19000
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${STUDENT_ID}-sonarqube.${DOMAIN_NAME};
 
     ssl_certificate ${SSL_DIR}/origin.crt;
@@ -133,7 +131,7 @@ server {
 
 # 5. Jenkins Controller -> Port 18080 (WebSocket Destekli)
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${STUDENT_ID}-jenkins.${DOMAIN_NAME};
 
     ssl_certificate ${SSL_DIR}/origin.crt;

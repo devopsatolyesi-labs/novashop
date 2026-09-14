@@ -124,9 +124,6 @@ Her bağlantı, öğrencinin izleyeceği eksiksiz manuel kurulum kılavuzudur. S
 | [LAB-09](labs/LAB-09/README.md) | Argo CD ve GitOps uzlaştırması | `bash scripts/verify/verify-lab-09.sh` |
 | [LAB-10](labs/LAB-10/README.md) | Prometheus, Grafana, OTel, Jaeger ve Alertmanager | `bash scripts/compose-observability.sh up`; `bash scripts/verify/verify-lab-10.sh` |
 | [LAB-11](labs/LAB-11/README.md) | Fluent Bit, Elasticsearch ve Kibana | `bash scripts/verify/verify-lab-11.sh` |
-| [LAB-12](labs/LAB-12/README.md) | Terraform modülleri, plan ve cleanup | `bash scripts/verify/verify-lab-12.sh` |
-| [LAB-13](labs/LAB-13/README.md) | EKS, IRSA ve AWS gözlemlenebilirliği | `bash scripts/verify/verify-lab-13.sh` |
-| [LAB-14](labs/LAB-14/README.md) | ECS Fargate, ALB ve CI/CD | `bash scripts/verify/verify-lab-14.sh` |
 
 Tüm yapılandırmaları hızlı ön kontrolden geçirmek için, servisler kapalıyken bile şu komut kullanılabilir:
 

@@ -39,7 +39,5 @@ Kurumsal bulut mimarileri (AWS), GitOps ve merkezi loglama konularında uzmanla�
 | **[LAB-04](LAB-04/README.md)** | AWS 3-Tier Production | Production compose, Nginx reverse proxy, TLS, CloudWatch loglama | [LAB-04 Rehberi](LAB-04/README.md) |
 | **[LAB-05](LAB-05/README.md)** | GitHub Actions CI/CD | AWS OIDC, ECR imaj dağıtımı, automated release, rollback mekanizması | [LAB-05 Rehberi](LAB-05/README.md) |
 | **[LAB-09](LAB-09/README.md)** | GitOps & Argo CD | Declarative GitOps, continuous reconciliation, self-healing, automated sync | [LAB-09 Rehberi](LAB-09/README.md) |
-| **[LAB-11](LAB-11/README.md)** | Merkezi Loglama (EFK) | Fluent Bit, Elasticsearch, Kibana log analitiği ve trace correlation | [LAB-11 Rehberi](LAB-11/README.md) |
-| **[LAB-12](LAB-12/README.md)** | Terraform IaC Enterprise | Modüler Terraform, remote S3 state, dynamoDB locking, cloud-init otomasyonu | [LAB-12 Rehberi](LAB-12/README.md) |
-| **[LAB-13](LAB-13/README.md)** | Amazon EKS Enterprise | Kurumsal AWS EKS kümesi, IRSA, AWS Load Balancer Controller, ADOT | [LAB-13 Rehberi](LAB-13/README.md) |
-| **[LAB-14](LAB-14/README.md)** | AWS ECS & Fargate | Serverless container mimarisi, ALB, ECS Task Definition, GitHub Actions | [LAB-14 Rehberi](LAB-14/README.md) |
+| **[LAB-11](LAB-11/README.md)** | Merkezi Loglama (ELK) | Fluent Bit, Elasticsearch, Kibana log analitiği ve trace correlation | [LAB-11 Rehberi](LAB-11/README.md) |
+

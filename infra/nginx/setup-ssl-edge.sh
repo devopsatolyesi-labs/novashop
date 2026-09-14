@@ -150,6 +150,120 @@ server {
         proxy_set_header Connection "upgrade";
     }
 }
+
+# 6. NovaShop Kubernetes UI (LAB-06) -> Port 30080
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-k8s.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:30080;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+# 7. Prometheus (LAB-10) -> Port 9090
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-prometheus.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:9090;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+# 8. Grafana (LAB-10) -> Port 3000
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-grafana.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# 9. Jaeger Tracing (LAB-10) -> Port 16686
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-jaeger.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:16686;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+
+# 10. Kibana Log Analitiği (LAB-11) -> Port 5601
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-kibana.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:5601;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}
+
+# 11. Elasticsearch API (LAB-11) -> Port 9200
+server {
+    listen 443 ssl;
+    server_name ${STUDENT_ID}-elastic.${DOMAIN_NAME};
+
+    ssl_certificate ${SSL_DIR}/origin.crt;
+    ssl_certificate_key ${SSL_DIR}/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://127.0.0.1:9200;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
 NGINX_CONF
 
 # Sembolik linki oluştur ve default siteyi temizle

@@ -48,13 +48,14 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
+### 🧭 Erişim Modelleri ve Kimlik Bilgileri (Credentials)
 
-| Placeholder | Anlamı | Örnek Biçim |
-|---|---|---|
-| `<GRAFANA_URL>` | Grafana gösterge paneli adresi | `http://localhost:3000` |
-| `<JAEGER_URL>` | Jaeger dağıtık izleme paneli adresi | `http://localhost:16686` |
-| `<PROMETHEUS_URL>` | Prometheus metrik sunucusu | `http://localhost:9090` |
+| Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
+| :--- | :--- | :--- | :---: | :---: |
+| **Grafana Panosu** | `https://studentXX-grafana.devopsatolyesi.com` | `http://<UBUNTU_IP>:3000` | `admin` | `.env` içindeki `GRAFANA_ADMIN_PASSWORD` (`DevOps2026!`) |
+| **Prometheus** | `https://studentXX-prometheus.devopsatolyesi.com` | `http://<UBUNTU_IP>:9090` | - | Kimlik doğrulaması yok |
+| **Jaeger UI (Tracing)** | `https://studentXX-jaeger.devopsatolyesi.com` | `http://<UBUNTU_IP>:16686` | - | Kimlik doğrulaması yok |
+| **Alertmanager** | - | `http://<UBUNTU_IP>:9093` | - | Kimlik doğrulaması yok |
 
 ---
 
@@ -62,24 +63,27 @@ graph TD
 
 #### 1. Gözlemlenebilirlik Profilini Başlatma
 
-Docker Compose ile izleme altyapısını (`observability` profili) ayağa kaldırın:
+İzleme altyapısını (`observability` profili) saf `docker compose` komutlarıyla ayağa kaldırın:
 
-```bash
-test -f .env || cp config/project.env.example .env
-chmod 600 .env
-nano .env
-# GRAFANA_ADMIN_PASSWORD placeholder değerini gerçek bir yerel parola ile değiştirin.
-bash scripts/compose-observability.sh config
-bash scripts/compose-observability.sh up
-```
-*Açıklama:* `.env` yalnızca bu makinede kalır ve Git tarafından yok sayılır. Helper, parola eksik veya placeholder ise Compose'u başlatmadan durur.
+1. Yerel `.env` dosyasını oluşturun ve Grafana parolanızı belirleyin:
+   ```bash
+   test -f .env || cp config/project.env.example .env
+   sed -i 's/<SET_A_LOCAL_SECRET>/DevOps2026!/g' .env
+   chmod 600 .env
+   ```
 
-*Beklenen çıktı:* Prometheus, Grafana, Alertmanager, Jaeger ve OTel Collector servislerinin `Up` duruma geçmesi. Bu stack, LAB-03 starter helper'ın oluşturduğu `novashop-starter_default` ağına bağlanır; bu nedenle starter UI önce çalışıyor olmalıdır.
+2. Saf `docker compose` komutuyla servisleri arka planda başlatın:
+   ```bash
+   docker compose --env-file .env -p novashop-observability -f deploy/observability/docker-compose.observability.yml up -d
+   ```
+   *(İsteğe bağlı helper betik: `bash scripts/compose-observability.sh up`)*
 
-**Servislerin Sağlık Durumunu Doğrulama:**
-```bash
-bash scripts/compose-observability.sh ps
-```
+*Açıklama:* Bu stack, LAB-03'te oluşturulan `novashop-starter_default` ağına bağlanır; bu nedenle LAB-03 UI servisi önce çalışıyor olmalıdır.
+
+3. **Servislerin Sağlık Durumunu Doğrulama:**
+   ```bash
+   docker compose -p novashop-observability -f deploy/observability/docker-compose.observability.yml ps
+   ```
 
 ---
 

@@ -12,25 +12,27 @@ nodes:
           kubeletExtraArgs:
             node-labels: "ingress-ready=true"
     extraPortMappings:
-      # NodePort doğrudan erişimi (30080 -> 8888)
+      # NodePort doğrudan erişimi (30080 -> 30080) — Port çakışması olmaması için ayrılmıştır
       - containerPort: 30080
-        hostPort: 8888
-        protocol: TCP
-      # Ingress HTTP (80 -> 80)
-      - containerPort: 80
-        hostPort: 8080
-        protocol: TCP
-      # Ingress HTTPS (443 -> 8443)
-      - containerPort: 443
-        hostPort: 8443
+        hostPort: 30080
         protocol: TCP
 
   - role: worker
     labels:
       tier: presentation
       node.kubernetes.io/instance-type: worker-1
+    extraMounts:
+      - hostPath: /var/log/containers
+        containerPath: /var/log/containers
+      - hostPath: /var/log/pods
+        containerPath: /var/log/pods
 
   - role: worker
     labels:
       tier: application
       node.kubernetes.io/instance-type: worker-2
+    extraMounts:
+      - hostPath: /var/log/containers
+        containerPath: /var/log/containers
+      - hostPath: /var/log/pods
+        containerPath: /var/log/pods

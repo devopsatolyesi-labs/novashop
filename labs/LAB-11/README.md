@@ -60,16 +60,13 @@ graph TD
 
 ---
 
-### Kullanılan Değerler
+### 🧭 Erişim Modelleri ve Kimlik Bilgileri (Credentials)
 
-| Değer / Parametre | Açıklama | Varsayılan |
-|---|---|---|
-| Kibana Web UI | Görsel analiz arayüzü | `http://localhost:5601` |
-| Elasticsearch API | Log sorgu ve sağlık uç noktası | `http://localhost:9200` |
-| Fluent Bit Forward | Docker konteyner log alım portu | `24224/TCP` |
-| Docker Log İndeksi | Uygulama logları | `novashop-docker-*` |
-| Kubernetes Log İndeksi | Pod logları | `novashop-k8s-*` |
-| Ubuntu Sistem İndeksi | Host syslog kayıtları | `novashop-ubuntu-*` |
+| Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
+| :--- | :--- | :--- | :---: | :---: |
+| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com` | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Single-Node Dev Modu) |
+| **Elasticsearch API** | `https://studentXX-elastic.devopsatolyesi.com` | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
+| **Fluent Bit Forward** | - | `http://<UBUNTU_IP>:24224` | - | Fluentd Forwarding Portu |
 
 ---
 
@@ -77,12 +74,13 @@ graph TD
 
 #### 1. Merkezi Loglama Profilini Başlatma
 
-Docker Compose ile `logging-elk` profilini başlatın:
+İzleme ve loglama altyapısını saf `docker compose` komutuyla arka planda başlatın:
 
 ```bash
-docker compose --profile logging-elk up -d
+cd ~/novashop
+docker compose -p novashop-logging -f deploy/logging/docker-compose.logging.yml up -d
 ```
-*Beklenen çıktı:* Elasticsearch, Kibana ve Fluent Bit konteynerlerinin `Up` duruma geçmesi.
+*Beklenen çıktı:* `novashop-elasticsearch`, `novashop-kibana` ve `novashop-fluent-bit` konteynerlerinin `Started` duruma geçmesi.
 
 **Elasticsearch Küme Sağlığını Doğrulama:**
 ```bash

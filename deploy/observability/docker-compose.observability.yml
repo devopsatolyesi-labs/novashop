@@ -45,6 +45,7 @@ services:
     volumes:
       - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/provisioning/alerting:/etc/grafana/provisioning/alerting:ro
     deploy:
       resources:
         limits:
@@ -109,10 +110,15 @@ services:
       - novashop-observability-net
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    image: gcr.io/cadvisor/cadvisor:v0.50.0
     container_name: novashop-cadvisor
+    restart: unless-stopped
     ports:
       - "8081:8080"
+    command:
+      - -housekeeping_interval=10s
+      - -docker_only=true
+      - -disable_metrics=percpu,sched,tcp,udp,hugetlb,disk,process
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -125,8 +131,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.30"
-          memory: 256M
+          cpus: "0.50"
+          memory: 512M
     networks:
       - novashop-observability-net
 

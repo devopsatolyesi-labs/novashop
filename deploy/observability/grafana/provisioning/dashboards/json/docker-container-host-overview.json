@@ -47,8 +47,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"novashop-.*\"}[1m])) * 100",
-          "legendFormat": "{{name}}",
+          "expr": "(sum by (job) (process_cpu_usage{job=~\"novashop-.*\"}) * 100) or (sum by (name) (rate(container_cpu_usage_seconds_total{name=~\"novashop-.*\"}[1m])) * 100) or (sum by (id) (rate(container_cpu_usage_seconds_total{id=~\"/system.slice/docker-.*\"}[1m])) * 100)",
+          "legendFormat": "{{job}}{{name}}",
           "refId": "A"
         }
       ]
@@ -79,8 +79,8 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "Prometheus" },
-          "expr": "sum by (name) (container_memory_working_set_bytes{name=~\"novashop-.*\"})",
-          "legendFormat": "{{name}}",
+          "expr": "(sum by (job) (jvm_memory_used_bytes{job=~\"novashop-.*\"})) or (sum by (name) (container_memory_working_set_bytes{name=~\"novashop-.*\"})) or (sum by (id) (container_memory_working_set_bytes{id=~\"/system.slice/docker-.*\"}))",
+          "legendFormat": "{{job}}{{name}}",
           "refId": "A"
         }
       ]

@@ -1,33 +1,35 @@
-# LAB-11-CENTRALIZED-LOGGING — Merkezi Loglama (ELK Stack): Docker, Kubernetes ve Ubuntu Günlüklerinin Toplanması
+# LAB-11-CENTRALIZED-LOGGING — Kapsamlı Merkezi Loglama (ELK Stack): Docker, Kubernetes, Ubuntu, Jenkins ve GitLab Günlükleri
 
 ---
 
 ### Amaç
 
-NovaShop ekosisteminde; **Fluent Bit** log toplayıcısı, **Elasticsearch** arama ve indeksleme motoru ile **Kibana** görselleştirme arayüzünden oluşan tam teşekküllü bir **ELK Loglama Yığını** kurmaktır.
+NovaShop ekosisteminde; **Elasticsearch 8.x** arama/indeksleme motoru, **Kibana 8.x** analiz ve görselleştirme platformu ile **Fluent Bit** ve **Filebeat** log ileticilerinden oluşan kurumsal seviyede bir **Merkezi Günlükleme (ELK Stack)** altyapısı kurmaktır.
 
-Bu laboratuvarda 3 farklı kaynaktan gelen loglar merkezi olarak toplanıp Kibana'da analiz edilir:
-1. **Docker Mikroservis Logları:** UI, Catalog ve diğer servislerin JSON logları ve `trace_id` korelasyonu.
-2. **Kubernetes (Kind) Küme Logları:** Pod ve konteyner seviyesindeki operasyonel loglar (`/var/log/containers/*.log`).
-3. **Ubuntu Sunucu Sistem Logları:** Host işletim sistemi seviyesindeki syslog ve servis günlükleri (`/var/log/syslog`).
+Bu laboratuvarda "hiçbir şey gizli veya sihirli kalmadan", öğrencinin **hem terminal komutlarıyla (CLI/curl/bash) hem de web kullanıcı arayüzünden (Kibana UI)** adım adım:
+1. Altyapıyı sıfırdan başlatması,
+2. Ubuntu sunucusundaki tüm kaynaklardan (Docker konteynerleri, Spring Boot mikroservisleri, Kubernetes podları, Ubuntu host ve Jenkins/GitLab) log toplaması,
+3. Elasticsearch API ile doğrudan veri basıp index/mapping mekanizmasını kavraması,
+4. Hazır örnek e-ticaret veri setlerini yüklemesi,
+5. Kibana Data View (Index Pattern) oluşturması,
+6. KQL (Kibana Query Language) ile arama ve `trace_id` korelasyonu yapması,
+7. Kibana Lens ile sıfırdan panolar çizip komutla içe aktarması,
+8. **SRE Bonus Bölümü** ile SLI, SLA, SLO ve Error Budget kavramlarını hem Grafana hem de ELK üzerinde canlı hesaplaması hedeflenir.
 
 ---
 
 ### Kazanımlar
 
-- **ELK & Fluent Bit Mimarisi:** Dağıtık sistemlerde hafif iletici (Fluent Bit), depolama/indeksleme (Elasticsearch) ve görselleştirme (Kibana) akışını uçtan uca kurmak.
-- **Çok Kaynaklı Log Toplama:** Docker konteynerleri, Kubernetes podları ve Ubuntu Linux sistem loglarını tek bir hatta birleştirmek.
-- **Log Parsing ve Zenginleştirme:** Gelen ham logları JSON ve Syslog ayrıştırıcıları ile parse edip `log_source` etiketleri eklemek.
-- **Dağıtık İzleme (Trace Correlation):** Mikroservislerdeki `trace_id` değerini yakalayarak bir hatayı tüm servisler arasında izlemek.
-- **Kibana ile Görselleştirme:** Kibana üzerinde Data View (Index Pattern) oluşturup KQL ile Docker, Kubernetes ve Ubuntu loglarını filtrelemek.
-
----
-
-### Ön koşullar
-
-- **Önceki Lablar:** [LAB-03](../LAB-03/README.md) ve [LAB-06](../LAB-06/README.md) tamamlanmış olmalıdır.
-- **Kaynak Gereksinimi:** `logging-elk` profili (en az 2 vCPU, 4 GB boş RAM).
-- **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`.
+- **ELK Mimarisi ve Veri Akışı:** Ham logun dosyadan çıkıp Elasticsearch indeksine ve Kibana panosuna uzanan yolculuğunu kavramak.
+- **Log Toplayıcı Ajanlar (Filebeat vs. Fluent Bit vs. Logstash):** Hangi log toplayıcının ne zaman, neden seçileceğini mimari ve kaynak tüketimi açısından bilmek.
+- **Çok Katmanlı Log Toplama:**
+  - Ubuntu Linux sistem logları (`/var/log/syslog`, `/var/log/auth.log`),
+  - Docker üzerinde koşan tüm araçlar (Jenkins, GitLab, SonarQube, NovaShop UI),
+  - Kubernetes (Kind) kümesindeki pod logları (`/var/log/containers/*.log`),
+  - Spring Boot Logback JSON formatındaki mikroservis uygulama logları.
+- **Elasticsearch API & Mapping Deneyimi:** Dev Tools ve `curl` ile doküman ekleme (`_doc`), indeks şablonları ve `keyword` vs `text` farkı.
+- **Kibana ile Veri Analitiği:** Discover, KQL filtreleri, hazır örnek veri (Sample Data) ve Lens ile görsel dashboard üretimi.
+- **SRE & Hata Bütçesi:** SLI/SLA/SLO metriklerinin log ve zaman serisi üzerinden formüle edilmesi.
 
 ---
 
@@ -35,27 +37,32 @@ Bu laboratuvarda 3 farklı kaynaktan gelen loglar merkezi olarak toplanıp Kiban
 
 ```mermaid
 graph TD
-    subgraph Log Kaynaklari ["Log Kaynakları"]
-        DockerApp["Docker Mikroservisleri<br/>(UI, Catalog)<br/>Fluentd Driver :24224"]
+    subgraph Ubuntu_Host ["Ubuntu Linux Sunucusu (Host)"]
+        Syslog["Ubuntu Syslog & Auth Log<br/>/var/log/syslog & auth.log"]
+        DockerAll["Docker Konteynerleri<br/>Jenkins, GitLab, SonarQube, UI<br/>/var/lib/docker/containers/*/*.log"]
         K8sPods["Kubernetes (Kind) Podları<br/>/var/log/containers/*.log"]
-        UbuntuHost["Ubuntu Sunucu Sistemi<br/>/var/log/syslog"]
+        AppMicro["NovaShop Mikroservisleri<br/>Spring Boot JSON (trace_id)"]
     end
 
-    subgraph Toplayici ["Log Toplama ve Zenginleştirme"]
-        FB["Fluent Bit Log Forwarder<br/>• Tagging & Parsing<br/>• Record Modifier (log_source)"]
+    subgraph Log_Toplayicilar ["Log İleticileri (Forwarders / Agents)"]
+        FB["Fluent Bit Forwarder (:24224 & Tail)<br/>• Docker Parser & Record Modifier<br/>• Çok Düşük Bellek (~25MB)"]
+        Filebeat["Filebeat Agent (Opsiyonel Entegrasyon)<br/>• Hafif Go Tabanlı Dosya Takibi"]
     end
 
     subgraph ELK_Stack ["Merkezi ELK Yığını (logging-elk)"]
-        ES[("Elasticsearch 8.x<br/>novashop-docker-*<br/>novashop-k8s-*<br/>novashop-ubuntu-*")]
-        Kibana["Kibana Web UI :5601<br/>• Log Arama (KQL)<br/>• Çok Kaynaklı Filtreleme<br/>• Trace-ID Korelasyonu"]
+        ES[("Elasticsearch 8.13<br/>• novashop-docker-*<br/>• novashop-k8s-*<br/>• novashop-ubuntu-*<br/>• kibana_sample_data_*")]
+        Kibana["Kibana Web UI :5601<br/>• Discover & KQL Arama<br/>• Data Views (Index Patterns)<br/>• Lens Dashboardları"]
     end
 
-    DockerApp -->|"Forward Driver"| FB
-    K8sPods -->|"Tail: /var/log/containers"| FB
-    UbuntuHost -->|"Tail: /var/log/syslog"| FB
+    Syslog -->|Tail| FB
+    DockerAll -->|Tail| FB
+    K8sPods -->|Tail| FB
+    AppMicro -->|Forward Driver| FB
+    DockerAll -.->|İsteğe Bağlı| Filebeat
 
-    FB -->|"İndeksleme"| ES
-    ES --> Kibana
+    FB -->|"HTTP POST :9200"| ES
+    Filebeat -.->|"HTTP POST :9200"| ES
+    ES <--> Kibana
 ```
 
 ---
@@ -64,202 +71,333 @@ graph TD
 
 | Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
 | :--- | :--- | :--- | :---: | :---: |
-| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com`<br/>*(veya Cloudflare Proxy: `https://studentXX-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Single-Node Dev Modu) |
-| **Elasticsearch API** | `https://studentXX-elastic.devopsatolyesi.com`<br/>*(veya Cloudflare Proxy: `https://studentXX-k8s-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
-| **Fluent Bit Forward** | - | `http://<UBUNTU_IP>:24224` | - | Fluentd Forwarding Portu |
+| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com`<br/>*(veya CDN Alias: `studentXX-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Eğitim Modu) |
+| **Elasticsearch REST API** | `https://studentXX-elastic.devopsatolyesi.com`<br/>*(veya CDN Alias: `studentXX-k8s-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
+| **Fluent Bit Forwarder** | - | `http://<UBUNTU_IP>:24224` | - | Fluentd TCP/UDP Forward Portu |
 
-> **💡 Kod ile Adım Adım Yerel DNS Çözümleme:**
-> `studentXX-kibana` ve diğer alt alan adlarının bilgisayarınızda doğrudan ve kesintisiz çözümlenmesi için depodaki otomatik yerel DNS betiğini çalıştırabilirsiniz:
+> **💡 Yerel DNS Otomasyonu:**
+> Bilgisayarınızdan alan adlarıyla kesintisiz çalışmak için terminalinizde şu betiği çalıştırabilirsiniz:
 > ```bash
-> sudo bash scripts/setup-local-dns.sh <SUNUCU_IP> <STUDENT_ID>
-> # Örnek: sudo bash scripts/setup-local-dns.sh 34.77.187.127 student100
+> sudo bash scripts/setup-local-dns.sh <SUNUCU_IP> student100
 > ```
-> Bu betik `/etc/hosts` dosyasını otomatik olarak yapılandırır ve tarayıcınızdan `https://student100-kibana.devopsatolyesi.com` adresinin anında açılmasını sağlar.
 
 ---
 
-### Adımlar
+### 📚 Log Toplayıcı Ajanlar: Filebeat vs. Logstash vs. Fluent Bit
 
-#### 1. Merkezi Loglama Profilini Başlatma
+Bir DevOps mühendisinin merkezi loglama kurarken vermesi gereken ilk mimari karar, doğru toplayıcıyı seçmektir:
 
-İzleme ve loglama altyapısını saf `docker compose` komutuyla arka planda başlatın:
+| Özellik | Filebeat (Elastic) | Fluent Bit (CNCF) | Logstash (Elastic) |
+| :--- | :--- | :--- | :--- |
+| **Geliştirildiği Dil** | Go | C | Java / JRuby |
+| **Bellek Tüketimi** | ~15 - 30 MB (Çok Düşük) | ~10 - 25 MB (Ultra Düşük) | ~500 MB - 1.5 GB (Ağır) |
+| **Kullanım Amacı** | Uç noktalardan (Node/Sunucu) dosya okuyup doğrudan ES'e aktarmak. | Bulut yerlisi (K8s/Docker) ortamlarda yüksek hızlı, hafif yönlendirme. | Ağır metin manipülasyonu, karmaşık Grok parsing ve zenginleştirme. |
+| **Konteyner Uyumu** | Mükemmel (Docker/K8s metadata modülü var). | Mükemmel (K8s standart de-facto ajanıdır). | Ağır kaldığı için her node'a agent olarak konulmaz, merkeze konur. |
+| **Bizim Tercihimiz** | LAB-11'de entegrasyon örneği olarak kullanıyoruz. | Ana omurgada sistem kaynağını yormamak için varsayılan toplayıcıdır. | Ağır bellek gerektirdiği için 4GB RAM'li eğitim profilinde tercih edilmemiştir. |
+
+---
+
+## 🛠️ Adım Adım Uygulama Rehberi (CLI & UI)
+
+---
+
+### ADIM 1: Merkezi Loglama Altyapısını (ELK) Sıfırdan Başlatma
+
+#### Yöntem A: Terminalden (CLI)
+Sunucuda ELK yığınını saf Docker Compose komutuyla ayağa kaldırın:
 
 ```bash
 cd ~/novashop
 docker compose -p novashop-logging -f deploy/logging/docker-compose.logging.yml up -d
 ```
-*Beklenen çıktı:* `novashop-elasticsearch`, `novashop-kibana` ve `novashop-fluent-bit` konteynerlerinin `Started` duruma geçmesi.
 
-**Elasticsearch Küme Sağlığını Doğrulama:**
+**Konteyner Durumlarını Denetleme:**
 ```bash
-curl -s http://localhost:9200/_cluster/health | grep -o '"status":"[a-z]*"'
+docker compose -p novashop-logging -f deploy/logging/docker-compose.logging.yml ps
 ```
-*Beklenen çıktı:* `"status":"green"` veya `"status":"yellow"` (tek düğüm için sarı normaldir).
+*Beklenen çıktı:* `novashop-elasticsearch`, `novashop-kibana` ve `novashop-fluent-bit` servislerinin `running (Up)` olması.
 
----
-
-#### 2. Fluent Bit Çok Kaynaklı Yapılandırması (`fluent-bit.conf`)
-
-Fluent Bit; Docker mikroservis loglarını forward portundan (24224), Kubernetes pod loglarını `/var/log/containers/` yolundan ve Ubuntu sistem günlüklerini `/var/log/syslog` dosyasından toplayarak Elasticsearch'e aktarır:
-
-```ini
-# 1. GİRİŞLER: Docker, Kubernetes ve Ubuntu
-[INPUT]
-    Name             forward
-    Listen           0.0.0.0
-    Port             24224
-    Tag              docker.novashop.*
-
-[INPUT]
-    Name             tail
-    Path             /var/log/containers/*.log
-    Tag              k8s.*
-    Parser           docker
-
-[INPUT]
-    Name             tail
-    Path             /var/log/syslog
-    Tag              ubuntu.syslog
-
-# 2. ÇIKIŞLAR: Elasticsearch İndeksleri
-[OUTPUT]
-    Name             es
-    Match            docker.*
-    Host             elasticsearch
-    Port             9200
-    Index            novashop-docker
-    Logstash_Format  On
-    Logstash_Prefix  novashop-docker
-
-[OUTPUT]
-    Name             es
-    Match            k8s.*
-    Host             elasticsearch
-    Port             9200
-    Index            novashop-k8s
-    Logstash_Format  On
-    Logstash_Prefix  novashop-k8s
-
-[OUTPUT]
-    Name             es
-    Match            ubuntu.*
-    Host             elasticsearch
-    Port             9200
-    Index            novashop-ubuntu
-    Logstash_Format  On
-    Logstash_Prefix  novashop-ubuntu
-```
-
-*Not:* Docker mikroservis loglarını Fluent Bit'e aktarmak için overlay dosyasıyla servisleri başlatın:
+**Elasticsearch Küme Sağlığını API ile Sorgulama:**
 ```bash
-docker compose -f src/app/docker-compose.yml -f deploy/logging/docker-compose.logging-driver.yml up -d
+curl -s http://localhost:9200/_cluster/health | jq .
 ```
-
----
-
-#### 3. Log Kayıtlarında Trace-ID ve Yapılandırılmış JSON Formatı
-
-Spring Boot ve Go mikroservisleri konsola standart JSON formatında log üretir. OpenTelemetry MDC üzerinden eklenen `trace_id` ile dağıtık izleme sağlanır:
-
+*Beklenen çıktı:*
 ```json
 {
-  "@timestamp": "2026-09-09T12:30:45.123Z",
-  "level": "ERROR",
-  "service": "novashop-ui",
-  "trace_id": "4bf92f3577b34da6a3ce929d0e0e4736",
-  "span_id": "00f067aa0ba902b7",
-  "message": "Failed to retrieve product details from catalog service"
+  "cluster_name": "docker-cluster",
+  "status": "green",
+  "number_of_nodes": 1,
+  "active_primary_shards": 5
 }
 ```
 
+#### Yöntem B: Web Tarayıcısından (UI)
+1. Tarayıcınızda `https://studentXX-elastic.devopsatolyesi.com` veya `http://<SUNUCU_IP>:9200` adresine gidin.
+   * Ekranda Elasticsearch sürümünü (`"number": "8.13.0"`) ve `"tagline": "You Know, for Search"` ifadesini görmelisiniz.
+2. `https://studentXX-kibana.devopsatolyesi.com` veya `http://<SUNUCU_IP>:5601` adresine gidin.
+   * Kibana karşılama ekranı yüklenecektir.
+
 ---
 
-#### 4. Elasticsearch İndekslerini Kontrol Etme
+### ADIM 2: Log Toplama Katmanları (Ubuntu'daki Her Şey)
 
-Her 3 kaynaktan da logların Elasticsearch'e ulaştığını doğrulayın:
+NovaShop Fluent Bit yapılandırması ([deploy/logging/fluent-bit.conf](file:///Users/hakan/devops-workspace/student-novashop/deploy/logging/fluent-bit.conf)) Ubuntu sunucusundaki 5 farklı kaynağı aynı anda dinler:
 
+1. **Ubuntu Host Logları:** `/var/log/syslog` ve `/var/log/auth.log` (SSH denemeleri, kernel mesajları).
+2. **Docker Konteyner Logları:** `/var/lib/docker/containers/*/*-json.log` yolu üzerinden makinedeki tüm Docker konteynerleri (Jenkins, GitLab, SonarQube, Harbor, NovaShop UI).
+3. **Uygulama JSON Logları:** Spring Boot ve Go servislerinin stdout'a bastığı yapılandırılmış JSON logları (`trace_id`, `span_id`, `level`, `service`).
+4. **Kubernetes Pod Logları:** Kind kümesinin pod logları (`/var/log/pods/` ve `/var/log/containers/`).
+5. **Fluentd Log Driver (:24224):** Docker servislerinin doğrudan TCP forward portu üzerinden gönderdiği loglar.
+
+**Elasticsearch'te İndekslerin Oluştuğunu Kontrol Etme (CLI):**
 ```bash
 curl -s http://localhost:9200/_cat/indices?v
 ```
-
-*Beklenen çıktı:* `novashop-docker-*`, `novashop-k8s-*` ve `novashop-ubuntu-*` indekslerinin listede belirmesi.
-
----
-
-#### 5. Kibana Üzerinde Çok Kaynaklı Log Analizi ve Korelasyon
-
-1. Tarayıcınızda `http://localhost:5601` (Kibana) adresine gidin.
-2. **Management > Stack Management > Data Views (Index Patterns)** bölümüne gidin.
-3. `novashop-*` desenini ekleyin (bu desen Docker, K8s ve Ubuntu indekslerinin tamamını kapsar) ve zaman alanı olarak `@timestamp` seçin.
-4. **Discover** sayfasına geçin.
-5. **KQL ile Kaynak Filtreleme:**
-   - Sadece Kubernetes loglarını görmek için:
-     ```kql
-     log_source: "kubernetes_pod"
-     ```
-   - Sadece Ubuntu host loglarını görmek için:
-     ```kql
-     log_source: "ubuntu_system"
-     ```
-   - Mikroservis hatasını `trace_id` ile uçtan uca izlemek için:
-     ```kql
-     trace_id: "4bf92f3577b34da6a3ce929d0e0e4736"
-     ```
-6. **Sonuç:** Tek bir Kibana arayüzünden hem altyapı (Ubuntu), hem orkestrasyon (Kubernetes) hem de uygulama (Docker) logları merkezi olarak analiz edilir.
+*Örnek Çıktı:*
+```text
+health status index                        docs.count store.size
+green  open   novashop-docker-2026.09.14          512    240kb
+green  open   novashop-k8s-2026.09.14           48102    9.5mb
+green  open   novashop-ubuntu-2026.09.14        16240    2.9mb
+```
 
 ---
 
-#### 6. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
+### ADIM 3: Elasticsearch Hands-On: Elle Veri Basma, Arama ve Mapping
 
-Log korelasyon kalıplarını ve Elasticsearch küme durumunu otomatik test betiği ile doğrulayın:
+Elasticsearch'ün arkasındaki mantığı tam kavramak için önce bir log dökümanını elle ekleyip arayalım.
 
+#### Yöntem A: Terminalden (`curl` ile)
+Yeni bir e-ticaret sipariş hatası simülasyonu ekleyin:
+
+```bash
+curl -s -X POST http://localhost:9200/novashop-demo/_doc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "@timestamp": "2026-09-14T10:00:00Z",
+    "service": "novashop-checkout",
+    "level": "ERROR",
+    "http_status": 502,
+    "user_id": "usr-9941",
+    "trace_id": "a1b2c3d4e5f60718",
+    "message": "Payment provider timeout after 5000ms"
+  }' | jq .
+```
+*Çıktı:* `"_id": "...", "result": "created"` dönecektir.
+
+**Eklenen Veriyi Arama:**
+```bash
+curl -s "http://localhost:9200/novashop-demo/_search?q=level:ERROR" | jq '.hits.hits[0]._source'
+```
+
+#### Yöntem B: Kibana UI (Dev Tools / Console)
+Kibana içinde en güçlü yönetim aracı **Dev Tools** konsoludur:
+1. Kibana sol menüsünde en alta inin ve **Management ➔ Dev Tools**'a tıklayın.
+2. Konsol editörüne şu komutu yazıp yanındaki yeşil çalıştır üçgenine basın:
+
+```http
+POST novashop-demo/_doc
+{
+  "@timestamp": "2026-09-14T10:05:00Z",
+  "service": "novashop-cart",
+  "level": "WARN",
+  "message": "Stock is low for product ID 408"
+}
+```
+3. İndeksin otomatik oluşan şemasını (Mapping) görmek için:
+```http
+GET novashop-demo/_mapping
+```
+> **Önemli Kavram: `keyword` vs `text`:**
+> - `keyword`: Tam eşleşme (Exact match), filtreleme, gruplama (Aggregation) için kullanılır (`service.keyword: "novashop-cart"`).
+> - `text`: Doğal dil metin araması (Full-text search), kelime kelime ayrıştırma (Inverted Index) için kullanılır (`message: "stock"`).
+
+---
+
+### ADIM 4: Kibana Hazır Örnek Veri (Sample Data) Entegrasyonu
+
+Öğrencinin sistemi kurduğu ilk dakikada binlerce gerçekçi log ve hazır grafiklerle çalışabilmesi için Kibana resmi örnek e-ticaret veri setini sağlar.
+
+#### Yöntem A: Terminalden Tek Komutla (CLI)
+Hazırladığımız otomasyon betiğini çalıştırın:
+```bash
+bash scripts/load-kibana-sample-data.sh
+```
+*Bu komut; 4.600+ sipariş işlemi, vergi, gelir, kategori kırılımları ve hazır gelir panosunu anında yükler.*
+
+#### Yöntem B: Kibana Arayüzünden (UI)
+1. Kibana ana sayfasına (`http://localhost:5601`) gidin.
+2. Sayfanın en altındaki **"Add sample data"** butonuna tıklayın.
+3. **Sample eCommerce orders** kartında **"Add data"** butonuna tıklayın.
+4. Yükleme tamamlandığında **"View data"** butonuna basarak hazır `[eCommerce] Revenue Dashboard` panosunu açın.
+
+---
+
+### ADIM 5: Kibana Data Views (Index Patterns) Oluşturma
+
+Elasticsearch'teki indekslerin Kibana **Discover** ve **Dashboard** ekranlarında görünmesi için bir **Data View** tanımlanmalıdır.
+
+#### Yöntem A: Terminalden Otomatik Oluşturma (CLI)
+```bash
+bash scripts/setup-kibana-dataviews.sh
+```
+Bu betik şu veri görünümlerini saniyeler içinde API üzerinden kaydeder:
+* `novashop-*` (Tüm sistem, docker, k8s ve ubuntu loglarını kapsayan çatı görünüm)
+* `novashop-docker-*` (Yalnızca konteynerler ve mikroservisler)
+* `novashop-k8s-*` (Yalnızca Kubernetes podları)
+* `novashop-ubuntu-*` (Yalnızca host işletim sistemi)
+
+#### Yöntem B: Kibana Arayüzünden (UI)
+1. Sol menüden **Management ➔ Stack Management**'a girin.
+2. Soldaki menüden **Kibana ➔ Data Views** seçeneğine tıklayın.
+3. Sağ üstteki **Create data view** mavi butonuna basın:
+   * **Name:** `NovaShop Tüm Loglar`
+   * **Index pattern:** `novashop-*`
+   * **Timestamp field:** `@timestamp`
+4. **Save data view to Kibana** butonuna basarak kaydedin.
+
+---
+
+### ADIM 6: Filebeat ile İleri Entegrasyon (Opsiyonel Ajan Yapılandırması)
+
+Fluent Bit'e ek olarak kurumsal projelerde çok yaygın kullanılan Elastic Filebeat ajanını incelemek için hazırladığımız yapılandırmayı kullanabilirsiniz:
+
+Dosya: [deploy/logging/filebeat/filebeat.yml](file:///Users/hakan/devops-workspace/student-novashop/deploy/logging/filebeat/filebeat.yml)
+
+**Filebeat'i Docker ile Başlatma Örneği:**
+```bash
+docker run -d \
+  --name novashop-filebeat \
+  --user root \
+  --network novashop-logging-net \
+  -v $(pwd)/deploy/logging/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro \
+  -v /var/lib/docker/containers:/var/lib/docker/containers:ro \
+  -v /var/log:/var/log:ro \
+  docker.elastic.co/beats/filebeat:8.13.0
+```
+*Filebeat, `/var/lib/docker/containers` altındaki JSON logları otomatik okuyup `novashop-filebeat-*` indeksine basar.*
+
+---
+
+### ADIM 7: Kibana ile Arama ve KQL (Kibana Query Language) Kılavuzu
+
+Kibana **Discover** ekranına (`http://localhost:5601/app/discover`) gidin ve sol üstten `novashop-*` veri görünümünü seçin.
+
+#### Pratik KQL Sorgu Kütüphanesi:
+
+| Amaç | KQL Sorgu Sözdizimi |
+| :--- | :--- |
+| **Yalnızca Hata Logları:** | `level: "ERROR"` |
+| **Spesifik Mikroservis Hatası:** | `service: "novashop-checkout" and level: "ERROR"` |
+| **HTTP 5xx Sunucu Hataları:** | `http.status_code >= 500` |
+| **Kubernetes Pod Loglarını Filtreleme:** | `log_source: "kubernetes_pod"` |
+| **Ubuntu Sistem Loglarını Filtreleme:** | `log_source: "ubuntu_system"` |
+| **Metin Araması (Wildcard):** | `message: *timeout* or message: *database*` |
+| **Dağıtık Trace-ID Takibi:** | `trace_id: "a1b2c3d4e5f60718"` |
+
+> **🚀 Trace-ID Korelasyon Deneyi:**
+> Bir kullanıcı ödeme yaparken hata aldıysa, logdaki `trace_id` değerini kopyalayıp KQL arama çubuğuna yapıştırın. `novashop-ui`, `novashop-checkout` ve `novashop-orders-db` servislerinin bu istek sırasında ürettiği tüm satırlar kronolojik sırayla önünüze dizilecektir!
+
+---
+
+### ADIM 8: Kibana Dashboard Tasarımı ve Komutla Yükleme
+
+#### Yöntem A: Terminalden Otomatik İçe Aktarma (CLI)
+```bash
+bash scripts/import-kibana-dashboard.sh
+```
+*Kibana Saved Objects API kullanılarak "NovaShop — Merkezi Log ve Sistem Analiz Panosu" otomatik oluşturulur.*
+Tarayıcıdan doğrudan açın: `http://localhost:5601/app/dashboards#/view/novashop-central-logging`
+
+#### Yöntem B: Kibana Lens ile Sıfırdan Grafik Tasarlama (UI)
+1. Sol menüden **Analytics ➔ Dashboard** sekmesine gidin.
+2. **Create dashboard** butonuna tıklayın.
+3. **Create visualization** butonuna basın (Kibana Lens açılır):
+   * **Grafik 1: Log Kaynağı Dağılımı (Bar Chart):**
+     * Sağdaki alan listesinden `log_source.keyword` alanını ortaya sürükleyip bırakın.
+     * Otomatik olarak `kubernetes_pod`, `ubuntu_system`, `docker_container` log sayılarını gösteren sütun grafik oluşacaktır.
+   * **Grafik 2: Hata Sayacı (Metric):**
+     * Sol üstteki filtre çubuğuna `level: "ERROR"` yazın.
+     * Orta alana `Records` alanını sürükleyin. Dev bir kırmızı hata sayacı elde edersiniz.
+4. Sağ üstteki **Save and return** butonuna basarak dashboard'unuza kaydedin.
+
+---
+
+## 🌟 SRE BONUS BÖLÜMÜ: SLI, SLA ve SLO Nedir? (Grafana & ELK Uygulamaları)
+
+Site Reliability Engineering (SRE) disiplininin kalbinde yer alan üç kritik kavram:
+
+```mermaid
+flowchart LR
+    SLI["<b>SLI (İndikatör)</b><br/>Gerçekte ne ölçüyoruz?<br/><i>Örn: Başarılı İstek %</i>"] -->|Karşılaştırılır| SLO["<b>SLO (Hedef)</b><br/>Mühendislik hedefimiz ne?<br/><i>Örn: %99.9 Başarı</i>"]
+    SLO -->|Güvence Sağlar| SLA["<b>SLA (Sözleşme)</b><br/>Müşteriye taahhüt ve ceza<br/><i>Örn: %99.5 altı para iadesi</i>"]
+    SLO -->|Kalan Pay| EB["<b>Error Budget (Hata Bütçesi)</b><br/>100 - 99.9 = %0.1 Hata Payı<br/><i>Yeni özellik yayını için ayrılan risk payı</i>"]
+```
+
+### 1. Temel Kavramlar ve Formüller:
+* **SLI (Service Level Indicator - Hizmet Seviyesi Göstergesi):** Sistemin anlık sağlık durumunu ölçen sayısal orandır.
+  $$\text{SLI} = \frac{\text{İyi Olayların Sayısı (Good Events)}}{\text{Toplam Olay Sayısı (Total Events)}} \times 100$$
+* **SLO (Service Level Objective - Hizmet Seviyesi Hedefi):** Mühendislik ve DevOps ekibinin sistem için koyduğu iç hedeftir (Örn: Ay boyunca $\%99.9$ başarı oranı).
+* **SLA (Service Level Agreement - Hizmet Seviyesi Sözleşmesi):** Müşteri veya iş birimiyle imzalanan yasal/sözleşmesel taahhüttür. Genellikle SLO'dan daha gevşektir (Örn: $\%99.5$). Sistemin $\%99.5$ altına inmesi durumunda şirkete cezai yaptırım doğar.
+* **Error Budget (Hata Bütçesi):** Sistemimizin izin verilen arıza payıdır:
+  $$\text{Hata Bütçesi} = 100\% - \text{SLO} = 100\% - 99.9\% = 0.1\%$$
+  *Eğer ay içinde hata bütçesi (%0.1) tükenirse, tüm yeni özellik dağıtımları durdurulur ve ekip yalnızca güvenilirlik/bug çözümlerine odaklanır.*
+* **Burn Rate (Tükenme Hızı):** Hata bütçenizin ne kadar hızlı eridiğini gösterir. Normal hız 1x'tir; eğer 14x hızında yanıyorsa birkaç saat içinde aylık bütçeniz bitecektir.
+
+---
+
+### 2. Grafana'da SLO & SLI Nasıl Hesaplanır? (PromQL)
+
+Grafana üzerinde bir **SLO / SLI Paneli** oluşturmak için PromQL formülleri:
+
+1. **Kullanılabilirlik SLI (Availability %):**
+   ```promql
+   (sum(rate(http_server_requests_seconds_count{status!~"5.."}[30d])) 
+   / 
+   sum(rate(http_server_requests_seconds_count[30d]))) * 100
+   ```
+   *Ekrana Stat veya Gauge paneli olarak konur; yeşil eşik 99.9, sarı 99.5, kırmızı 99.0 yapılır.*
+
+2. **Gecikme (Latency) SLI (%95 İstek < 200ms):**
+   ```promql
+   (sum(rate(http_server_requests_seconds_bucket{le="0.2"}[30d])) 
+   / 
+   sum(rate(http_server_requests_seconds_count[30d]))) * 100
+   ```
+
+3. **Kalan Hata Bütçesi (Remaining Error Budget %):**
+   ```promql
+   100 - ((100 - (sum(rate(http_server_requests_seconds_count{status!~"5.."}[30d])) / sum(rate(http_server_requests_seconds_count[30d])) * 100)) / 0.1 * 100)
+   ```
+
+---
+
+### 3. ELK / Kibana'da Log Tabanlı SLO & SLI Nasıl Hesaplanır?
+
+Prometheus metriklere bakarken, Elasticsearch doğrudan log kayıtları üzerinden SLA doğrulaması yapar:
+
+1. **Log Tabanlı Hata Oranı SLI:**
+   * Kibana Lens arayüzünde **Formula** alanına şu ifade yazılır:
+   ```text
+   (count() - count(kql='level: "ERROR"')) / count() * 100
+   ```
+   * Bu formül, gelen tüm uygulama logları içerisindeki hatasız log oranını verir.
+2. **Kibana SLA İhlal Filtresi:**
+   * KQL ile son 24 saatteki ihlalleri listeleme:
+   ```kql
+   response_time_ms > 200 or http.status_code >= 500
+   ```
+
+---
+
+### Doğrulama ve Cleanup
+
+**Otomatik Doğrulama:**
 ```bash
 bash scripts/verify/verify-lab-11.sh localhost:9200
 ```
-*Beklenen çıktı:*
-```text
-=== [LAB-11] Merkezi Günlükleme Doğrulama Başlatılıyor ===
-1. Uygulama loglarında Trace-ID / Span-ID korelasyon kontrolü...
-✅ Kaynak kodda dağıtık log korelasyonu (traceId / spanId) kalıbı mevcut.
-2. Elasticsearch canlı cluster durumu test ediliyor...
-=== [LAB-11] Merkezi Günlükleme Doğrulama Tamamlandı ===
-```
 
----
-
-### Troubleshooting
-
-#### Senaryo 1: Elasticsearch Yetersiz Bellek / Çökme (`Exit Code 137`)
-- **Belirti:** Elasticsearch başladıktan hemen sonra kapanıyor.
-- **Muhtemel Neden:** JVM heap alanının çok yüksek tutulması veya sistem RAM'inin tükenmesi.
-- **Güvenli Çözüm:** `ES_JAVA_OPTS="-Xms512m -Xmx512m"` ile bellek kullanımını sınırlandırın.
-
-#### Senaryo 2: Kibana'da Loglar Görünmüyor (`No results found`)
-- **Belirti:** Discover sekmesinde log akışı yok.
-- **Teşhis:** Elasticsearch indeksini kontrol edin: `curl -s http://localhost:9200/_cat/indices?v`.
-- **Güvenli Çözüm:** Zaman filtresini (Time Filter) "Last 15 minutes" olarak ayarlayın ve Fluent Bit loglarını inceleyin: `docker logs novashop-fluent-bit`.
-
----
-
-### Güvenlik Notu
-
-1. **Hassas Veri Maskeleme (Log Sanitization):**
-   - Müşteri parolaları, kredi kartı numaraları ve kimlik bilgileri loglara açık metin yazılamaz; Fluent Bit regex filtreleri veya Logback encoder ile maskelenmelidir (`***MASKED***`).
-2. **Log Saklama ve Silme (Retention):**
-   - Disk alanının dolmaması için Elasticsearch Index Lifecycle Management (ILM) ile 7 günden eski loglar otomatik silinir.
-
----
-
-### Cleanup / Rollback
-
+**Temizlik / Rollback:**
 ```bash
-# Loglama altyapısını durdur ve birimleri temizle
-docker compose --profile logging-elk down -v
+docker compose -p novashop-logging -f deploy/logging/docker-compose.logging.yml down -v
 ```
-
----
-
-### Pratik Uygulama Görevi
-
-1. Kibana üzerinde yalnızca `level: "ERROR"` olan logları listeleyen özel bir filtre oluşturun.
-2. Bu filtrenin sonucunu "Hata Sayacı" (Error Metrics) görselleştirmesi olarak yeni bir Dashboard'a kaydedin.

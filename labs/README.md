@@ -4,9 +4,12 @@ NovaShop e-ticaret platformu üzerinde adım adım uygulanan, kurumsal standartl
 
 Tüm laboratuvarlar **Ubuntu sunucusu** üzerinde koşar ve iki erişim modelini (`Doğrudan IP:Port` ve `Kurumsal DNS+SSL`) destekler.
 
+> 👨‍🏫 **Eğitmenler İçin Ders Anlatım ve Mülakat Rehberi:**  
+> Ders anlatımı sırasında öğrencilere aktarılacak motivasyonel hikayeler, mimari kararlar, soru-cevap köşeleri, prodüksiyon best practice'leri ve sektörel mülakat soruları için **[Eğitmen Ders Anlatım Kitapçığı](../docs/instructor/INSTRUCTOR_TEACHING_GUIDE.md)** dökümanını inceleyin.
+
 ---
 
-## 🧭 Laboratuvar Yol Haritası (LAB-00 - LAB-14)
+## 🧭 Laboratuvar Yol Haritası (LAB-00 - LAB-11)
 
 Aşağıdaki laboratuvarlar, modern bir DevOps mühendisinin uçtan uca uzmanlaşması gereken konu başlıklarına göre sıralı olarak kurgulanmıştır:
 
@@ -24,7 +27,4 @@ Aşağıdaki laboratuvarlar, modern bir DevOps mühendisinin uçtan uca uzmanla�
 | **09** | **[LAB-09](LAB-09/README.md)** | GitOps & Argo CD | Declarative GitOps, continuous reconciliation, self-healing, automated sync | [LAB-09 Rehberi](LAB-09/README.md) |
 | **10** | **[LAB-10](LAB-10/README.md)** | Observability & İzleme | Prometheus metrikleri, Grafana panoları, OpenTelemetry / Jaeger trace, SLO yönetimi | [LAB-10 Rehberi](LAB-10/README.md) |
 | **11** | **[LAB-11](LAB-11/README.md)** | Merkezi Loglama (ELK Stack) | Fluent Bit, Elasticsearch, Kibana; Docker mikroservisleri, K8s podları ve Ubuntu host logları | [LAB-11 Rehberi](LAB-11/README.md) |
-| **12** | **[LAB-12](LAB-12/README.md)** | Terraform IaC Enterprise | Modüler Terraform, remote S3 state, DynamoDB locking, cloud-init otomasyonu | [LAB-12 Rehberi](LAB-12/README.md) |
-| **13** | **[LAB-13](LAB-13/README.md)** | Amazon EKS Enterprise | Kurumsal AWS EKS kümesi, IRSA, AWS Load Balancer Controller, ADOT | [LAB-13 Rehberi](LAB-13/README.md) |
-| **14** | **[LAB-14](LAB-14/README.md)** | AWS ECS & Fargate | Serverless container mimarisi, ALB, ECS Task Definition, GitHub Actions | [LAB-14 Rehberi](LAB-14/README.md) |
 

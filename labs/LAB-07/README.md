@@ -60,7 +60,9 @@ graph TD
 
 ---
 
-| Placeholder | Anlamı | Örnek Biçim |
+### ⚙️ Ortam Değişkenleri ve Parametreler
+
+| Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<HARBOR_URL>` | Harbor Registry erişim adresi | Model A: `127.0.0.1:18082` \| Model B: `studentXX-harbor.devopsatolyesi.com` |
 | `<ROBOT_NAME>` | Harbor robot hesap adı | `robot$novashop+novashop-cicd` |

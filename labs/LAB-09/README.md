@@ -56,9 +56,9 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
+### ⚙️ Ortam Değişkenleri ve Parametreler
 
-| Placeholder | Anlamı | Örnek Biçim |
+| Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<ARGOCD_PASSWORD>` | Argo CD admin arayüzü şifresi | Güvenli parola |
 | `<REPO_URL>` | GitOps manifestolarını barındıran repo adresi | `https://github.com/.../novashop.git` |

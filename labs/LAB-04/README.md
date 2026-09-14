@@ -53,9 +53,9 @@ graph TD
 
 ---
 
-### Kullanılan placeholder'lar
+### ⚙️ Ortam Değişkenleri ve Parametreler
 
-| Placeholder | Anlamı | Örnek Biçim |
+| Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<EC2_PUBLIC_IP>` | EC2 sunucusunun genel IP adresi | `3.120.45.67` |
 | `<RDS_ENDPOINT>` | RDS MySQL bağlantı adresi | `novashop-catalog-db.cxxxx.rds.amazonaws.com` |

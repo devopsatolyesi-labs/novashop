@@ -33,11 +33,11 @@ sudo usermod -aG docker $USER
 | Araç | Kurulum Rehberi | Model A: Doğrudan IP:Port | Model B: DNS + SSL (HTTPS) | RAM Tüketimi | Hızlı Başlatma |
 | :--- | :--- | :---: | :---: | :---: | :--- |
 | **NovaShop UI** | [LAB-06](../LAB-06/README.md) | `http://<UBUNTU_IP>:8888` | `https://student100-novashop.devopsatolyesi.com` | ~512 MB | Helm / Kind |
-| **Harbor Registry** | [02-harbor-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/02-harbor-setup.md) | `http://<UBUNTU_IP>:18082` | `https://student100-harbor.devopsatolyesi.com` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
-| **GitLab CE** | [01-gitlab-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/01-gitlab-setup.md) | `http://<UBUNTU_IP>:8929` | `https://student100-gitlab.devopsatolyesi.com` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
-| **SonarQube** | [03-sonarqube-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/03-sonarqube-setup.md) | `http://<UBUNTU_IP>:19000` | `https://student100-sonarqube.devopsatolyesi.com` | ~2.0 GB | `docker compose -f infra/sonarqube/docker-compose.yml up -d` |
-| **Jenkins** | [04-jenkins-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/04-jenkins-setup.md) | `http://<UBUNTU_IP>:18080` | `https://student100-jenkins.devopsatolyesi.com` | ~1.0 GB | `docker compose -f infra/jenkins/docker-compose.yml up -d` |
-| **Nginx Proxy** | [05-nginx-ssl-setup.md](file:///labs/LAB-00-PLATFORM-SETUP/05-nginx-ssl-setup.md) | - | `80/443 (Edge)` | ~100 MB | `sudo bash infra/nginx/setup-ssl-edge.sh student100` |
+| **Harbor Registry** | [02-harbor-setup.md](02-harbor-setup.md) | `http://<UBUNTU_IP>:18082` | `https://student100-harbor.devopsatolyesi.com` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
+| **GitLab CE** | [01-gitlab-setup.md](01-gitlab-setup.md) | `http://<UBUNTU_IP>:8929` | `https://student100-gitlab.devopsatolyesi.com` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
+| **SonarQube** | [03-sonarqube-setup.md](03-sonarqube-setup.md) | `http://<UBUNTU_IP>:19000` | `https://student100-sonarqube.devopsatolyesi.com` | ~2.0 GB | `docker compose -f infra/sonarqube/docker-compose.yml up -d` |
+| **Jenkins** | [04-jenkins-setup.md](04-jenkins-setup.md) | `http://<UBUNTU_IP>:18080` | `https://student100-jenkins.devopsatolyesi.com` | ~1.0 GB | `docker compose -f infra/jenkins/docker-compose.yml up -d` |
+| **Nginx Proxy** | [05-nginx-ssl-setup.md](05-nginx-ssl-setup.md) | - | `80/443 (Edge)` | ~100 MB | `sudo bash infra/nginx/setup-ssl-edge.sh student100` |
 
 ---
 

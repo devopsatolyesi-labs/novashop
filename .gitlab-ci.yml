@@ -1,7 +1,21 @@
 # ==============================================================================
 # NovaShop — GitLab CI/CD Pipeline
 # Kurumsal Dağıtım Hattı: Test -> Harbor Registry -> Kind Kubernetes
+# NOT: Runner saat kotasını tüketmemek için tüm işler 'manual' (elle tetiklemeli)
+#      veya yalnızca GitLab Web arayüzünden 'Run Pipeline' yapıldığında çalışır.
 # ==============================================================================
+
+workflow:
+  rules:
+    # Doküman, script veya [skip ci] içeren commitlerde pipeline oluşturma
+    - if: '$CI_COMMIT_MESSAGE =~ /\[skip ci\]|\[ci skip\]/i'
+      when: never
+    # GitLab Web arayüzünden ("Run pipeline" butonu) tetiklendiğinde çalıştır
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    # Normal git push yapıldığında pipeline'ı oluştur ama işleri otomatik BAŞLATMA (manual bekle)
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
 
 stages:
   - verify
@@ -21,6 +35,10 @@ variables:
 
 unit-tests:
   stage: verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - when: manual
   script:
     - echo "Stage 1 - Kod Dogrulama ve Birim Testler"
     - cd src/ui
@@ -30,6 +48,11 @@ unit-tests:
 
 build-and-push-harbor:
   stage: build-and-push
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - when: manual
+  allow_failure: true
   script:
     - echo "Stage 2 - Docker Build ve Harbor Registry Push"
     - echo "${HARBOR_ROBOT_SECRET}" | docker login ${HARBOR_HOST} -u 'robot$novashop+novashop-cicd' --password-stdin
@@ -40,6 +63,11 @@ build-and-push-harbor:
 
 deploy-to-kind:
   stage: deploy-k8s
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+      when: always
+    - when: manual
+  allow_failure: true
   script:
     - echo "Stage 3 - Kind Kubernetes Kumesine Dagitim"
     - kubectl get nodes

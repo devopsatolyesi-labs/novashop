@@ -1,0 +1,105 @@
+name: NovaShop CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/ui/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    name: Build, Test & Push to ECR
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tag }}
+      image_uri: ${{ steps.build-image.outputs.image_uri }}
+
+    steps:
+      - name: Repoyu Klonla
+        uses: actions/checkout@v4
+
+      - name: Java 21 Kurulumu
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Birim Testleri Çalıştır
+        run: |
+          cd src/ui
+          chmod +x mvnw
+          ./mvnw test -B -q
+
+      - name: AWS OIDC Kimlik Doğrulaması
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: AWS ECR Girişi Yap
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: İmaj Etiketi Belirleme
+        id: meta
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Docker İmajını Derle ve ECR'a Gönder
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: novashop-ui
+          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker build -t "$IMAGE_URI" src/ui
+          docker push "$IMAGE_URI"
+          echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+
+  deploy-to-ec2:
+    name: Deploy to EC2 & Verify
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: AWS OIDC Kimlik Doğrulaması (ECR Token İçin)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: ECR Login Token Al
+        id: ecr-token
+        run: |
+          TOKEN=$(aws ecr get-login-password --region ${{ vars.AWS_REGION }})
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: SSH ile EC2'ye Dağıtım Yap
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_TOKEN: ${{ steps.ecr-token.outputs.token }}
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image_uri }}
+        with:
+          host: ${{ vars.EC2_HOST }}
+          username: ${{ vars.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: ECR_TOKEN,IMAGE_URI
+          script: |
+            export ECR_TOKEN IMAGE_URI
+            cd ~/novashop/labs/LAB-05 2>/dev/null || cd ~/novashop-deploy
+            ./deploy.sh "$IMAGE_URI"
+
+      - name: Dış Uçtan Uca Sağlık Kontrolü (Smoke Test)
+        run: |
+          curl -s -k -f https://${{ vars.EC2_HOST }}/healthz || exit 1
+          echo "Canlı sistem doğrulandı."

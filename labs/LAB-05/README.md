@@ -1,10 +1,14 @@
 # LAB-05-GITHUB-ACTIONS — GitHub Actions ile Otomatik CI/CD, ECR ve EC2 Dağıtımı
 
+| Seviye | Tahmini Süre | Profil / Araçlar | Açık Portlar |
+|---|---|---|---|
+| Orta | 45 Dakika | GitHub Actions, AWS ECR, AWS IAM OIDC, Docker Compose, Nginx | 80 (HTTP), 443 (HTTPS), 8888 (UI Local) |
+
 ---
 
 ### Amaç
 
-NovaShop UI mikroservisini; GitHub Actions iş akışı (workflow) kullanarak otomatik olarak derlemek, Docker imajı olarak etiketleyip AWS ECR (Elastic Container Registry) özel kayıt defterine göndermek, EC2 sunucusuna güvenli OIDC/SSH üzerinden otomatik dağıtmak ve sağlık kontrolü başarısız olduğunda otomatik rollback mekanizmasını doğrulamak.
+NovaShop UI mikroservisini; GitHub Actions iş akışı kullanarak otomatik olarak derlemek, Docker imajı olarak etiketleyip AWS ECR (Elastic Container Registry) özel kayıt defterine göndermek, EC2 sunucusuna güvenli OIDC/SSH üzerinden otomatik dağıtmak ve sağlık kontrolü başarısız olduğunda otomatik rollback mekanizmasını doğrulamak.
 
 ---
 
@@ -13,8 +17,9 @@ NovaShop UI mikroservisini; GitHub Actions iş akışı (workflow) kullanarak ot
 - Modern CI/CD yaşam döngüsünü (Continuous Integration & Continuous Deployment) uçtan uca kurmak.
 - Kalıcı AWS anahtarları (Access Key / Secret Key) yerine **GitHub OIDC (OpenID Connect)** ve geçici IAM Rolü (`AssumeRoleWithWebIdentity`) ile en yüksek güvenlik standardını uygulamak.
 - AWS ECR üzerinde özel container kayıt defteri oluşturup imajları semantik versiyon ve Git commit SHA ile etiketlemek (`immutable tag`).
-- EC2 sunucusunda çalışan Docker Compose yığınını yeni imaj ile sıfır kesintiye yakın güncellemek.
-- Dağıtım sonrası otomatik sağlık kontrolü (`health check`) testi koşmak ve hata durumunda otomatik geri alma (rollback) tetiklemek.
+- EC2 sunucusunda çalışan Docker Compose yığınını yeni imaj ile kesintisiz güncellemek.
+- Dağıtım sonrası otomatik sağlık kontrolü (`smoke test`) koşmak ve hata durumunda otomatik geri alma (rollback) tetiklemek.
+- Ortam değişkenlerini (`.env`) merkezi yöneterek komut satırında hard-coded değer girmeden doğrudan kopyala-yapıştır ile operasyon yürütmek.
 
 ---
 
@@ -22,12 +27,13 @@ NovaShop UI mikroservisini; GitHub Actions iş akışı (workflow) kullanarak ot
 
 - **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-04](../LAB-04/README.md) tamamlanmış olmalıdır.
 - **GitHub Reposu:** Öğrencinin kendi GitHub hesabı altındaki `novashop` reposu (Admin yetkili).
-- **AWS Hesabı:** ECR ve IAM rolü oluşturma yetkisine sahip AWS kullanıcısı.
-- **Çalışan EC2 Sunucusu:** Docker ve Docker Compose kurulu, public subnet'teki EC2 instance'ı.
+- **AWS Hesabı:** ECR ve IAM rolü oluşturma yetkisine sahip AWS kullanıcısı (veya CloudShell).
+- **Çalışan EC2 Sunucusu:** LAB-04'ten kalan Docker Compose ve Nginx kurulu EC2 instance'ı.
+- **SSH Anahtarı:** EC2 sunucusuna bağlanan `.pem` özel anahtarı (`~/.ssh/novashop-key.pem`).
 
 ---
 
-### Mimari
+### Mimari ve Çalışma Modeli
 
 ```mermaid
 sequenceDiagram
@@ -37,11 +43,11 @@ sequenceDiagram
     participant ECR as AWS ECR Registry
     participant EC2 as AWS EC2 Web Sunucusu
 
-    Dev->>GH: git push origin main
+    Dev->>GH: git push origin main (src/ui)
     Note over GH: 1. Test & Build (Maven / Docker)
     GH->>ECR: AWS OIDC AssumeRole ile ECR Login
     GH->>ECR: docker push <AWS_ACCOUNT_ID>.dkr.ecr.../novashop-ui:<SHA>
-    Note over GH,EC2: 2. CD Deployment Adımı
+    Note over GH,EC2: 2. CD Dağıtım Adımı
     GH->>EC2: SSH ile deploy.sh tetikleme
     EC2->>ECR: Yeni imajı çek (docker pull)
     EC2->>EC2: docker compose up -d ui
@@ -49,337 +55,191 @@ sequenceDiagram
     alt Sağlık Kontrolü Başarılı (UP)
         EC2-->>GH: Dağıtım Başarılı (200 OK)
     else Sağlık Kontrolü Başarısız
-        EC2->>EC2: ./rollback.sh (Önceki İmaja Dön)
+        EC2->>EC2: Otomatik Rollback (Önceki İmaja Dön)
         EC2-->>GH: Dağıtım Başarısız (Exit 1)
     end
 ```
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Parametreler
+### ⚙️ Ortam Değişkenleri ve Konfigürasyon Dosyası (.env)
 
-| Parametre | Açıklama | Örnek Değer |
-|---|---|---|
-| `<AWS_ACCOUNT_ID>` | 12 haneli AWS hesap numarası | `123456789012` |
-| `<AWS_REGION>` | Çalışılan AWS bölgesi | `eu-central-1` |
-| `<GITHUB_ORG_OR_USER>` | GitHub kullanıcı adı veya organizasyonu | `devops-ogrenci` |
-| `<EC2_PUBLIC_IP>` | EC2 sunucusunun genel IP adresi | `3.120.45.67` |
-| `<ECR_REPO_NAME>` | ECR kayıt defteri adı | `novashop-ui` |
+Bu laboratuvardaki tüm komutların kopyala-yapıştır ile doğrudan çalışabilmesi için parametreler `.env` dosyasında tanımlanır.
+
+#### 1. Yerel Terminalde Değişkenleri Tanımlama
+
+Yerel bilgisayarınızda veya CloudShell'de lab klasörüne geçin ve `.env` dosyanızı oluşturun:
+
+```bash
+cd labs/LAB-05
+cp .env.example .env
+```
+
+`.env` dosyasını kendi AWS, GitHub ve EC2 değerlerinizle güncelleyin (`nano .env`):
+
+```bash
+# --- AWS ve Hesap Bilgileri ---
+AWS_REGION="eu-central-1"
+AWS_ACCOUNT_ID="123456789012"
+
+# --- GitHub Bilgileri ---
+GITHUB_ORG_OR_USER="devops-ogrenci"
+GITHUB_REPO_NAME="novashop"
+
+# --- EC2 Sunucu Bilgileri ---
+EC2_PUBLIC_IP="3.120.45.67"
+EC2_USER="ubuntu"
+KEY_PATH="~/.ssh/novashop-key.pem"
+```
+
+Değişkenleri terminal oturumunuza aktarın:
+
+```bash
+set -a && source .env && set +a
+```
+
+> [!TIP]
+> `set -a && source .env && set +a` komutu `.env` içindeki tüm değişkenleri `export` eder. Böylece aşağıdaki tüm komutları parametre değiştirmeden doğrudan kopyalayıp çalıştırabilirsiniz.
 
 ---
 
-### Adımlar
+### Adım Adım Uygulama Rehberi
 
-#### 1. AWS ECR Kayıt Defterini (Repository) Oluşturma
+#### 1. AWS Kaynaklarını Oluşturma (ECR ve GitHub OIDC IAM Rolü)
 
-Yerel terminalinizden veya AWS CloudShell üzerinden NovaShop UI için özel ECR reposu oluşturun:
+AWS tarafında ECR reposunu, GitHub OIDC identity provider'ı ve `novashop-github-actions-role` IAM rolünü tek komutla hazırlamak için hazır kurulum betiğini çalıştırın:
 
 ```bash
-aws ecr create-repository \
-  --repository-name novashop-ui \
-  --image-tag-mutability IMMUTABLE \
-  --image-scanning-configuration scanOnPush=true \
-  --region <AWS_REGION>
+./setup-aws.sh
 ```
-*Açıklama:*
-- `--image-tag-mutability IMMUTABLE`: Aynı etiketle (tag) var olan bir imajın üzerine yazılmasını engelleyerek sürüm güvenliğini sağlar.
-- `scanOnPush=true`: İmaj her yüklendiğinde otomatik güvenlik açığı taraması başlatır.
 
-**ECR URI Bilgisini Alma:**
-```bash
-aws ecr describe-repositories --repository-names novashop-ui --region <AWS_REGION> \
-  --query 'repositories[0].repositoryUri' --output text
-```
-*Beklenen çıktı:* `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/novashop-ui`
+Bu betik otomatik olarak:
+1. `novashop-ui` ECR özel reposunu `IMMUTABLE` ve `scanOnPush=true` kurallarıyla oluşturur.
+2. AWS IAM üzerinde GitHub OIDC sağlayıcısını (`token.actions.githubusercontent.com`) kontrol eder / ekler.
+3. Reponuza özel güven ilkesi (`repo:${GITHUB_ORG_OR_USER}/${GITHUB_REPO_NAME}:*`) ile IAM rolü oluşturur.
+4. ECR yetkilendirmesi (`AmazonEC2ContainerRegistryPowerUser`) politikasını role bağlar.
+5. GitHub'a girmeniz gereken tüm Secrets ve Variables değerlerini ekrana yazdırır.
 
 ---
 
-#### 2. Güvenli GitHub OIDC (OpenID Connect) IAM Rolü Oluşturma
+#### 2. GitHub Secrets ve Variables Tanımlama
 
-> [!IMPORTANT]
-> GitHub Actions içine asla kalıcı AWS Access Key / Secret Key yazılmaz. AWS STS AssumeRoleWithWebIdentity ile geçici 1 saatlik token alınır:
+GitHub'da deponuza gidin: **Settings > Secrets and variables > Actions**
 
-**1. OIDC Identity Provider Varlığını Kontrol Etme:**
-```bash
-aws iam list-open-id-connect-providers | grep -q "token.actions.githubusercontent.com" || \
-aws iam create-open-id-connect-provider \
-  --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1 1c5860f5b04e3ca1a81f3cb0e6e1b4b0e8b5770e
-```
+**1. Repository Secrets (Gizli Değerler):**
+- **İsim:** `EC2_SSH_KEY`
+- **Değer:** EC2 anahtarınızın tam metin içeriği:
+  ```bash
+  cat "$KEY_PATH"
+  ```
 
-**2. GitHub Reponuza Özel Güven İlkesi (Trust Policy) Oluşturma:**
-```bash
-cat << EOF > github-oidc-trust.json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Principal": {
-        "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-      },
-      "Action": "sts:AssumeRoleWithWebIdentity",
-      "Condition": {
-        "StringEquals": {
-          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-        },
-        "StringLike": {
-          "token.actions.githubusercontent.com:sub": "repo:<GITHUB_ORG_OR_USER>/novashop:*"
-        }
-      }
-    }
-  ]
-}
-EOF
-
-aws iam create-role \
-  --role-name novashop-github-actions-role \
-  --assume-role-policy-document file://github-oidc-trust.json
-
-# ECR Push ve Login Yetki Politikasını Ekle
-aws iam attach-role-policy \
-  --role-name novashop-github-actions-role \
-  --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
-
-rm -f github-oidc-trust.json
-```
-Rol ARN adresini not ediniz: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/novashop-github-actions-role`.
-
----
-
-#### 3. GitHub Secrets ve Değişkenlerini (Variables) Tanımlama
-
-GitHub reponuzun **Settings > Secrets and variables > Actions** sayfasına giderek aşağıdaki değerleri ekleyin:
-
-**Repository Secrets:**
-- `EC2_SSH_KEY`: EC2 sunucunuza bağlanan `.pem` anahtarınızın tam metin içeriği (`cat ~/.ssh/novashop-key.pem`).
-
-**Repository Variables:**
+**2. Repository Variables (Genel Değişkenler):**
+Aşağıdaki 5 değişkeni `New repository variable` butonu ile ekleyin:
 - `AWS_ROLE_TO_ASSUME`: `arn:aws:iam::<AWS_ACCOUNT_ID>:role/novashop-github-actions-role`
-- `AWS_REGION`: `<AWS_REGION>`
+- `AWS_REGION`: `$AWS_REGION` (örn: `eu-central-1`)
 - `ECR_REPOSITORY`: `<AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/novashop-ui`
-- `EC2_HOST`: `<EC2_PUBLIC_IP>`
+- `EC2_HOST`: `$EC2_PUBLIC_IP`
 - `EC2_USER`: `ubuntu`
 
 ---
 
-#### 4. EC2 Sunucusunda Otomatik Dağıtım Betiğini Hazırlama
+#### 3. EC2 Sunucusunda Dağıtım Dizinini ve Betikleri Hazırlama
 
-EC2 sunucunuza SSH ile bağlanıp dağıtım ve doğrulama betiğini oluşturun:
+EC2 sunucunuza bağlanın:
 
 ```bash
-cat << 'EOF' > ~/novashop-deploy/deploy.sh
-#!/usr/bin/env bash
-set -e
-
-NEW_IMAGE="$1"
-if [ -z "$NEW_IMAGE" ]; then
-    echo "Hata: İmaj parametresi eksik! Kullanım: ./deploy.sh <IMAGE_URI>"
-    exit 1
-fi
-
-echo "=== 1. Mevcut Stabil İmajı Yedekleme ==="
-CURRENT_IMAGE=$(grep -o "image: .*/novashop-ui:.*" docker-compose.prod.yml | awk '{print $2}' || true)
-echo "Mevcut çalışan imaj: $CURRENT_IMAGE"
-
-echo "=== 2. Yeni İmajı ECR'dan Çekme ==="
-# AWS CLI ile ECR oturum aç
-aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin $(echo "$NEW_IMAGE" | cut -d/ -f1)
-docker pull "$NEW_IMAGE"
-
-echo "=== 3. docker-compose.prod.yml Güncelleme ==="
-sed -i "s|image: .*/novashop-ui:.*|image: ${NEW_IMAGE}|g" docker-compose.prod.yml
-
-echo "=== 4. Konteyneri Güncelleme ==="
-docker compose -f docker-compose.prod.yml up -d ui
-
-echo "=== 5. Sağlık Kontrolü Doğrulaması (Smoke Test) ==="
-SUCCESS=0
-for i in {1..12}; do
-    STATUS=$(curl -s http://127.0.0.1:8888/actuator/health | grep -o '"status":"UP"' || true)
-    if [ "$STATUS" = '"status":"UP"' ]; then
-        echo "Sağlık kontrolü BAŞARILI: $STATUS"
-        SUCCESS=1
-        break
-    fi
-    echo "Servis bekleniyor ($i/12)..."
-    sleep 5
-done
-
-if [ "$SUCCESS" -ne 1 ]; then
-    echo "HATA: Sağlık kontrolü başarısız oldu! Otomatik Rollback başlatılıyor..."
-    if [ -n "$CURRENT_IMAGE" ]; then
-        sed -i "s|image: .*/novashop-ui:.*|image: ${CURRENT_IMAGE}|g" docker-compose.prod.yml
-        docker compose -f docker-compose.prod.yml up -d ui
-        echo "Rollback tamamlandı: $CURRENT_IMAGE aktif edildi."
-    fi
-    exit 1
-fi
-
-echo "=== Dağıtım Başarıyla Tamamlandı ==="
-EOF
-
-chmod +x ~/novashop-deploy/deploy.sh
+chmod 400 "$KEY_PATH"
+ssh -i "$KEY_PATH" ubuntu@"$EC2_PUBLIC_IP"
 ```
+
+Sunucu üzerinde repo klasörüne geçin (veya repoyu çekin):
+
+```bash
+git clone https://gitlab.com/devops-practitioner-labs/novashop.git ~/novashop || (cd ~/novashop && git pull)
+cd ~/novashop/labs/LAB-05
+cp .env.example .env
+nano .env   # RDS_ENDPOINT ve DB_PASSWORD girip kaydedin
+set -a && source .env && set +a
+```
+
+Klasör içeriğinde hazır bulunan dosyalar:
+- `deploy.sh`: ECR'dan yeni imajı çeker, `docker-compose.prod.yml`'ı günceller, UI servisini yeniden başlatır, 15 denemede sağlık kontrolü yapar; başarısız olursa otomatik rollback yapar.
+- `rollback.sh`: İstenen kararlı sürüme anında döner.
+- `docker-compose.prod.yml`: 3-Tier mimariyi çalıştıran üretim Compose dosyası.
 
 ---
 
-#### 5. GitHub Actions Workflow Dosyasını Oluşturma
+#### 4. GitHub Actions CI/CD Pipeline'ını İnceleme ve Devreye Alma
 
-Yerel çalışma kopyanızda `.github/workflows/deploy.yml` dosyasını oluşturun:
+Deponuzda `.github/workflows/deploy.yml` dosyası hazır olarak tanımlanmıştır:
 
 ```bash
-mkdir -p .github/workflows
-cat << 'EOF' > .github/workflows/deploy.yml
-name: NovaShop CI/CD Pipeline
-
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/ui/**'
-      - '.github/workflows/deploy.yml'
-  workflow_dispatch:
-
-permissions:
-  id-token: write
-  contents: read
-
-jobs:
-  build-and-push:
-    name: Build, Test & Push to ECR
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tag }}
-      image_uri: ${{ steps.build-image.outputs.image_uri }}
-
-    steps:
-      - name: Repoyu Klonla
-        uses: actions/checkout@v4
-
-      - name: Java 21 Kurulumu
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'maven'
-
-      - name: Birim Testleri Çalıştır
-        run: |
-          cd src/ui
-          ./mvnw test
-
-      - name: AWS OIDC Kimlik Doğrulaması
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ vars.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: AWS ECR Girişi Yap
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: İmaj Etiketi Belirleme
-        id: meta
-        run: |
-          SHORT_SHA=$(git rev-parse --short HEAD)
-          echo "tag=${SHORT_SHA}" >> $GITHUB_OUTPUT
-
-      - name: Docker İmajını Derle ve ECR'a Gönder
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: novashop-ui
-          IMAGE_TAG: ${{ steps.meta.outputs.tag }}
-        run: |
-          IMAGE_URI="${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
-          docker build -t "$IMAGE_URI" src/ui
-          docker push "$IMAGE_URI"
-          echo "image_uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-
-  deploy-to-ec2:
-    name: Deploy to EC2 & Verify
-    needs: build-and-push
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: SSH ile EC2'ye Dağıtım Yap
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ vars.EC2_HOST }}
-          username: ${{ vars.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd ~/novashop-deploy
-            ./deploy.sh "${{ needs.build-and-push.outputs.image_uri }}"
-
-      - name: Dış Uçtan Uca Sağlık Kontrolü (Smoke Test)
-        run: |
-          curl -s -k -f https://${{ vars.EC2_HOST }}/healthz || exit 1
-          echo "Canlı sistem doğrulandı."
-EOF
+cat .github/workflows/deploy.yml
 ```
+
+İş akışı iki aşamadan oluşur:
+1. **build-and-push:**
+   - Java 21 ortamında `./mvnw test` ile birim testleri çalıştırır.
+   - AWS OIDC ile geçici token alır.
+   - Git Commit SHA ile Docker imajını derler ve ECR'a gönderir (`novashop-ui:<SHORT_SHA>`).
+2. **deploy-to-ec2:**
+   - OIDC üzerinden ECR login token alır.
+   - Appleboy SSH Action ile EC2'ye bağlanır.
+   - `./deploy.sh "<IMAGE_URI>"` çalıştırarak konteyneri günceller.
+   - Dışarıdan `https://${EC2_HOST}/healthz` ile duman testi (smoke test) koşar.
 
 ---
 
-#### 6. Pipeline'ı Tetikleme ve Otomatik Dağıtımı İzleme
+#### 5. Pipeline'ı Tetikleme ve Otomatik Dağıtımı İzleme
 
-Yapılan değişikliği commit edin ve GitHub'a gönderin:
+CI/CD hattını tetiklemek için UI kodunda ufak bir değişiklik yapıp repoya gönderin:
 
 ```bash
-git add .github/workflows/deploy.yml
-git commit -m "ci: add automated CI/CD pipeline with AWS ECR and EC2 deployment"
+# Yerel bilgisayarınızda
+git add .
+git commit -m "feat(ui): update banner title and trigger CI/CD pipeline"
 git push origin main
 ```
 
-**GitHub Arayüzünden Takip:**
+**İzleme:**
 1. GitHub reponuzda **Actions** sekmesine gidin.
-2. `NovaShop CI/CD Pipeline` iş akışının yeşile döndüğünü (`Success`) doğrulayın.
-3. AWS ECR konsolunda yeni commit SHA etiketiyle imajın yüklendiğini teyit edin.
+2. `NovaShop CI/CD Pipeline` çalışmasını canlı izleyin.
+3. `build-and-push` ve `deploy-to-ec2` adımlarının yeşile döndüğünü (`Success`) doğrulayın.
 
 ---
 
-#### 7. Otomatik Rollback Senaryosunu Test Etme
+### Doğal Doğrulama ve Beklenen Sonuç
 
-Sistemin başarısız bir dağıtımda önceki stabil sürüme döndüğünü test etmek için kasıtlı olarak hatalı bir imaj dağıtımını simüle edin:
+Dağıtım tamamlandıktan sonra yerel terminalinizden canlı doğrulama yapın:
 
 ```bash
-# EC2 sunucusunda test edin:
-ssh -i <KEY_PATH> ubuntu@<EC2_PUBLIC_IP>
-cd ~/novashop-deploy
-
-# Bilerek sağlık kontrolü vermeyen bir imajı dağıtmaya çalışın
-./deploy.sh "alpine:latest"
+# 1. Nginx Edge Sağlık Kontrolü
+curl -s -k "https://${EC2_PUBLIC_IP}/healthz"
 ```
 *Beklenen çıktı:*
-```text
-Servis bekleniyor (1/12)...
-...
-HATA: Sağlık kontrolü başarısız oldu! Otomatik Rollback başlatılıyor...
-Rollback tamamlandı: <PREV_IMAGE> aktif edildi.
-```
-Sistemin çökmediğini ve önceki çalışan imajın devrede kaldığını teyit edin:
-```bash
-curl -s http://127.0.0.1:8888/actuator/health
-# {"status":"UP"}
+```json
+{"status":"UP","tier":"3-tier-edge","protocol":"https"}
 ```
 
----
-
-#### 8. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
-
-İş akışlarınızı, OIDC tanımlarınızı ve secret sızıntı denetimini otomatik test betiği ile denetleyin:
+```bash
+# 2. UI Mikroservisi Doğrudan Actuator Kontrolü
+curl -s -k "https://${EC2_PUBLIC_IP}/actuator/health"
+```
+*Beklenen çıktı:*
+```json
+{"status":"UP"}
+```
 
 ```bash
+# 3. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
 bash scripts/verify/verify-lab-05.sh
 ```
 *Beklenen çıktı:*
 ```text
 === [LAB-05] GitHub Actions Doğrulama Başlatılıyor ===
 ✅ Workflows dizini mevcut.
-✅ Bulunan iş akışı sayısı: ...
-✅ OIDC / AWS kimlik sağlayıcı tanımı tespit edildi: ...
+✅ Bulunan iş akışı sayısı: 10
+✅ OIDC / AWS kimlik sağlayıcı tanımı tespit edildi: deploy.yml
 ✅ Hardcoded AWS gizli anahtarı bulunmadı (Güvenli).
 ✅ İmaj etiketleme kuralları temiz (SHA veya semantik versiyon kullanılıyor).
 === [LAB-05] GitHub Actions Doğrulaması Tamamlandı! ===
@@ -387,26 +247,59 @@ bash scripts/verify/verify-lab-05.sh
 
 ---
 
+### Kontrollü Sürüm Güncelleme ve Otomatik Rollback
+
+Sistemin dağıtım hatasında otomatik olarak önceki stabil sürüme döndüğünü test etmek için kasıtlı olarak hatalı bir imaj ile dağıtımı simüle edin:
+
+```bash
+# EC2 sunucusunda test edin:
+cd ~/novashop/labs/LAB-05
+
+# Kasıtlı olarak /actuator/health yanıtı vermeyen bir imajı dağıtmayı deneyin:
+./deploy.sh "alpine:latest"
+```
+
+*Beklenen çıktı:*
+```text
+=== 1. Mevcut Çalışan İmajı Yedekleme ===
+Mevcut çalışan stabil imaj: .../novashop-ui:1.6.2
+...
+=== 5. Sağlık Kontrolü Doğrulaması (Smoke Test) ===
+   Servis bekleniyor (1/15)...
+   ...
+❌ HATA: Sağlık kontrolü başarısız oldu! Otomatik Rollback başlatılıyor...
+Geri dönülüyor: .../novashop-ui:1.6.2
+✅ Rollback tamamlandı: Stabil imaj yeniden devrede.
+```
+
+Sistemin ayakta kaldığını doğrulayın:
+```bash
+curl -s http://127.0.0.1:8888/actuator/health
+```
+*Beklenen çıktı:* `{"status":"UP"}`
+
+---
+
 ### Troubleshooting
 
 #### Senaryo 1: GitHub Actions `Not authorized to perform sts:AssumeRoleWithWebIdentity`
-- **Belirti:** Pipeline'ın "AWS OIDC Kimlik Doğrulaması" adımında yetki hatası alması.
-- **Muhtemel Neden:** IAM rolünün Güven İlkesinde (`Trust Policy`) repo adı (`repo:<ORG>/<REPO>:*`) yazım hatası veya `token.actions.githubusercontent.com:aud` şartının uyuşmaması.
+- **Belirti:** Pipeline "AWS OIDC Kimlik Doğrulaması" adımında yetki hatası alıyor.
+- **Muhtemel Neden:** IAM rolünün Güven İlkesinde (`Trust Policy`) repo adı (`repo:<ORG>/<REPO>:*`) yanlış yazılmış veya `Condition` bloğunda `aud` eşleşmiyor.
 - **Teşhis Komutu:**
   ```bash
   aws iam get-role --role-name novashop-github-actions-role --query 'Role.AssumeRolePolicyDocument'
   ```
-- **Güvenli Çözüm:** `Condition` altındaki `sub` dizesini GitHub reponuzun tam yoluyla (`repo:kullanici/novashop:*`) eşleştirin.
+- **Güvenli Çözüm:** `setup-aws.sh` betiğini `.env` içindeki doğru `GITHUB_ORG_OR_USER` ve `GITHUB_REPO_NAME` bilgileriyle yeniden çalıştırın.
 
 #### Senaryo 2: ECR Push Sırasında `denied: Your authorization token has expired`
 - **Belirti:** Docker push adımında `unauthorized` veya token süresi doldu hatası.
 - **Muhtemel Neden:** ECR login işleminin yapılmaması veya IAM rolünde `ecr:GetAuthorizationToken` izninin eksik olması.
-- **Güvenli Çözüm:** IAM rolüne `AmazonEC2ContainerRegistryPowerUser` politikasının eklendiğini teyit edin.
+- **Güvenli Çözüm:** IAM rolüne `AmazonEC2ContainerRegistryPowerUser` politikasının bağlı olduğunu doğrulayın.
 
 #### Senaryo 3: EC2 SSH Adımında `Host Key Verification Failed` veya Zaman Aşımı
-- **Belirti:** GitHub Actions `appleboy/ssh-action` adımında takılı kalıyor ve zaman aşımına uğruyor.
-- **Muhtemel Neden:** EC2 Web Güvenlik Grubunda SSH portunun (22) GitHub Actions runner IP'lerine kapalı olması veya SSH anahtarının yanlış formatta eklenmesi.
-- **Güvenli Çözüm:** Lab ortamında SSH anahtarının doğru eklendiğini ve güvenlik grubunda port 22'nin erişilebilir olduğunu kontrol edin.
+- **Belirti:** GitHub Actions `appleboy/ssh-action` adımında takılı kalıyor ve timeout veriyor.
+- **Muhtemel Neden:** EC2 Güvenlik Grubunda (SG) port 22'nin açık olmaması veya `EC2_SSH_KEY` secret'ının eksik/hatalı kopyalanması.
+- **Güvenli Çözüm:** `cat ~/.ssh/novashop-key.pem` çıktısının tamamını (başlangıç ve bitiş çizgileri dahil) `EC2_SSH_KEY` secret'ına ekleyin.
 
 ---
 
@@ -415,29 +308,21 @@ bash scripts/verify/verify-lab-05.sh
 1. **Sıfır Kalıcı Secret (Zero Static Keys):**
    - Repoda hiçbir AWS Access Key veya Secret Key saklanmaz. GitHub OIDC ile dakikalık geçici oturum anahtarları üretilir.
 2. **Değiştirilemez İmaj Etiketleri (Immutable Tags):**
-   - ECR üzerinde `IMMUTABLE` özelliği açılarak aynı etiketle zararlı veya hatalı kod yüklenmesi engellenir.
+   - ECR üzerinde `IMMUTABLE` özelliği açık tutularak aynı etiketle mevcut imajın üzerine yazılması engellenir.
 3. **Otomatik Güvenlik Taraması (ECR Scan on Push):**
    - Her imaj AWS tarafında bilinen güvenlik açıkları (CVE) için taranır.
 
 ---
 
-### Cleanup / Rollback
+### Cleanup
+
+Laboratuvarı tamamladıktan sonra AWS kaynaklarını temizlemek için:
 
 ```bash
 # 1. AWS ECR Kayıt Defterini Silin
-aws ecr delete-repository --repository-name novashop-ui --force --region <AWS_REGION>
+aws ecr delete-repository --repository-name "$ECR_REPO_NAME" --force --region "$AWS_REGION"
 
 # 2. IAM Rolünü Silin
-aws iam detach-role-policy --role-name novashop-github-actions-role --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
-aws iam delete-role --role-name novashop-github-actions-role
-
-# 3. EC2 Sunucusunu Durdurma/Silme
-# LAB-02-AWS-BASICS.md cleanup adımlarını uygulayınız.
+aws iam detach-role-policy --role-name "$ROLE_NAME" --policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+aws iam delete-role --role-name "$ROLE_NAME"
 ```
-
----
-
-### Pratik Uygulama Görevi
-
-1. `.github/workflows/deploy.yml` dosyasına derleme öncesinde `src/ui/src/main/resources/lang/messages.properties` dosyasında syntax kontrolü yapan bir shell adımı ekleyin.
-2. Hatalı bir sözdizimi ile commit atıp pipeline'ın derlemeyi durdurduğunu (Quality Gate) Actions sekmesinde gözlemleyin.

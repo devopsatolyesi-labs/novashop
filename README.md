@@ -2,6 +2,10 @@
 
 > **From Code to Cloud** — DevOps Atölyesi Uygulamalı Eğitim Projesi
 
+> [!IMPORTANT]
+> **Eğitim ve Laboratuvar Amaçlı Kullanım Bildirimi:**  
+> Bu depo ve içerisindeki kaynak kodlar, konfigürasyon dosyaları, betikler ve altyapı şablonları **yalnızca eğitim, simülasyon ve laboratuvar çalışmaları için hazırlanmıştır**. Canlı üretim (Production) ortamlarında doğrudan kullanılmak üzere tasarlanmamıştır; kurumsal üretim ortamlarının gerektirdiği ileri düzey güvenlik sertleştirmeleri, yüksek erişilebilirlik (HA), olağanüstü durum kurtarma ve uyumluluk politikalarını içermez.
+
 NovaShop DevOps Store, tek bir e-ticaret uygulamasının modern DevOps ve Cloud-Native teslim zinciri boyunca adım adım nasıl olgunlaştığını gösteren yaşayan eğitim platformudur:
 
 `plan → code → review → test → quality → security → package → registry → deploy → verify → observe → respond → improve`

@@ -1,5 +1,9 @@
 # LAB-04-AWS-3TIER — AWS 3-Tier Mimari: Docker Compose, Private RDS ve TLS Dağıtımı
 
+| Seviye | Tahmini Süre | Profil / Araçlar | Açık Portlar |
+|---|---|---|---|
+| Orta | 45 Dakika | Docker Compose, Nginx, AWS EC2, AWS RDS MySQL | 80 (HTTP), 443 (HTTPS), 8888 (UI Local), 3306 (MySQL Private) |
+
 ---
 
 ### Amaç
@@ -15,6 +19,7 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'teki EC2 üzerinde Docker
 - Nginx üzerinde TLS/HTTPS (SSL) sonlandırması ve HTTP'den HTTPS'e otomatik yönlendirme yapılandırmak.
 - Mikroservisler arası dahili container bridge ağı (`novashop-tier-net`) kurarak yalnızca gerekli portları dış dünyaya açmak.
 - Yeni bir sürüm dağıtımında hata oluştuğunda çalışan önceki sürüme geri dönmeyi sağlayan kontrollü Rollback mekanizmasını uygulamak.
+- Ortam değişkenlerini (`.env`) merkezi yöneterek komut satırında hard-coded değer girmeden kolay kopyala-yapıştır ile operasyon yürütmek.
 
 ---
 
@@ -25,11 +30,11 @@ AWS üzerinde izole bir VPC içerisinde; public subnet'teki EC2 üzerinde Docker
   - Çalışır durumda 1 adet VPC (10.0.0.0/16) ve Internet Gateway.
   - Public Subnet içinde 1 adet EC2 Ubuntu 22.04 LTS sunucusu (`novashop-web-sg` grubunda).
   - Private Subnet içinde 1 adet RDS MySQL veritabanı (`catalogdb` kurulu, `novashop-rds-sg` grubunda).
-- **Alan Adı (Opsiyonel / Tavsiye Edilen):** Kendi alan adınız (`novashop.<DOMAIN>`) veya lab ortamı için kendinden imzalı (self-signed) test sertifikası.
+- **Yerel Ortam:** SSH anahtarı (`.pem`), AWS CLI (veya CloudShell).
 
 ---
 
-### Mimari
+### Mimari ve Çalışma Modeli
 
 ```mermaid
 graph TD
@@ -53,35 +58,82 @@ graph TD
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Parametreler
+### ⚙️ Ortam Değişkenleri ve Konfigürasyon Dosyası (.env)
 
-| Parametre | Açıklama | Örnek Değer |
-|---|---|---|
-| `<EC2_PUBLIC_IP>` | EC2 sunucusunun genel IP adresi | `3.120.45.67` |
-| `<RDS_ENDPOINT>` | RDS MySQL bağlantı adresi | `novashop-catalog-db.cxxxx.rds.amazonaws.com` |
-| `<DB_PASSWORD>` | RDS `novashop` veritabanı kullanıcısı şifresi | Belirlenen güçlü şifre |
-| `<DOMAIN>` | Sunucu alan adı (yoksa IP kullanılır) | `shop.example.com` veya `<EC2_PUBLIC_IP>` |
-| `<KEY_PATH>` | Yerel SSH özel anahtarının yolu | `~/.ssh/novashop-key.pem` |
+Bu laboratuvardaki tüm komutların kopyala-yapıştır ile doğrudan çalışabilmesi için parametreler `.env` dosyasında tanımlanır.
+
+#### 1. Yerel Terminalde Değişkenleri Tanımlama
+
+Yerel bilgisayarınızda veya CloudShell'de lab klasörüne geçin ve `.env` dosyanızı oluşturun:
+
+```bash
+cd labs/LAB-04
+cp .env.example .env
+```
+
+`.env` dosyasını kendi AWS ve RDS değerlerinizle güncelleyin (`nano .env`):
+
+```bash
+# --- AWS ve EC2 Bilgileri ---
+AWS_REGION="eu-central-1"
+EC2_PUBLIC_IP="3.120.45.67"
+KEY_PATH="~/.ssh/novashop-key.pem"
+WEB_SG_ID="sg-0123456789abcdef0"
+
+# --- RDS MySQL Parametreleri ---
+RDS_ENDPOINT="novashop-catalog-db.cxxxx.rds.amazonaws.com"
+DB_PORT="3306"
+DB_NAME="catalogdb"
+DB_USER="novashop"
+DB_PASSWORD="YourStrongPassword123!"
+
+# --- Domain / Host ---
+DOMAIN="${EC2_PUBLIC_IP}"
+```
+
+Değişkenleri terminal oturumunuza aktarın:
+
+```bash
+set -a && source .env && set +a
+```
+
+> [!TIP]
+> `set -a && source .env && set +a` komutu `.env` içindeki tüm değişkenleri `export` eder. Böylece aşağıdaki tüm komutları parametre değiştirmeden doğrudan kopyalayıp çalıştırabilirsiniz.
 
 ---
 
-### Adımlar
+### Adım Adım Uygulama Rehberi
 
-#### 1. EC2 Sunucusuna Bağlanma ve Docker/Compose Kurulumu
+#### 1. Güvenlik Grubunda HTTPS (Port 443) Açma
 
-Yerel terminalinizden EC2 sunucusuna SSH ile bağlanın:
+Yerel terminalinizden veya AWS CloudShell üzerinden EC2 Web Güvenlik Grubuna HTTPS izni ekleyin:
 
 ```bash
-chmod 400 <KEY_PATH>
-ssh -i <KEY_PATH> ubuntu@<EC2_PUBLIC_IP>
+aws ec2 authorize-security-group-ingress \
+  --group-id "$WEB_SG_ID" \
+  --protocol tcp --port 443 \
+  --cidr 0.0.0.0/0 \
+  --region "$AWS_REGION"
 ```
 
-**Docker Engine ve Docker Compose Eklentisini Kurun:**
+---
+
+#### 2. EC2 Sunucusuna Bağlanma ve Docker/Compose Kurulumu
+
+EC2 sunucusuna SSH ile bağlanın:
+
+```bash
+chmod 400 "$KEY_PATH"
+ssh -i "$KEY_PATH" ubuntu@"$EC2_PUBLIC_IP"
+```
+
+Sunucuya ilk kez bağlanıyorsanız Docker ve Docker Compose eklentisini kurun:
+
 ```bash
 sudo apt-get update -y
 sudo apt-get install -y ca-certificates curl gnupg
 
-# Docker resmi GPG anahtarını ve reposunu ekle
+# Docker resmi reposunu ekle
 sudo install -m 0755 -d /etc/apt/keyrings
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 sudo chmod a+r /etc/apt/keyrings/docker.gpg
@@ -90,14 +142,12 @@ echo "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docke
   "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update -y
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
-# Ubuntu kullanıcısını docker grubuna ekle
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin nginx
 sudo usermod -aG docker ubuntu
+newgrp docker
 ```
-*Not:* Grup yetkisinin geçerli olması için oturumu kapatıp yeniden bağlanın veya `newgrp docker` çalıştırın.
 
-**Doğrulama:**
+Doğrulama:
 ```bash
 docker --version
 docker compose version
@@ -105,240 +155,41 @@ docker compose version
 
 ---
 
-#### 2. Güvenlik Grubunda HTTPS (Port 443) Açma
+#### 3. Proje Dosyalarını Hazırlama ve Ortam Değişkenleri
 
-Yerel bilgisayarınızdan veya AWS CloudShell üzerinden EC2 Web Güvenlik Grubuna HTTPS izni ekleyin:
+EC2 üzerinde repo klasörüne geçin (veya repoyu klonlayın):
 
 ```bash
-aws ec2 authorize-security-group-ingress \
-  --group-id <WEB_SG_ID> \
-  --protocol tcp --port 443 \
-  --cidr 0.0.0.0/0 \
-  --region <AWS_REGION>
+git clone https://gitlab.com/devops-practitioner-labs/novashop.git ~/novashop || (cd ~/novashop && git pull)
+cd ~/novashop/labs/LAB-04
 ```
 
----
-
-#### 3. Proje Dosyalarını Hazırlama ve Gizli Bilgi (.env) Yönetimi
-
-EC2 sunucusu üzerinde uygulama dizinini oluşturun:
+Sunucu için `.env` dosyasını oluşturun:
 
 ```bash
-mkdir -p ~/novashop-deploy && cd ~/novashop-deploy
-```
-
-**Güvenli Ortam Değişkenleri Dosyası (`.env`):**
-> [!IMPORTANT]
-> Veritabanı şifresi ve endpoint bilgileri doğrudan komutlarda veya Dockerfile içinde tutulmaz; sunucuya özel `.env` dosyasında saklanır ve asla Git'e commit edilmez:
-
-```bash
-read -s -p "RDS Veritabanı Parolasını Giriniz: " DB_PASS
-echo ""
-
-cat << EOF > .env
-# NovaShop 3-Tier Production Environment
-APP_ENV=production
-UI_PORT=8888
-CATALOG_PORT=8081
-
-# RDS Veritabanı Parametreleri
-DB_ENDPOINT=<RDS_ENDPOINT>:3306
-DB_USER=novashop
-DB_PASSWORD=$DB_PASS
-DB_NAME=catalogdb
-EOF
-
-# Parolayı bellekten temizle ve .env dosyasını yalnızca sahibine okunur yap
-unset DB_PASS
+cp .env.example .env
+nano .env   # RDS_ENDPOINT ve DB_PASSWORD değerlerini girip kaydedin
 chmod 600 .env
+set -a && source .env && set +a
 ```
+
+Klasör içeriğindeki hazır üretim dosyaları:
+- `docker-compose.prod.yml`: UI ve Catalog servislerini izole `novashop-tier-net` bridge ağında kaynak limitleriyle çalıştırır.
+- `novashop-3tier.conf`: HTTP->HTTPS 301 yönlendirmesi, SSL sonlandırması ve loopback ters vekil yapılandırması.
+- `setup-tls.sh`: Kendinden imzalı TLS sertifikasını üretir ve Nginx'i devreye alır.
+- `deploy.sh`: Docker Compose ile servisleri başlatır ve sağlık durumunu raporlar.
+- `rollback.sh`: Hatalı imaj durumunda anında stabil sürüme döner.
 
 ---
 
-#### 4. Üretim Düzeyi Docker Compose Dosyası (`docker-compose.prod.yml`)
+#### 4. Üretim Düzeyi Docker Compose Dağıtımı
 
-EC2 üzerinde `docker-compose.prod.yml` dosyasını oluşturun. Bu dosya UI ve Catalog servislerini izole bir container bridge ağında birleştirir ve katı kaynak limitleri uygular (PROFILES.md kaynak sınırları):
-
-```bash
-cat << 'EOF' > docker-compose.prod.yml
-version: '3.8'
-
-networks:
-  novashop-tier-net:
-    driver: bridge
-
-services:
-  catalog:
-    image: public.ecr.aws/aws-containers/retail-store-sample-catalog:1.6.2
-    container_name: novashop-catalog-prod
-    restart: unless-stopped
-    networks:
-      - novashop-tier-net
-    environment:
-      - RETAIL_CATALOG_PERSISTENCE_PROVIDER=mysql
-      - RETAIL_CATALOG_PERSISTENCE_ENDPOINT=${DB_ENDPOINT}
-      - RETAIL_CATALOG_PERSISTENCE_USER=${DB_USER}
-      - RETAIL_CATALOG_PERSISTENCE_PASSWORD=${DB_PASSWORD}
-      - RETAIL_CATALOG_PERSISTENCE_DB_NAME=${DB_NAME}
-      - DB_ENDPOINT=${DB_ENDPOINT}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - PORT=8080
-    deploy:
-      resources:
-        limits:
-          cpus: '0.40'
-          memory: 384M
-        reservations:
-          memory: 128M
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
-
-  ui:
-    image: public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2
-    container_name: novashop-ui-prod
-    restart: unless-stopped
-    depends_on:
-      catalog:
-        condition: service_healthy
-    networks:
-      - novashop-tier-net
-    ports:
-      - "127.0.0.1:8888:8080"
-    environment:
-      - ENDPOINTS_CATALOG=http://catalog:8080
-      - RETAIL_UI_ENDPOINTS_CATALOG=http://catalog:8080
-      - JAVA_OPTS=-Xms128m -Xmx384m
-    deploy:
-      resources:
-        limits:
-          cpus: '0.60'
-          memory: 512M
-        reservations:
-          memory: 256M
-    healthcheck:
-      test: ["CMD-SHELL", "curl -s -f http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
-      interval: 15s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-EOF
-```
-
----
-
-#### 5. TLS Sertifikası ve Nginx HTTPS Yapılandırması
-
-**1. TLS Sertifikası Üretimi:**
-Eğer doğrulanmış bir DNS alan adınız varsa Let's Encrypt / Certbot (`sudo certbot --nginx -d <DOMAIN>`) kullanabilirsiniz. Lab veya IP tabanlı test ortamında ise yüksek güvenlikli kendinden imzalı TLS sertifikası üretin:
+Servisleri tek komutla başlatın:
 
 ```bash
-sudo mkdir -p /etc/ssl/novashop
-sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout /etc/ssl/novashop/novashop.key \
-  -out /etc/ssl/novashop/novashop.crt \
-  -subj "/C=TR/ST=Istanbul/L=DevOps/O=NovaShop/CN=<EC2_PUBLIC_IP>"
-
-sudo chmod 600 /etc/ssl/novashop/novashop.key
-sudo chmod 644 /etc/ssl/novashop/novashop.crt
-```
-
-**2. Nginx TLS ve Reverse Proxy Konfigürasyonu:**
-`/etc/nginx/conf.d/novashop-3tier.conf` dosyasını oluşturun:
-
-```bash
-sudo tee /etc/nginx/conf.d/novashop-3tier.conf > /dev/null << 'EOF'
-# HTTP -> HTTPS Yönlendirmesi
-server {
-    listen 80 default_server;
-    listen [::]:80 default_server;
-    server_name _;
-
-    # Sağlık kontrolü HTTP üzerinden de yanıt verir (Load Balancer dostu)
-    location = /healthz {
-        access_log off;
-        default_type application/json;
-        return 200 '{"status":"UP","tier":"3-tier-edge","protocol":"http"}\n';
-    }
-
-    # Diğer tüm istekleri güvenli HTTPS portuna zorla yönlendir (301)
-    location / {
-        return 301 https://$host$request_uri;
-    }
-}
-
-# HTTPS Güvenli Web Katmanı
-server {
-    listen 443 ssl http2 default_server;
-    listen [::]:443 ssl http2 default_server;
-    server_name _;
-
-    # SSL / TLS Sertifikaları
-    ssl_certificate /etc/ssl/novashop/novashop.crt;
-    ssl_certificate_key /etc/ssl/novashop/novashop.key;
-
-    # Güçlü TLS Protokol ve Şifreleme Ayarları
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_prefer_server_ciphers on;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 1d;
-
-    # Güvenlik Başlıkları
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    server_tokens off;
-
-    # 1. Sağlık Kontrolü
-    location = /healthz {
-        access_log off;
-        default_type application/json;
-        return 200 '{"status":"UP","tier":"3-tier-edge","protocol":"https"}\n';
-    }
-
-    # 2. UI Storefront Reverse Proxy (127.0.0.1:8888)
-    location / {
-        proxy_pass http://127.0.0.1:8888;
-        proxy_http_version 1.1;
-
-        proxy_set_header Connection "";
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-
-        proxy_connect_timeout 5s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
-}
-EOF
-```
-
-**Nginx Test ve Yeniden Başlatma:**
-```bash
-sudo rm -f /etc/nginx/conf.d/novashop.conf /etc/nginx/sites-enabled/default 2>/dev/null || true
-sudo nginx -t
-sudo systemctl restart nginx
-```
-
----
-
-#### 6. 3-Tier Uygulama Yığınını Başlatma
-
-Konteynerleri arka planda başlatın:
-
-```bash
-cd ~/novashop-deploy
 docker compose -f docker-compose.prod.yml up -d
 ```
+*(Alternatif olarak hazır betiği kullanabilirsiniz: `./deploy.sh`)*
 
 **Konteynerlerin Sağlık Durumunu İzleyin:**
 ```bash
@@ -359,23 +210,38 @@ docker logs novashop-catalog-prod | head -n 20
 
 ---
 
-#### 7. Uçtan Uca Doğrulama ve Testler
+#### 5. TLS Sertifikası ve Nginx HTTPS Yapılandırması
 
-Yerel bilgisayarınızdan veya terminalinizden testleri gerçekleştirin:
+TLS sertifikasını üretmek ve Nginx ters vekilini kurmak için hazır kurulum betiğini çalıştırın:
+
+```bash
+./setup-tls.sh
+```
+
+Bu betik otomatik olarak:
+1. `/etc/ssl/novashop/` altında 2048-bit RSA kendinden imzalı TLS sertifikası üretir.
+2. `novashop-3tier.conf` dosyasını `/etc/nginx/conf.d/` altına kopyalar.
+3. `nginx -t` ile sözdizimini doğrular ve Nginx servisini yeniden başlatır.
+
+---
+
+### Doğal Doğrulama ve Beklenen Sonuç
+
+Yerel bilgisayarınızdan (veya sunucu dışından) testleri gerçekleştirin:
 
 ```bash
 # 1. HTTP -> HTTPS 301 Yönlendirme Testi
-curl -s -I http://<EC2_PUBLIC_IP>/ | grep -E "(HTTP|Location)"
+curl -s -I "http://${EC2_PUBLIC_IP}/" | grep -E "(HTTP|Location)"
 ```
 *Beklenen çıktı:*
 ```text
 HTTP/1.1 301 Moved Permanently
-Location: https://<EC2_PUBLIC_IP>/
+Location: https://3.120.45.67/
 ```
 
 ```bash
 # 2. HTTPS Sağlık Kontrolü (Kendinden imzalı sertifika için -k / --insecure)
-curl -s -k https://<EC2_PUBLIC_IP>/healthz
+curl -s -k "https://${EC2_PUBLIC_IP}/healthz"
 ```
 *Beklenen çıktı:*
 ```json
@@ -384,16 +250,16 @@ curl -s -k https://<EC2_PUBLIC_IP>/healthz
 
 ```bash
 # 3. HTTPS Üzerinden Mağaza Sayfası İçerik Kontrolü
-curl -s -k https://<EC2_PUBLIC_IP>/ | grep -i "catalog"
+curl -s -k "https://${EC2_PUBLIC_IP}/" | grep -i "store"
 ```
 
 ```bash
 # 4. Otomatik Laboratuvar Doğrulama Betiğini Çalıştırma
-bash scripts/verify/verify-lab-04.sh <EC2_PUBLIC_IP> --insecure
+bash ../../scripts/verify/verify-lab-04.sh "$EC2_PUBLIC_IP" --insecure
 ```
 *Beklenen çıktı:*
 ```text
-=== [LAB-04] Doğrulama Başlatılıyor: <EC2_PUBLIC_IP> ===
+=== [LAB-04] Doğrulama Başlatılıyor: 3.120.45.67 ===
 1. HTTP (Port 80) -> HTTPS yönlendirme testi...
 ✅ HTTP -> HTTPS yönlendirmesi başarılı (HTTP 301).
 2. HTTPS üzerinden ana sayfa ve NovaShop marka kontrolü...
@@ -406,36 +272,21 @@ bash scripts/verify/verify-lab-04.sh <EC2_PUBLIC_IP> --insecure
 
 ---
 
-#### 8. Kontrollü Sürüm Güncelleme ve Rollback Mekanizması
+### Kontrollü Sürüm Güncelleme ve Rollback Mekanizması
 
-Gerçek üretim ortamlarında hatalı bir sürüm çıktığında sistemin anında önceki kararlı sürüme dönebilmesi gerekir.
+Hatalı bir imaj dağıtıldığında veya acil geri dönüş gerektiğinde hazır rollback betiğini çalıştırın:
 
-**1. Dağıtım ve Rollback Betiği (`deploy.sh` ve `rollback.sh`):**
-```bash
-cat << 'EOF' > rollback.sh
-#!/usr/bin/env bash
-set -e
-
-echo "=== NovaShop Acil Rollback Başlatılıyor ==="
-PREV_UI_IMAGE="public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2"
-
-# Çalışan hatalı servisi önceki stabil imaja döndür
-sed -i "s|image: .*retail-store-sample-ui:.*|image: ${PREV_UI_IMAGE}|g" docker-compose.prod.yml
-
-docker compose -f docker-compose.prod.yml up -d ui
-
-echo "Rollback tamamlandı. Konteyner durumu:"
-docker compose -f docker-compose.prod.yml ps
-EOF
-
-chmod +x rollback.sh
-```
-
-**2. Rollback Testi:**
 ```bash
 ./rollback.sh
 ```
-*Beklenen çıktı:* `Rollback tamamlandı. Konteyner durumu: ... Up (healthy)`.
+
+*Beklenen çıktı:*
+```text
+=== NovaShop Acil Rollback Başlatılıyor ===
+Geri dönülecek stabil UI imajı: public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2
+Rollback tamamlandı. Konteyner durumu:
+novashop-ui-prod ... Up (healthy)
+```
 
 ---
 
@@ -446,7 +297,7 @@ chmod +x rollback.sh
 - **Muhtemel Neden:** RDS Security Group (`novashop-rds-sg`) kuralında EC2 Security Group kimliğinin eksik olması veya yanlış yazılması.
 - **Teşhis Komutu:**
   ```bash
-  docker exec -it novashop-catalog-prod nc -zv <RDS_ENDPOINT> 3306
+  docker exec -it novashop-catalog-prod nc -zv "$RDS_ENDPOINT" 3306
   ```
 - **Güvenli Çözüm:** AWS konsolundan veya CLI ile `novashop-rds-sg` güvenlik grubunda port 3306'nın kaynağının `novashop-web-sg` olduğunu teyit edin.
 
@@ -468,7 +319,7 @@ chmod +x rollback.sh
   sudo nginx -t
   grep -rn "listen 443" /etc/nginx/
   ```
-- **Güvenli Çözüm:** Konfigürasyon dosyasında `listen 443 ssl http2;` satırını doğrulayıp `sudo systemctl restart nginx` yapın.
+- **Güvenli Çözüm:** `setup-tls.sh` betiğini çalıştırarak doğru konfigürasyonun aktif olduğundan emin olun.
 
 ---
 
@@ -481,29 +332,19 @@ chmod +x rollback.sh
    - Port 80 gelen tüm istekler HTTP 301 kodu ile HTTPS port 443'e zorla yönlendirilir.
    - Güçlü HSTS (`Strict-Transport-Security`) başlığı eklenmiştir.
 3. **Secret Yönetimi:**
-   - `.env` dosyası `chmod 600` ile korunur ve `.gitignore` içinde yer alır.
+   - `.env` dosyası `chmod 600` ile korunur ve `.gitignore` içinde yer alır. Asla Git deposuna commit edilmez.
 
 ---
 
-### Cleanup / Rollback
+### Cleanup
 
-Kaynakları güvenle kaldırmak için:
+Laboratuvarı tamamladıktan sonra kaynakları temizlemek için:
 
 ```bash
-# 1. Konteynerleri ve iç ağı durdur
-cd ~/novashop-deploy
+# 1. Konteynerleri ve ağı kaldır
 docker compose -f docker-compose.prod.yml down -v
 
-# 2. Üretilen TLS sertifikalarını ve deploy dizinini temizle
-sudo rm -rf /etc/ssl/novashop ~/novashop-deploy
-
-# 3. AWS Altyapısını Silme (EC2 ve RDS)
-# LAB-02-AWS-BASICS.md dosyasındaki "Cleanup / Rollback" adımlarını eksiksiz uygulayınız.
+# 2. TLS sertifikalarını ve Nginx konfigürasyonunu temizle
+sudo rm -rf /etc/ssl/novashop /etc/nginx/conf.d/novashop-3tier.conf
+sudo systemctl restart nginx
 ```
-
----
-
-### Pratik Uygulama Görevi
-
-1. Nginx konfigürasyonuna `/api/catalog/` yolunu ekleyerek doğrudan Catalog servisinin sağlık durumunu dönen bir alt yönlendirme (proxy path) tanımlayın.
-2. `curl -k https://<EC2_PUBLIC_IP>/api/catalog/health` çağrısının `200 OK` verdiğini teyit edin.

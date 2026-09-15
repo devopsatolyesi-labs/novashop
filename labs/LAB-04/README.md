@@ -75,7 +75,7 @@ cp .env.example .env
 
 ```bash
 # --- AWS ve EC2 Bilgileri ---
-AWS_REGION="eu-central-1"
+AWS_REGION="us-east-1"
 EC2_PUBLIC_IP="3.120.45.67"
 KEY_PATH="~/.ssh/novashop-key.pem"
 WEB_SG_ID="sg-0123456789abcdef0"

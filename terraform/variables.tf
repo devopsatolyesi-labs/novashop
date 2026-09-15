@@ -1,7 +1,7 @@
 variable "aws_region" {
   type        = string
   description = "AWS dağıtım bölgesi"
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "environment" {

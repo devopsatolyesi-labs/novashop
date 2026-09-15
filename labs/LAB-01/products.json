@@ -81,15 +81,6 @@
     ]
   },
   {
-    "id": "d3104128-1d14-4465-99d3-8ab9267c687b",
-    "name": "Cloud-Native SkyCycle",
-    "description": "Hibrit elektrikli kentsel ulaşım aracı. Yüksek verimli batarya, GPS takip ve hafif karbon fiber gövde.",
-    "price": 8500,
-    "tags": [
-      "vehicles"
-    ]
-  },
-  {
     "id": "d77f9ae6-e9a8-4a3e-86bd-b72af75cbc49",
     "name": "Zero Trust Phantom Cruiser",
     "description": "Şifreli telemetri ve çok katmanlı savunma sistemine sahip otonom elektrikli scooter. Şehir içi çevik ulaşım.",

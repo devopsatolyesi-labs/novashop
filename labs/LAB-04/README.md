@@ -169,12 +169,17 @@ networks:
 
 services:
   catalog:
-    image: public.ecr.aws/aws-containers/retail-store-sample-catalog:v1.6.2
+    image: public.ecr.aws/aws-containers/retail-store-sample-catalog:1.6.2
     container_name: novashop-catalog-prod
     restart: unless-stopped
     networks:
       - novashop-tier-net
     environment:
+      - RETAIL_CATALOG_PERSISTENCE_PROVIDER=mysql
+      - RETAIL_CATALOG_PERSISTENCE_ENDPOINT=${DB_ENDPOINT}
+      - RETAIL_CATALOG_PERSISTENCE_USER=${DB_USER}
+      - RETAIL_CATALOG_PERSISTENCE_PASSWORD=${DB_PASSWORD}
+      - RETAIL_CATALOG_PERSISTENCE_DB_NAME=${DB_NAME}
       - DB_ENDPOINT=${DB_ENDPOINT}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
@@ -188,14 +193,14 @@ services:
         reservations:
           memory: 128M
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 10s
 
   ui:
-    image: public.ecr.aws/aws-containers/retail-store-sample-ui:v1.6.2
+    image: public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2
     container_name: novashop-ui-prod
     restart: unless-stopped
     depends_on:
@@ -207,6 +212,7 @@ services:
       - "127.0.0.1:8888:8080"
     environment:
       - ENDPOINTS_CATALOG=http://catalog:8080
+      - RETAIL_UI_ENDPOINTS_CATALOG=http://catalog:8080
       - JAVA_OPTS=-Xms128m -Xmx384m
     deploy:
       resources:
@@ -216,7 +222,7 @@ services:
         reservations:
           memory: 256M
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
+      test: ["CMD-SHELL", "curl -s -f http://localhost:8080/actuator/health | grep -q 'UP' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 3
@@ -341,8 +347,8 @@ docker compose -f docker-compose.prod.yml ps
 *Beklenen çıktı (yaklaşık 20-30 saniye sonra):*
 ```text
 NAME                   IMAGE                                                  STATUS                    PORTS
-novashop-catalog-prod  .../retail-store-sample-catalog:v1.6.2                 Up (healthy)              8080/tcp
-novashop-ui-prod       .../retail-store-sample-ui:v1.6.2                      Up (healthy)              127.0.0.1:8888->8080/tcp
+novashop-catalog-prod  .../retail-store-sample-catalog:1.6.2                  Up (healthy)              8080/tcp
+novashop-ui-prod       .../retail-store-sample-ui:1.6.2                       Up (healthy)              127.0.0.1:8888->8080/tcp
 ```
 
 **Katalog Servisi Loglarını ve Veritabanı Bağlantısını Kontrol Edin:**
@@ -411,7 +417,7 @@ cat << 'EOF' > rollback.sh
 set -e
 
 echo "=== NovaShop Acil Rollback Başlatılıyor ==="
-PREV_UI_IMAGE="public.ecr.aws/aws-containers/retail-store-sample-ui:v1.6.2"
+PREV_UI_IMAGE="public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2"
 
 # Çalışan hatalı servisi önceki stabil imaja döndür
 sed -i "s|image: .*retail-store-sample-ui:.*|image: ${PREV_UI_IMAGE}|g" docker-compose.prod.yml

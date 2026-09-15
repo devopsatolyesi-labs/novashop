@@ -171,7 +171,7 @@ resource "aws_ecs_task_definition" "ui" {
   container_definitions = jsonencode([
     {
       name      = "ui"
-      image     = "public.ecr.aws/aws-containers/retail-store-sample-ui:v1.6.2"
+      image     = "public.ecr.aws/aws-containers/retail-store-sample-ui:1.6.2"
       essential = true
       user      = "appuser"
       portMappings = [

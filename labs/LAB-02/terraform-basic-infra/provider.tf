@@ -8,7 +8,8 @@ terraform {
   }
 
   backend "s3" {
-    bucket  = "novashop-tfstate-934639816492"
+    # S3 bucket adi hesap bazli dinamik oldugu icin
+    # 'terraform init -backend-config="bucket=..."' veya ./run.sh ile verilir.
     key     = "lab-02/terraform.tfstate"
     region  = "us-east-1"
     encrypt = true

@@ -17,7 +17,7 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # 2. NovaShop UI Spring Boot Actuator Metrikleri (Kind K8s veya Docker)
+  # 2. NovaShop UI Spring Boot Actuator Metrikleri
   - job_name: "novashop-ui"
     metrics_path: "/actuator/prometheus"
     scrape_interval: 5s
@@ -25,34 +25,44 @@ scrape_configs:
       - targets: ["host.docker.internal:30080"]
         labels:
           runtime: "kind-k8s"
-      - targets: ["ui:8080"]
-        labels:
-          runtime: "docker-compose"
+          service: "ui"
 
-  # 3. NovaShop Mikroservis Metrikleri
+  # 3. NovaShop Mikroservis Metrikleri (Catalog, Cart, Orders, Checkout)
   - job_name: "novashop-catalog"
     metrics_path: "/metrics"
     scrape_interval: 5s
     static_configs:
-      - targets: ["catalog:8080"]
+      - targets: ["host.docker.internal:30081"]
+        labels:
+          runtime: "kind-k8s"
+          service: "catalog"
 
   - job_name: "novashop-cart"
     metrics_path: "/actuator/prometheus"
     scrape_interval: 5s
     static_configs:
-      - targets: ["cart:8080"]
-
-  - job_name: "novashop-checkout"
-    metrics_path: "/metrics"
-    scrape_interval: 5s
-    static_configs:
-      - targets: ["checkout:8080"]
+      - targets: ["host.docker.internal:30082"]
+        labels:
+          runtime: "kind-k8s"
+          service: "cart"
 
   - job_name: "novashop-orders"
     metrics_path: "/actuator/prometheus"
     scrape_interval: 5s
     static_configs:
-      - targets: ["orders:8080"]
+      - targets: ["host.docker.internal:30083"]
+        labels:
+          runtime: "kind-k8s"
+          service: "orders"
+
+  - job_name: "novashop-checkout"
+    metrics_path: "/metrics"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["host.docker.internal:30085"]
+        labels:
+          runtime: "kind-k8s"
+          service: "checkout"
 
   # 4. OpenTelemetry Collector Metrik Çıkışı
   - job_name: "otel-collector"

@@ -82,21 +82,42 @@ def simulate_http_traffic(ui_url, count, inject_errors=False):
 # ------------------------------------------------------------------------------
 def simulate_elasticsearch_logs(es_url, count, inject_errors=False):
     print(f"\n📜 [2/3] Elasticsearch'e Yapılandırılmış Loglar Gönderiliyor ({es_url})...")
-    index_name = f"novashop-docker-{get_today_index_suffix()}"
-    endpoint = f"{es_url}/{index_name}/_doc"
+    date_suffix = get_today_index_suffix()
+    docker_index = f"novashop-docker-{date_suffix}"
+    k8s_index = f"novashop-k8s-{date_suffix}"
+    jenkins_index = f"novashop-jenkins-{date_suffix}"
 
-    services = ["novashop-ui", "novashop-catalog", "novashop-cart", "novashop-checkout", "novashop-orders-db"]
+    # 1. Mikroservis Log Şablonları (Docker & Kubernetes Pods)
     log_templates = [
         ("INFO", "User logged in successfully", "novashop-ui", 200),
         ("INFO", "Item added to shopping cart", "novashop-cart", 200),
         ("INFO", "Catalog search query executed", "novashop-catalog", 200),
         ("INFO", "Payment authorization granted via Stripe", "novashop-checkout", 200),
-        ("INFO", "Order confirmed and email notification enqueued", "novashop-checkout", 201),
-        ("WARN", "Cache miss on product details, querying database", "novashop-catalog", 200),
+        ("INFO", "Order confirmed and persistence stored", "novashop-orders", 201),
+        ("WARN", "Cache miss on product details, querying catalog memory", "novashop-catalog", 200),
         ("WARN", "High memory consumption detected in cart session cache", "novashop-cart", 200),
-        ("ERROR", "External banking gateway timeout after 5000ms", "novashop-checkout", 504),
-        ("ERROR", "Database connection pool exhausted: maximum 100 reached", "novashop-orders-db", 500),
+        ("ERROR", "External payment provider timeout after 5000ms", "novashop-checkout", 504),
+        ("ERROR", "Orders persistence error: failed to serialize order state", "novashop-orders", 500),
         ("ERROR", "NullPointerException during discount voucher validation", "novashop-checkout", 500),
+    ]
+
+    # 2. Jenkins CI/CD Pipeline Log Şablonları
+    jenkins_templates = [
+        ("INFO", "[Pipeline] { (Declarative: Checkout SCM)", "novashop-pipeline", "Checkout"),
+        ("INFO", "Selected Git commit: 4a2f81c feat(checkout): add idempotent token support", "novashop-pipeline", "Checkout"),
+        ("INFO", "[Pipeline] { (Stage: Maven Unit Tests)", "novashop-pipeline", "Unit-Tests"),
+        ("INFO", "[INFO] Tests run: 48, Failures: 0, Errors: 0, Skipped: 0", "novashop-pipeline", "Unit-Tests"),
+        ("INFO", "[Pipeline] { (Stage: SonarQube Quality Gate)", "novashop-pipeline", "SonarQube"),
+        ("INFO", "ANALYSIS SUCCESSFUL. Quality Gate status: PASSED (Bugs: 0, Vulnerabilities: 0)", "novashop-pipeline", "SonarQube"),
+        ("INFO", "[Pipeline] { (Stage: Trivy Container Security Scan)", "novashop-pipeline", "Trivy-Scan"),
+        ("INFO", "Trivy: Total: 0 (CRITICAL: 0, HIGH: 0, MEDIUM: 2, LOW: 5). Security Gate PASSED.", "novashop-pipeline", "Trivy-Scan"),
+        ("INFO", "[Pipeline] { (Stage: Docker Image Push)", "novashop-pipeline", "Docker-Push"),
+        ("INFO", "Pushed image: registry.devopsatolyesi.com/novashop/checkout:v1.2.4 (digest: sha256:8f2a...)", "novashop-pipeline", "Docker-Push"),
+        ("INFO", "[Pipeline] { (Stage: Helm GitOps Sync)", "novashop-pipeline", "GitOps-Deploy"),
+        ("INFO", "ArgoCD sync completed successfully: Application 'novashop' is Synced & Healthy.", "novashop-pipeline", "GitOps-Deploy"),
+        ("WARN", "Node.js npm audit found 1 low severity dependency warning", "novashop-pipeline", "Unit-Tests"),
+        ("ERROR", "SonarQube Quality Gate FAILED: 1 Security Vulnerability introduced in CheckoutService.java:44", "novashop-pipeline", "SonarQube"),
+        ("ERROR", "Trivy scan detected 1 CRITICAL CVE in base image node:18-alpine. Build ABORTED.", "novashop-pipeline", "Trivy-Scan"),
     ]
 
     indexed = 0
@@ -114,7 +135,8 @@ def simulate_elasticsearch_logs(es_url, count, inject_errors=False):
             idx = random.choices(range(len(log_templates)), weights=weights)[0]
             level, msg, srv, status = log_templates[idx]
 
-        doc = {
+        # A. Docker Konteyner Logu
+        doc_docker = {
             "@timestamp": get_iso_timestamp(),
             "service": srv,
             "level": level,
@@ -127,17 +149,62 @@ def simulate_elasticsearch_logs(es_url, count, inject_errors=False):
             "duration_ms": random.randint(15, 650) if level != "ERROR" else random.randint(3000, 5200),
             "amount": round(random.uniform(25.0, 850.0), 2) if "Order" in msg or "Payment" in msg else None
         }
+        bulk_lines.append(json.dumps({"index": {"_index": docker_index}}))
+        bulk_lines.append(json.dumps(doc_docker))
+        indexed += 1
 
-        # Bulk newline-delimited JSON format
-        bulk_lines.append(json.dumps({"index": {"_index": index_name}}))
-        bulk_lines.append(json.dumps(doc))
+        # B. Kubernetes Pod Logu (Kind cluster simülasyonu)
+        pod_suffix = hex_id(3)
+        doc_k8s = {
+            "@timestamp": get_iso_timestamp(),
+            "service": srv,
+            "level": level,
+            "message": f"[{srv.upper()}] {msg}",
+            "trace_id": trace_id,
+            "span_id": span_id,
+            "log_source": "kubernetes_pod",
+            "kubernetes": {
+                "namespace": "novashop",
+                "pod_name": f"{srv}-{pod_suffix}",
+                "container_name": srv.replace("novashop-", ""),
+                "host": "kind-control-plane"
+            }
+        }
+        bulk_lines.append(json.dumps({"index": {"_index": k8s_index}}))
+        bulk_lines.append(json.dumps(doc_k8s))
+        indexed += 1
+
+    # C. Jenkins CI/CD Pipeline Logları
+    jenkins_count = max(3, count // 3)
+    for j in range(jenkins_count):
+        build_num = random.randint(35, 52)
+        if inject_errors and random.random() < 0.6:
+            j_level, j_msg, j_pipe, j_stage = random.choice([t for t in jenkins_templates if t[0] == "ERROR"])
+        else:
+            j_level, j_msg, j_pipe, j_stage = random.choice(jenkins_templates)
+
+        doc_jenkins = {
+            "@timestamp": get_iso_timestamp(),
+            "service": "jenkins",
+            "pipeline": j_pipe,
+            "build_number": build_num,
+            "stage": j_stage,
+            "level": j_level,
+            "message": f"[Build #{build_num}] [{j_stage}] {j_msg}",
+            "log_source": "jenkins_cicd"
+        }
+        bulk_lines.append(json.dumps({"index": {"_index": jenkins_index}}))
+        bulk_lines.append(json.dumps(doc_jenkins))
         indexed += 1
 
     payload = "\n".join(bulk_lines) + "\n"
     try:
         r = requests.post(f"{es_url}/_bulk", data=payload, headers={"Content-Type": "application/x-ndjson"}, timeout=10)
         if r.status_code in (200, 201):
-            print(f"    ✅ {indexed} adet log başarıyla Elasticsearch'e indekslendi -> [{index_name}].")
+            print(f"    ✅ {indexed} adet yapılandırılmış log Elasticsearch'e indekslendi:")
+            print(f"       • Docker:     {docker_index}")
+            print(f"       • Kubernetes: {k8s_index}")
+            print(f"       • Jenkins:    {jenkins_index}")
         else:
             print(f"    ⚠️ Elasticsearch bulk yanıtı: {r.status_code}")
     except Exception as e:

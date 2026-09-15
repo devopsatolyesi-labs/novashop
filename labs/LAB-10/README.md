@@ -4,34 +4,60 @@
 
 ### Amaç
 
-NovaShop mikroservis ekosisteminde; **Prometheus** ile zaman serisi metrik toplama (RED ve USE metotları), **Grafana** ile operasyonel izleme panoları kurma, **Alertmanager** ile çok kanallı alarm yönlendirme (E-posta, Slack, Telegram) ve kontrollü yük oluşturarak **SRE Hizmet Seviyesi Hedefleri (SLO)** ile **Hata Bütçesi (Error Budget)** yönetimini uçtan uca doğrulamaktır.
+NovaShop mikroservis ekosistemindeki tüm servisleri (**UI, Catalog, Cart, Orders, Checkout**); **Prometheus** ile zaman serisi metrik toplama (RED ve USE metotları), **Grafana** ile operasyonel izleme panoları ve canlı alarm kuralları tanımlama, **Alertmanager** ile çok kanallı alarm yönlendirme ve kontrollü yük oluşturarak **SRE Hizmet Seviyesi Hedefleri (SLO)** ile **Hata Bütçesi (Error Budget)** yönetimini hem komut satırından (CLI) hem de web kullanıcı arayüzünden (UI) uçtan uca doğrulamaktır.
 
-Laboratuvarın sonunda yer alan **Bonus Bölüm** ile modern mikroservis mimarilerinde isteklerin uçtan uca yolculuğunu izleyen **OpenTelemetry (OTel) Collector & Jaeger Distributed Tracing** altyapısı incelenir.
+Laboratuvarın **Bonus Bölümü** ile mikroservisler arası istek yolculuklarını izleyen **OpenTelemetry (OTel) Collector & Jaeger Distributed Tracing** altyapısı incelenir.
 
 ---
 
-### Kazanımlar
+### Gözlemlenebilirlik ve SRE Temel İlkeleri
 
-- **Metrik Toplama Mimarisi (Pull Modeli):** Prometheus'un `/actuator/prometheus` ve cAdvisor/Node-Exporter uç noktalarından metrik toplama dinamiklerini kavramak.
-- **PromQL ile Derinlemesine Analiz:** Table (anlık snapshot) ve Graph (zaman serisi trend) modlarında RED (Rate, Errors, Duration) ve USE (Utilization, Saturation, Errors) sorguları yazmak.
-- **Grafana Panel & Dashboard Tasarımı:** Time series, Stat, Gauge, Bar chart, Table ve Alert List panellerini hem UI üzerinden hem de kodla (JSON/Provisioning) oluşturmak.
-- **Alarm Yönetimi ve Çok Kanallı Bildirim:** Kritik sistem durumlarında Alertmanager üzerinden E-posta (Gmail SMTP), Slack ve Telegram kanallarına bildirim iletmek.
-- **SRE Metodolojisi:** SLI, SLA, SLO, Error Budget ve Burn Rate kavramlarını PromQL formülleriyle hesaplayıp Grafana'da canlı takip etmek.
-- **Bonus Tracing (OpenTelemetry & Jaeger):** Mikroservisler arasındaki HTTP çağrılarının şelale (Waterfall) gecikmelerini analiz etmek.
+Modern bulut-yerlisi sistemlerin izlenmesinde 3 temel sütun ve 2 metodoloji esastır:
+
+#### 1. Gözlemlenebilirliğin 3 Temel Sütunu (The Three Pillars)
+* **Metrikler (Metrics):** Zaman içinde toplanan sayısal verilerdir (CPU %, istek sayısı, gecikme). Sistemin *"Şu anda bir sorun var mı?"* sorusuna en hızlı ve en hafif cevabı verir (Prometheus).
+* **Günlükler (Logs):** Belirli bir zaman damgasında gerçekleşen tekil olay kayıtlarıdır. *"Ne oldu, hata mesajı nedir?"* sorusunu yanıtlar (ELK Stack / LAB-11).
+* **İzler (Traces):** Tek bir kullanıcı isteğinin mikroservisler arasındaki uçtan uca yolculuğudur. *"Gecikme hangi mikroserviste ve hangi SQL sorgusunda yaşandı?"* sorusunu yanıtlar (Jaeger / OpenTelemetry).
+
+#### 2. RED Metodu (Mikroservis ve İstek Odaklı İzleme)
+* **R — Rate (İstek Hızı):** Saniyedeki istek sayısı (Requests per Second - RPS).
+* **E — Errors (Hata Oranı):** Başarısız istek sayısı (özellikle HTTP 5xx ve 4xx durum kodları).
+* **D — Duration (Gecikme / Süre):** İsteklerin yanıtlanma süresi (p50, p90, p95, p99 persentilleri).
+
+#### 3. USE Metodu (Altyapı ve Kaynak Odaklı İzleme)
+* **U — Utilization (Kullanım):** Kaynağın kullanım yüzdesi (Örn: %75 CPU, %80 RAM doluluğu).
+* **S — Saturation (Doygunluk):** İşlenemeyip kuyrukta bekleyen iş miktarı (CPU Load Average, Disk I/O Wait).
+* **E — Errors (Hatalar):** Donanım veya çekirdek düzeyindeki hata sayaçları (Ağ paket düşmesi, disk I/O hatası).
+
+#### 4. SRE Sözlüğü (SLI, SLO, SLA, Error Budget)
+* **SLI (Service Level Indicator):** Ölçülen anlık gerçek performans metriği (Örn: *"Son 30 günde 200 dönen isteklerin oranı %99.78"*).
+* **SLO (Service Level Objective):** Mühendislik ekibinin kendi kendine koyduğu iç kalite hedefi (Örn: *"Aylık başarı oranı en az %99.5 olmalıdır"*).
+* **SLA (Service Level Agreement):** Müşteriler veya iş birimleriyle yapılan yasal taahhüt (Örn: *"Aylık başarı %99.0'ın altına düşerse %15 fatura iadesi yapılır"*).
+* **Hata Bütçesi (Error Budget):** İzin verilen maksimum hata payı:
+  $$\text{Error Budget} = 100\% - \text{SLO} = 100\% - 99.5\% = \%0.5$$
+* **Burn Rate:** Hata bütçesinin harcanma hızı. 1x normal tüketimi, 14.4x ise bütçenin birkaç saat içinde tükeneceğini ve acil müdahale gerektiğini belirtir.
 
 ---
 
 ### Ön Koşullar ve Hızlı Hazırlık
 
-1. **NovaShop'un Kind Üzerinde Başlatılması:**
-   NovaShop uygulamasının Kind Kubernetes kümesinde ayakta olması gerekir. Eğer önceki lablar yapılmadıysa veya küme kapalıysa, tek komutla her şeyi hazır hale getirin:
-   ```bash
-   bash scripts/setup-kind-cluster.sh
-   ```
-   *Doğrulama:* `kubectl get pods -n novashop` (Podların `Running` olduğu görülür).  
-   *Mağaza Erişimi (Kind NodePort):* `http://localhost:30080` (veya Cockpit üzerinden App Slot).
+NovaShop ekosistemindeki 5 mikroservis (**UI, Catalog, Cart, Orders, Checkout**) Kind Kubernetes kümesinde `in-memory` modda tek komutla başlatılır:
 
-2. **Gerekli Araçlar:** Docker v24+, `curl`, `jq`.
+```bash
+# Kind kümesini kurun ve 5 mikroservisi birden dağıtın:
+bash scripts/setup-kind-cluster.sh
+```
+*Doğrulama:* `kubectl get pods -n novashop` (Tüm servislerin `Running` olduğu görülür).  
+
+#### Mikroservis Endpoint ve Metrik Port Eşleme Tablosu
+
+| Mikroservis | Teknoloji | NodePort | Doğrudan Erişim | Metrik Endpoint'i |
+|---|---|:---:|---|---|
+| **`novashop-ui`** | Java 21 / Spring Boot | `30080` | `http://localhost:30080` | `/actuator/prometheus` |
+| **`novashop-catalog`** | Go / Gin | `30081` | `http://localhost:30081` | `/metrics` |
+| **`novashop-cart`** | Java 21 / Spring Boot | `30082` | `http://localhost:30082` | `/actuator/prometheus` |
+| **`novashop-orders`** | Java 21 / Spring Boot | `30083` | `http://localhost:30083` | `/actuator/prometheus` |
+| **`novashop-checkout`** | Node.js / Express | `30085` | `http://localhost:30085` | `/metrics` |
 
 ---
 
@@ -40,14 +66,21 @@ Laboratuvarın sonunda yer alan **Bonus Bölüm** ile modern mikroservis mimaril
 ```mermaid
 graph TD
     User([Kullanıcı / Trafik Simülatörü]) -->|HTTP :30080| UI[NovaShop UI in Kind K8s]
-    UI -->|Spring Boot Actuator| Metrics[Actuator /actuator/prometheus]
+    UI -->|HTTP :8080| Catalog[Catalog :30081]
+    UI -->|HTTP :8080| Cart[Cart :30082]
+    UI -->|HTTP :8080| Orders[Orders :30083]
+    UI -->|HTTP :8080| Checkout[Checkout :30085]
 
     subgraph Prometheus_Grafana_Katmani ["Metrik & Alarm Katmanı (Docker / Cockpit)"]
-        Prometheus[Prometheus Server :9091 / :19090] -->|Scrape host.docker.internal:30080| Metrics
+        Prometheus[Prometheus Server :9091 / :19090] -->|Scrape NodePort 30080| UI
+        Prometheus -->|Scrape NodePort 30081| Catalog
+        Prometheus -->|Scrape NodePort 30082| Cart
+        Prometheus -->|Scrape NodePort 30083| Orders
+        Prometheus -->|Scrape NodePort 30085| Checkout
         Prometheus -->|Scrape :9100| NodeExp[Node Exporter :9100<br/>Host CPU/RAM/Disk]
         Prometheus -->|Scrape :8081| CAdvisor[cAdvisor :8081<br/>Konteyner Kaynakları]
 
-        Prometheus --> Alertmanager[Alertmanager :9093<br/>E-posta, Slack, Telegram]
+        Prometheus --> Alertmanager[Alertmanager :9093<br/>E-posta, Slack, Webhook]
         Grafana[Grafana Dashboards :3000 / :13000<br/>Canlı Panolar & SLO Takibi] -->|PromQL| Prometheus
     end
 
@@ -59,15 +92,14 @@ graph TD
 
 ---
 
-### 🧭 Erişim Modelleri ve Kimlik Bilgileri (Credentials)
+### 🧭 Erişim Modelleri ve Kimlik Bilgileri
 
-| Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
-| :--- | :--- | :--- | :---: | :---: |
-| **Grafana Panosu** | `https://studentXX-grafana.devopsatolyesi.com` | `http://<UBUNTU_IP>:3000` veya `:13000` | `admin` | `.env` içindeki `GRAFANA_ADMIN_PASSWORD` (`DevOps2026!`) |
-| **Prometheus Web UI** | `https://studentXX-prometheus.devopsatolyesi.com` | `http://<UBUNTU_IP>:9091` veya `:19090` | - | Kimlik doğrulaması yok (*Cockpit 9090 kullandığı için 9091/19090 ayrılmıştır*) |
-| **Alertmanager** | - | `http://<UBUNTU_IP>:9093` | - | Kimlik doğrulaması yok |
-| **NovaShop Storefront (Kind)** | `https://studentXX-app1.devopsatolyesi.com` | `http://<UBUNTU_IP>:30080` | - | E-ticaret vitrini |
-| **Jaeger UI (Tracing - Bonus)** | `https://studentXX-jaeger.devopsatolyesi.com` | `http://<UBUNTU_IP>:16686` | - | Kimlik doğrulaması yok |
+| Servis | Model B: Kurumsal DNS + SSL | Model A: Doğrudan IP:Port | Kullanıcı Adı | Parola |
+|---|---|---|:---:|:---:|
+| **Grafana Panosu** | `https://${STUDENT_ID}-grafana.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:3000` veya `:13000` | `admin` | `DevOps2026!` |
+| **Prometheus Web UI** | `https://${STUDENT_ID}-prometheus.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:9091` veya `:19090` | - | Kimlik doğrulama yok |
+| **Alertmanager** | - | `http://<SUNUCU_IP>:9093` | - | Kimlik doğrulama yok |
+| **Jaeger UI (Tracing)** | `https://${STUDENT_ID}-jaeger.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:16686` | - | Kimlik doğrulama yok |
 
 ---
 
@@ -75,10 +107,9 @@ graph TD
 
 ---
 
-### ADIM 1: Gözlemlenebilirlik Profilini Başlatma
+### BÖLÜM 1: Komut Satırından (CLI) Otomasyon ve Kurulum
 
-#### Yöntem A: Terminalden (CLI)
-Yerel parolanızı tanımlayın ve servisleri Docker Compose ile başlatın:
+#### 1.1 Gözlemlenebilirlik Profilini Başlatma
 
 ```bash
 cd ~/novashop
@@ -86,174 +117,191 @@ test -f .env || cp config/project.env.example .env
 sed -i 's/<SET_A_LOCAL_SECRET>/DevOps2026!/g' .env
 chmod 600 .env
 
-# Stack'i başlatın
+# Prometheus, Grafana, Alertmanager, Node Exporter, cAdvisor servislerini başlatın:
 docker compose --env-file .env -p novashop-observability -f deploy/observability/docker-compose.observability.yml up -d
 ```
 
-**Konteyner Durumlarını Doğrulama:**
+**Konteyner Durumlarını Denetleyin:**
 ```bash
 docker compose -p novashop-observability -f deploy/observability/docker-compose.observability.yml ps
 ```
 *Beklenen konteynerler:* `novashop-prometheus`, `novashop-grafana`, `novashop-alertmanager`, `novashop-node-exporter`, `novashop-cadvisor`.
 
-#### Yöntem B: Web Tarayıcısından (UI)
-1. Tarayıcınızda `https://studentXX-grafana.devopsatolyesi.com` veya `http://<SUNUCU_IP>:3000` adresine gidin.
-2. `admin` / `DevOps2026!` ile giriş yapın.
-
 ---
 
-### ADIM 2: Prometheus Hedeflerini (Targets) ve PromQL Sorgularını İnceleme
+#### 1.2 5 Mikroservisin Prometheus Scrape Hedeflerini Doğrulama (CLI)
 
-Prometheus'un sistemdeki bileşenleri başarıyla dinlediğini doğrulayın:
+Tüm mikroservislerin Prometheus tarafından başarıyla dinlendiğini terminalden API ile sorgulayın:
 
-#### Yöntem A: Terminalden (CLI / curl)
 ```bash
-curl -s http://localhost:9091/api/v1/targets | jq -r '.data.activeTargets[] | "\(.labels.job): \(.health)"'
+curl -s http://localhost:9091/api/v1/targets | jq -r '.data.activeTargets[] | "\(.labels.job): \(.health) (\(.scrapeUrl))"'
 ```
+
 *Beklenen çıktı:*
 ```text
-prometheus: up
-node-exporter: up
-cadvisor: up
-novashop-ui: up
+prometheus: up (http://localhost:9090/metrics)
+node-exporter: up (http://node-exporter:9100/metrics)
+cadvisor: up (http://cadvisor:8080/metrics)
+novashop-ui: up (http://host.docker.internal:30080/actuator/prometheus)
+novashop-catalog: up (http://host.docker.internal:30081/metrics)
+novashop-cart: up (http://host.docker.internal:30082/actuator/prometheus)
+novashop-orders: up (http://host.docker.internal:30083/actuator/prometheus)
+novashop-checkout: up (http://host.docker.internal:30085/metrics)
+```
+Tüm servislerin **up** olduğunu ve hiçbir servisin kırmızı (down) olmadığını teyit edin.
+
+---
+
+#### 1.3 Yapay Trafik Simülatörünü Başlatma
+
+Metriklerin Grafana üzerinde canlı dalgalanması için arka planda istek üreten simülatörü çalıştırın:
+
+```bash
+# E-ticaret sipariş, sepet ve gezinme trafiği üretir:
+python3 scripts/simulate-traffic.py &
 ```
 
-#### Yöntem B: Prometheus Web Arayüzünden (UI)
-1. `https://studentXX-prometheus.devopsatolyesi.com/targets` veya `http://<SUNUCU_IP>:9091/targets` adresine gidin.
-2. Tüm hedeflerin mavi renkli **UP** durumunda olduğunu teyit edin.
+---
+
+### BÖLÜM 2: Prometheus Web Arayüzü (UI) Kullanımı
+
+1. Tarayıcınızdan `http://<SUNUCU_IP>:9091` veya `https://${STUDENT_ID}-prometheus.${DOMAIN_NAME}` adresine gidin.
+2. Üst menüden **Status > Targets** sayfasına tıklayın:
+   - `novashop-ui`, `novashop-catalog`, `novashop-cart`, `novashop-orders`, `novashop-checkout` hedeflerinin yeşil **UP (1/1)** olduğunu gözlemleyin.
 3. Üst menüden **Graph** sekmesine geçin.
 
----
+#### Kritik PromQL Sorgu Kütüphanesi:
 
-### ADIM 3: PromQL Sorgu Kütüphanesi (Table ve Graph Modları)
+Aşağıdaki sorguları `Expression` alanına yapıştırıp **Execute** butonuna basın ve **Graph** sekmesinde zaman serisi eğrilerini inceleyin:
 
-Prometheus arayüzünde veya Grafana **Explore** sekmesinde iki mod bulunur:
-- **Table Modu:** Anlık en güncel snapshot değerlerini gösterir (Örn: `up == 1`).
-- **Graph Modu:** Zaman içindeki eğilimleri, persentilleri ve türevleri çizer (`rate`, `histogram_quantile`).
-
-#### Pratik PromQL Formülleri:
-
-| Metot / Alan | Amaç | PromQL Sorgusu |
-| :--- | :--- | :--- |
-| **RED - Rate** | İstek Hızı (RPS) | `sum by (job) (rate(http_server_requests_seconds_count[1m]))` |
-| **RED - Errors** | HTTP 5xx Hata Oranı (%) | `(sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum(rate(http_server_requests_seconds_count[1m]))) * 100` |
-| **RED - Duration** | p95 Yanıt Gecikmesi (saniye) | `histogram_quantile(0.95, sum by (le) (rate(http_server_requests_seconds_bucket[5m])))` |
-| **USE - Utilization** | Host CPU Doluluğu (%) | `100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)` |
-| **USE - Memory** | Host Kullanılabilir RAM (%) | `(node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100` |
-| **Konteyner** | Konteyner Başına CPU (%) | `sum by (name) (rate(container_cpu_usage_seconds_total{name=~".+"}[1m])) * 100` |
-
----
-
-### ADIM 4: Grafana Panoları ve Panel Mimarisi
-
-Grafana hiyerarşisi:
-$$\text{Data Source (Prometheus)} \longrightarrow \text{Query (PromQL)} \longrightarrow \text{Panel (Widget)} \longrightarrow \text{Dashboard (Pano)}$$
-
-#### 1. Panel Tipleri ve Görevleri:
-* **Time Series:** Zamanla değişen CPU, bellek ve RPS değerlerini iniş-çıkışlı çizgi grafik olarak gösterir.
-* **Stat (Sayaç):** "Toplam 142 Sipariş" gibi özet bir sayıyı devasa rakamla ve eşik rengiyle gösterir.
-* **Gauge (Kadran):** Araba hız göstergesi gibi % doluluk oranlarını (%85 üzeri kırmızı) gösterir.
-* **Alert List:** Sistemde tanımlı alarmların o anki sağlık durumunu (Normal/Firing) pano üstünde listeler.
-
-#### 2. Hazır Panolar:
-* **NovaShop Services Overview:** RED ve e-ticaret iş metrikleri. En tepesinde canlı **Alert List** paneli yer alır.
-* **NovaShop Docker & Host Overview:** Konteyner ve sunucu altyapı tüketimi.
-* **NovaShop Alerting & Health Center:** Canlı alarmların, CPU/RAM kadranlarının ve servis sağlık durumlarının toplandığı merkez.
+* **Servis Başına İstek Hızı (RED - Rate / RPS):**
+  ```promql
+  sum by (job) (rate(http_server_requests_seconds_count[1m]))
+  ```
+* **HTTP 5xx Hata Oranı Yüzdesi (RED - Errors):**
+  ```promql
+  (sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum(rate(http_server_requests_seconds_count[1m]))) * 100
+  ```
+* **p95 Yanıt Gecikmesi (RED - Duration):**
+  ```promql
+  histogram_quantile(0.95, sum by (job, le) (rate(http_server_requests_seconds_bucket[1m])))
+  ```
+* **Host CPU Doluluk Oranı (USE - Utilization):**
+  ```promql
+  100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)
+  ```
+* **Host Kullanılabilir Bellek Yüzdesi (USE - Memory):**
+  ```promql
+  (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100
+  ```
 
 ---
 
-### ADIM 5: Alarm Yönetimi ve Kontrollü Hata Tetikleme
+### BÖLÜM 3: Grafana Web Arayüzü (UI) — Manuel Pano ve Alarm Oluşturma
 
-#### 1. Grafana UI Üzerinden Yeni Alarm Kuralı Oluşturma:
-1. Sol menüden **Alerting ➔ Alert rules** sayfasına gidin ve **+ New alert rule** butonuna basın.
-2. **Rule name:** `NovaShop-UI-HighErrorRate`
-3. **Query (A):**
+1. Tarayıcınızda `http://<SUNUCU_IP>:3000` (veya `13000`) adresini açın.
+2. Kullanıcı adı `admin` ve şifre `DevOps2026!` ile giriş yapın.
+
+#### 3.1 Arayüzden Sıfırdan Yeni Dashboard ve Panel Oluşturma (Manuel)
+
+1. Sol menüden **Dashboards** sekmesine gelin, sağ üstteki **New > New Dashboard** butonuna tıklayın.
+2. Açılan ekranda **+ Add visualization** seçeneğine tıklayın.
+3. Veri kaynağı (Data source) olarak **Prometheus** seçin.
+4. **Panel 1: Canlı İstek Hızı (Time Series):**
+   - **Query (A):** `sum by (job) (rate(http_server_requests_seconds_count[1m]))`
+   - **Legend:** `{{job}}`
+   - Sağ panelden **Panel options > Title:** `Mikroservis İstek Hızları (RPS)` yazın.
+   - Sağ üstteki **Apply** butonuna tıklayın.
+5. **Panel 2: Toplam Başarılı İstek Sayacı (Stat Paneli):**
+   - Dashboard'a dönüp **+ Add > Visualization** deyin.
+   - **Query (A):** `sum(http_server_requests_seconds_count{status=~"2.."})`
+   - Sağ paneldeki panel tipini **Time series** yerine **Stat** olarak değiştirin.
+   - **Title:** `Toplam Başarılı İşlem (HTTP 200)` yazın ve **Apply** deyin.
+6. **Panel 3: CPU Kullanım Kadranı (Gauge Paneli):**
+   - **Query (A):** `100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100)`
+   - Panel tipini **Gauge** seçin.
+   - Sağ taraftaki **Standard options > Unit** alanından **Percent (0-100)** seçin.
+   - **Thresholds:** `80` sarı, `90` kırmızı belirleyin.
+   - **Title:** `Sunucu CPU Tüketimi` yazın ve **Apply** deyin.
+7. Sağ üstteki **Disket (Save dashboard)** simgesine basarak panonuzu `NovaShop Canlı İzleme` adıyla kaydedin.
+
+---
+
+#### 3.2 Arayüzden Manuel Alarm Kuralı (Alert Rule) Tanımlama
+
+1. Sol menüden **Alerting > Alert rules** sayfasına gidin.
+2. **+ New alert rule** butonuna tıklayın:
+   - **Rule name:** `NovaShopHighErrorRateAlert`
+   - **Query (A):**
+     ```promql
+     sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum(rate(http_server_requests_seconds_count[1m])) * 100
+     ```
+   - **Condition (C):** `Input: A`, `IS ABOVE: 5` (Hata oranı %5'in üzerine çıkarsa alarm ver).
+   - **Evaluation interval:** `1m` (Her 1 dakikada bir kontrol et).
+   - **Folder:** `NovaShop Alerts` oluşturun.
+   - **Rule group:** `ecommerce-errors` yazın.
+3. Sayfanın en altındaki **Save rule and exit** butonuna basarak kuralı aktifleştirin.
+
+---
+
+#### 3.3 Hazır Dashboard JSON Dosyalarını İçe Aktarma (Import)
+
+Hazır profesyonel panoları tek tıkla Grafana'ya yükleyin:
+
+1. Sol menüden **Dashboards > New > Import** yolunu izleyin.
+2. **Upload dashboard JSON file** butonuna tıklayarak depodaki şu dosyaları yükleyin:
+   - `deploy/observability/grafana/provisioning/dashboards/json/novashop-services-overview.json`
+   - `deploy/observability/grafana/provisioning/dashboards/json/docker-container-host-overview.json`
+3. Veri kaynağı olarak **Prometheus** seçin ve **Import** butonuna basın.
+4. Tüm mikroservislerin RED metrikleri, e-ticaret sepet verileri ve alarm listeleri tek bir ekranda belirecektir.
+
+---
+
+### BÖLÜM 4: SRE Uygulaması — SLI, SLO ve Hata Bütçesi Hesaplama
+
+Grafana'da açtığınız panoya yeni bir **Gauge** paneli ekleyin:
+
+1. **SLO Formülü (PromQL):**
    ```promql
-   sum(rate(http_server_requests_seconds_count{status=~"5.."}[1m])) / sum(rate(http_server_requests_seconds_count[1m])) * 100
+   (sum(rate(http_server_requests_seconds_count{status!~"5.."}[30d])) 
+   / 
+   sum(rate(http_server_requests_seconds_count[30d]))) * 100
    ```
-4. **Condition (C):** `Input: A`, `IS ABOVE: 2` (%2 hata eşiği).
-5. **Folder:** `NovaShop Alerts` seçin.
-6. **Save and exit** diyerek kaydedin.
+2. **Threshold Eşikleri:**
+   - `0 - 99.0`: Kırmızı (SLA İhlali — Müşteriye ceza/iade riski)
+   - `99.0 - 99.9`: Sarı (SLO İhlal Riski — Hata Bütçesi tükeniyor)
+   - `99.9 - 100.0`: Yeşil (SLO Başarılı — Sistem sağlıklı)
 
-#### 2. Yapay Hata Yükü Üretme ve Alarm Testi (CLI):
+#### Kontrollü Hata Bütçesi Tüketme Deneyi:
+Terminalden bilerek 500 hataları üreterek hata bütçesini eritin ve Grafana kadranının sarıya/kırmızıya döndüğünü gözlemleyin:
 ```bash
-# Bilerek 404/500 hataları üretecek test trafiği gönderin:
-for i in {1..40}; do curl -s http://localhost:30080/api/invalid-endpoint > /dev/null & done
-
-# veya hazır simülasyon betiği ile:
-bash scripts/simulate-traffic.sh --error-burst
+for i in {1..50}; do curl -s http://localhost:30080/api/invalid-endpoint > /dev/null & done
 ```
-*Doğrulama:*
-- `http://localhost:9091/alerts` (veya `:19090/alerts`) sayfasında alarmın `Pending` -> `Firing` olduğunu görün.
-- Grafana `NovaShop Alerts` panosunda kutunun kırmızı yandığını teyit edin.
 
 ---
 
-## 🌟 SRE BÖLÜMÜ: SLI, SLA, SLO ve Hata Bütçesi (Prometheus & Grafana)
+### BÖLÜM 5: Bonus Dağıtık İzleme (OpenTelemetry & Jaeger Tracing)
 
-Modern Site Reliability Engineering (SRE) yaklaşımında sistem başarısı bu 4 kavramla yönetilir:
+Kullanıcı tek bir satın alma işlemi yaptığında istek arka planda `UI -> Cart -> Orders -> Checkout` zincirini takip eder.
 
-```mermaid
-flowchart LR
-    SLI["<b>SLI (Gösterge)</b><br/>Ölçülen Değer<br/><i>%99.94</i>"] --> SLO["<b>SLO (İç Hedef)</b><br/>Ekip Taahhüdü<br/><i>%99.90</i>"]
-    SLO --> SLA["<b>SLA (Dış Sözleşme)</b><br/>Müşteri Cezai Şartı<br/><i>%99.50</i>"]
-    SLO --> EB["<b>Error Budget</b><br/>Kalan Hata Hakkı<br/><i>0.1% - Harcanan</i>"]
-```
-
-### 1. Formüller:
-* **SLI (Service Level Indicator):**
-  $$\text{SLI} = \frac{\text{Başarılı İstek Sayısı (HTTP 2xx, 3xx, 4xx)}}{\text{Toplam İstek Sayısı}} \times 100$$
-* **SLO (Service Level Objective):** Mühendislik hedefi: `%99.9` başarı.
-* **SLA (Service Level Agreement):** Müşteri sözleşmesi: `%99.5` altı fatura iadesi.
-* **Error Budget:** Ayda izin verilen maksimum kesinti süresi:
-  $$100\% - 99.9\% = 0.1\% \approx \text{Ayda en fazla 43 dakika kesinti payı}$$
-
-### 2. Grafana'da SLO Paneli Tanımlama (PromQL):
-Grafana'da yeni bir **Gauge** paneli açıp aşağıdaki formülü ekleyin:
-
-```promql
-(sum(rate(http_server_requests_seconds_count{status!~"5.."}[30d])) 
-/ 
-sum(rate(http_server_requests_seconds_count[30d]))) * 100
-```
-* **Threshold Ayarları:**
-  * 0 - 99.0: Kırmızı (SLA İhlali)
-  * 99.0 - 99.9: Sarı (SLO Riski / Hata Bütçesi Eriyor)
-  * 99.9 - 100: Yeşil (SLO Sağlandı)
-
----
-
-## 🌟 BONUS / İLERİ SEVİYE SRE MODÜLÜ: OpenTelemetry & Jaeger ile Dağıtık İzleme
-
-> **💡 Müfredat Notu:**
-> Bu bölüm, klasik sistem izlemenin ötesine geçip mikroservislerdeki gecikmeleri uçtan uca analiz etmek isteyen mühendisler için **opsiyonel bir ileri seviye modüldür**.
-
-### 1. Dağıtık İzleme (Tracing) Nedir?
-Kullanıcı tek bir "Satın Al" butonuna bastığında, arkada çalışan 5 farklı servisin (UI, Sepet, Ödeme, Sipariş, Veritabanı) birbirini kaçar milisaniyede çağırdığını gösteren şelale (Waterfall) diyagramıdır.
-
-### 2. Gerçekçi Örnek Trace Üretme (CLI):
-Uygulama trafiğini simüle eden hazırladığımız betiği çalıştırın:
-
-```bash
-python3 scripts/generate-sample-traces.py
-```
-*Bu betik; başarılı sipariş akışlarını, ürün arama işlemlerini ve 502 Gateway Timeout hata senaryolarını OpenTelemetry üzerinden Jaeger'a basar.*
-
-### 3. Jaeger UI'da İnceleme:
-1. `https://studentXX-jaeger.devopsatolyesi.com` adresini açın.
-2. **Service:** `novashop-checkout` seçin ve **Find Traces** deyin.
-3. Gelen izlere tıklayarak sürenin ne kadarının HTTP çağrısında, ne kadarının veritabanı `INSERT INTO orders` SQL sorgusunda geçtiğini inceleyin.
+1. **Örnek Dağıtık İz Üretme (CLI):**
+   ```bash
+   python3 scripts/generate-sample-traces.py
+   ```
+2. **Jaeger Web Arayüzünde Şelale (Waterfall) Analizi:**
+   - Tarayıcınızda `http://<SUNUCU_IP>:16686` veya `https://${STUDENT_ID}-jaeger.${DOMAIN_NAME}` adresini açın.
+   - **Service:** `novashop-checkout` seçin ve **Find Traces** butonuna tıklayın.
+   - Gelen span bloklarına tıklayarak sürenin kaç milisaniyesinin HTTP ağ gecikmesinde, kaç milisaniyesinin iç işlemde harcandığını waterfall diyagramında analiz edin.
 
 ---
 
 ### Doğrulama ve Cleanup
 
-**Otomatik Doğrulama:**
 ```bash
+# 1. Otomatik laboratuvar doğrulama testini çalıştırın:
 bash scripts/verify/verify-lab-10.sh 30080 localhost
-```
 
-**Temizlik / Rollback:**
-```bash
+# 2. Çalışma bittiğinde kaynakları serbest bırakın:
 docker compose -p novashop-observability -f deploy/observability/docker-compose.observability.yml down -v
+pkill -f simulate-traffic || true
 ```

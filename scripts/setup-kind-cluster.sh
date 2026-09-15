@@ -62,7 +62,9 @@ helm upgrade --install novashop "$REPO_ROOT/charts/novashop" \
 echo "8. Dağıtılan kaynaklar listeleniyor..."
 kubectl get all -n novashop
 
-echo "=== [NovaShop] Kind ve Helm Dağıtımı Başarıyla Tamamlandı! ==="
-echo "Mağaza Erişimi (NodePort):   http://localhost:30080"
-echo "Sağlık Kontrolü (Actuator): http://localhost:30080/actuator/health"
-echo "Prometheus Metrikleri:       http://localhost:30080/actuator/prometheus"
+echo "=== [NovaShop] Kind ve Helm Mikroservis Dağıtımı Başarıyla Tamamlandı! ==="
+echo "1. UI Storefront (Java/Spring):   http://localhost:30080 (Metrik: /actuator/prometheus)"
+echo "2. Catalog Servisi (Go/Gin):      http://localhost:30081 (Metrik: /metrics)"
+echo "3. Cart Servisi (Java/Spring):    http://localhost:30082 (Metrik: /actuator/prometheus)"
+echo "4. Orders Servisi (Java/Spring):  http://localhost:30083 (Metrik: /actuator/prometheus)"
+echo "5. Checkout Servisi (Node.js):    http://localhost:30085 (Metrik: /metrics)"

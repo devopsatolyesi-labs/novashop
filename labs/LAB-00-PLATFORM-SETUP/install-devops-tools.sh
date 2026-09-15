@@ -90,24 +90,28 @@ else
     echo "   ✓ Terraform zaten kurulu: $(terraform version | head -n 1)"
 fi
 
-# 5. Kubernetes kubectl (v1.30)
+# 5. Kubernetes kubectl (En Güncel Resmi Stable)
 echo "▶ 5. Kubernetes kubectl kontrol ediliyor / kuruluyor..."
 if ! command -v kubectl >/dev/null 2>&1; then
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | $SUDO gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg --yes
-    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | $SUDO tee /etc/apt/sources.list.d/kubernetes.list
-    $SUDO apt-get update -y && $SUDO apt-get install -y kubectl
-    echo "   ✓ kubectl başarıyla kuruldu."
+    K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+    echo "   En güncel stable kubectl indiriliyor ($K8S_VERSION)..."
+    curl -fsSL "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl" -o /tmp/kubectl
+    chmod +x /tmp/kubectl
+    $SUDO mv /tmp/kubectl /usr/local/bin/kubectl
+    echo "   ✓ kubectl ($K8S_VERSION) başarıyla kuruldu."
 else
     echo "   ✓ kubectl zaten kurulu: $(kubectl version --client --output=yaml 2>/dev/null | grep gitVersion || kubectl version --client)"
 fi
 
-# 6. Kind (Kubernetes in Docker)
+# 6. Kind (Kubernetes in Docker - En Güncel Resmi Stable)
 echo "▶ 6. Kind kontrol ediliyor / kuruluyor..."
 if ! command -v kind >/dev/null 2>&1; then
-    curl -Lo /tmp/kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+    KIND_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    echo "   En güncel stable Kind indiriliyor ($KIND_VERSION)..."
+    curl -fsSL "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64" -o /tmp/kind
     chmod +x /tmp/kind
     $SUDO mv /tmp/kind /usr/local/bin/kind
-    echo "   ✓ Kind başarıyla kuruldu."
+    echo "   ✓ Kind ($KIND_VERSION) başarıyla kuruldu."
 else
     echo "   ✓ Kind zaten kurulu: $(kind version)"
 fi

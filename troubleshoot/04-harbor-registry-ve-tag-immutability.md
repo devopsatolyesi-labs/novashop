@@ -103,10 +103,18 @@ curl -s -u "admin:WebSalla454!!" -X POST "http://127.0.0.1:18082/api/v2.0/projec
 # 1. Robot hesap ile oturum aç:
 echo "IDPJHyl1Vr8hGHzoWxrHgWT1gwSRjbCe" | docker login 127.0.0.1:18082 -u "robot\$novashop+novashop-cicd" --password-stdin
 
-# 2. İmajı push et:
+# 2. İmajı ilk kez push et (Kabul edilir):
 docker push 127.0.0.1:18082/novashop/ui:v0.1.1
 
-# 3. İkinci kez aynı etiketi push etmeyi dene (Hata beklenir):
+# ⚠️ Önemli Mühendislik Notu:
+# Eğer aynı imajı hiçbir değişiklik yapmadan tekrar push ederseniz, digest (parmak izi) 
+# aynı olduğu için OCI standartlarına göre idempotent kabul edilir ve hata vermez.
+
+# 3. Gerçek İhlal Testi (Farklı bir imajla aynı etiketin üzerine yazmaya çalışma):
+docker pull alpine:latest
+docker tag alpine:latest 127.0.0.1:18082/novashop/ui:v0.1.1
 docker push 127.0.0.1:18082/novashop/ui:v0.1.1
 ```
-*Beklenen Sonuç:* İkinci push `configured as immutable` hatası ile başarıyla reddedilmelidir.
+*Beklenen Sonuç:*  
+`error from registry: Failed to process request due to 'ui:v0.1.1' configured as immutable.`  
+İşlem Harbor tarafından anında reddedilir.

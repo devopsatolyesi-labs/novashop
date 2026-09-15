@@ -6,15 +6,29 @@
 
 NovaShop ekosisteminde; **Elasticsearch 8.x** arama/indeksleme motoru, **Kibana 8.x** analiz ve görselleştirme platformu ile **Fluent Bit** ve **Filebeat** log ileticilerinden oluşan kurumsal seviyede bir **Merkezi Günlükleme (ELK Stack)** altyapısı kurmaktır.
 
-Bu laboratuvarda "hiçbir şey gizli veya sihirli kalmadan", öğrencinin **hem terminal komutlarıyla (CLI/curl/bash) hem de web kullanıcı arayüzünden (Kibana UI)** adım adım:
-1. Altyapıyı sıfırdan başlatması,
-2. Ubuntu sunucusundaki tüm kaynaklardan (Docker konteynerleri, Spring Boot mikroservisleri, Kubernetes podları, Ubuntu host ve Jenkins/GitLab) log toplaması,
-3. Elasticsearch API ile doğrudan veri basıp index/mapping mekanizmasını kavraması,
-4. Hazır örnek e-ticaret veri setlerini yüklemesi,
-5. Kibana Data View (Index Pattern) oluşturması,
-6. KQL (Kibana Query Language) ile arama ve `trace_id` korelasyonu yapması,
-7. Kibana Lens ile sıfırdan panolar çizip komutla içe aktarması,
-8. **SRE Bonus Bölümü** ile SLI, SLA, SLO ve Error Budget kavramlarını hem Grafana hem de ELK üzerinde canlı hesaplaması hedeflenir.
+Bu laboratuvarda hem terminal komutlarıyla (CLI/curl/bash) hem de web kullanıcı arayüzünden (Kibana UI) adım adım:
+1. Altyapıyı sıfırdan başlatmak,
+2. Ubuntu sunucusundaki tüm kaynaklardan (Docker konteynerleri, Spring Boot mikroservisleri, Kubernetes podları, Ubuntu host ve Jenkins/GitLab) log toplamak,
+3. Elasticsearch API ile doğrudan veri basıp index/mapping mekanizmasını kavramak,
+4. Hazır örnek e-ticaret veri setlerini yüklemek,
+5. Kibana Data View (Index Pattern) oluşturmak,
+6. KQL (Kibana Query Language) ile arama ve `trace_id` korelasyonu yapmak,
+7. Kibana Lens ile sıfırdan panolar çizip komutla içe aktarmak,
+8. **SRE Bonus Bölümü** ile SLI, SLA, SLO ve Error Budget kavramlarını hem Grafana hem de ELK üzerinde canlı hesaplamak hedeflenir.
+
+---
+
+### Ön Koşullar ve Hızlı Hazırlık
+
+1. **NovaShop'un Kind Üzerinde Başlatılması:**
+   NovaShop uygulamasının Kind Kubernetes kümesinde ayakta olması pod loglarının toplanabilmesi için önerilir. Eğer önceki lablar yapılmadıysa veya küme kapalıysa, tek komutla her şeyi hazır hale getirin:
+   ```bash
+   bash scripts/setup-kind-cluster.sh
+   ```
+   *Doğrulama:* `kubectl get pods -n novashop` (Podların `Running` olduğu görülür).  
+   *Log Akışı:* Kind pod logları `/var/log/pods` altında üretilir ve Fluent Bit tarafından Elasticsearch'e `novashop-k8s-*` indeksiyle aktarılır.
+
+2. **Gerekli Araçlar:** Docker v24+, `curl`, `jq`.
 
 ---
 
@@ -71,7 +85,7 @@ graph TD
 
 | Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
 | :--- | :--- | :--- | :---: | :---: |
-| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com`<br/>*(veya CDN Alias: `studentXX-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:5601` | - | Kimlik doğrulaması yok (Eğitim Modu) |
+| **Kibana Web UI** | `https://studentXX-kibana.devopsatolyesi.com`<br/>*(veya CDN Alias: `studentXX-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:5601` veya `:15601` | - | Kimlik doğrulaması yok (Eğitim Modu) |
 | **Elasticsearch REST API** | `https://studentXX-elastic.devopsatolyesi.com`<br/>*(veya CDN Alias: `studentXX-k8s-app1.devopsatolyesi.com`)* | `http://<UBUNTU_IP>:9200` | - | Kimlik doğrulaması yok (`xpack.security=false`) |
 | **Fluent Bit Forwarder** | - | `http://<UBUNTU_IP>:24224` | - | Fluentd TCP/UDP Forward Portu |
 
@@ -216,7 +230,7 @@ GET novashop-demo/_mapping
 
 ### ADIM 4: Kibana Hazır Örnek Veri (Sample Data) Entegrasyonu
 
-Öğrencinin sistemi kurduğu ilk dakikada binlerce gerçekçi log ve hazır grafiklerle çalışabilmesi için Kibana resmi örnek e-ticaret veri setini sağlar.
+Sistemin kurulduğu ilk dakikada binlerce gerçekçi log ve hazır grafiklerle çalışabilmek için Kibana resmi örnek e-ticaret veri setini sağlar.
 
 #### Yöntem A: Terminalden Tek Komutla (CLI)
 Hazırladığımız otomasyon betiğini çalıştırın:

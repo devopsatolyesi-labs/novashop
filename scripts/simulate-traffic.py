@@ -281,12 +281,22 @@ def main():
     print(f"   Hata Enjeksiyonu (SLO Alarm Testi): {'AÇIK 🚨' if args.error_burst else 'KAPALI'}")
     print("=" * 78)
 
+    ui_target = args.ui_url
+    if ui_target == "http://localhost:8888":
+        # Otomatik algılama: Önce Kind Kubernetes NodePort (30080) kontrol edilir
+        try:
+            r = requests.get("http://localhost:30080/actuator/health", timeout=1)
+            if r.status_code == 200:
+                ui_target = "http://localhost:30080"
+        except Exception:
+            pass
+
     cycle = 1
     while True:
         if args.continuous:
             print(f"\n--- [Döngü #{cycle}] Canlı veri akışı üretiliyor... ---")
 
-        simulate_http_traffic(args.ui_url, args.burst, inject_errors=args.error_burst)
+        simulate_http_traffic(ui_target, args.burst, inject_errors=args.error_burst)
         simulate_elasticsearch_logs(args.es_url, args.burst * 2, inject_errors=args.error_burst)
         simulate_jaeger_traces(args.otel_url, max(5, args.burst // 3), inject_errors=args.error_burst)
 

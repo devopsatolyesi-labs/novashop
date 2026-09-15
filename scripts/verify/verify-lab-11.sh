@@ -20,6 +20,11 @@ ES_HEALTH=$(curl -s --connect-timeout 3 "http://${ES_HOST}/_cluster/health" 2>/d
 
 if echo "$ES_HEALTH" | grep -qE '"status":"(green|yellow)"'; then
     echo "✅ Elasticsearch cluster sağlıklı ($ES_HEALTH)."
+    K8S_INDICES=$(curl -s "http://${ES_HOST}/_cat/indices/novashop-k8s*?h=index,docs.count" 2>/dev/null || echo "")
+    if [ -n "$K8S_INDICES" ]; then
+        echo "✅ Kubernetes (Kind) pod log indeksi aktif:"
+        echo "$K8S_INDICES"
+    fi
 else
     echo "ℹ️ Bilgi: Elasticsearch ($ES_HOST) erişilemedi veya henüz başlatılmadı."
 fi

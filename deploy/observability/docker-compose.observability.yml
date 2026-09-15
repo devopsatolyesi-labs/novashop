@@ -6,6 +6,9 @@ services:
     container_name: novashop-prometheus
     ports:
       - "9091:9090"
+      - "19090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./alert.rules.yml:/etc/prometheus/alert.rules.yml:ro
@@ -17,7 +20,6 @@ services:
           memory: 512M
     networks:
       - novashop-observability-net
-      - novashop-starter-net
 
   alertmanager:
     image: prom/alertmanager:v0.27.0
@@ -39,6 +41,7 @@ services:
     container_name: novashop-grafana
     ports:
       - "3000:3000"
+      - "13000:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD must be set locally; do not commit it}
       - GF_USERS_ALLOW_SIGN_UP=false
@@ -139,7 +142,3 @@ services:
 networks:
   novashop-observability-net:
     driver: bridge
-  # The starter helper creates this network. LAB-03 must be running first.
-  novashop-starter-net:
-    external: true
-    name: novashop-starter_default

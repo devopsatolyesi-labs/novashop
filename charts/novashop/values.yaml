@@ -10,8 +10,8 @@ ui:
   enabled: true
   replicaCount: 2
   image:
-    repository: novashop-ui
-    tag: v0.1.0
+    repository: public.ecr.aws/aws-containers/retail-store-sample-ui
+    tag: "1.6.2"
     pullPolicy: IfNotPresent
   service:
     type: NodePort

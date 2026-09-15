@@ -17,12 +17,17 @@ scrape_configs:
     static_configs:
       - targets: ["localhost:9090"]
 
-  # 2. NovaShop UI Spring Boot Actuator Metrikleri
+  # 2. NovaShop UI Spring Boot Actuator Metrikleri (Kind K8s veya Docker)
   - job_name: "novashop-ui"
     metrics_path: "/actuator/prometheus"
     scrape_interval: 5s
     static_configs:
+      - targets: ["host.docker.internal:30080"]
+        labels:
+          runtime: "kind-k8s"
       - targets: ["ui:8080"]
+        labels:
+          runtime: "docker-compose"
 
   # 3. NovaShop Mikroservis Metrikleri
   - job_name: "novashop-catalog"

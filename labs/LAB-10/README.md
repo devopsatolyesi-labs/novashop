@@ -21,27 +21,38 @@ Laboratuvarın sonunda yer alan **Bonus Bölüm** ile modern mikroservis mimaril
 
 ---
 
+### Ön Koşullar ve Hızlı Hazırlık
+
+1. **NovaShop'un Kind Üzerinde Başlatılması:**
+   NovaShop uygulamasının Kind Kubernetes kümesinde ayakta olması gerekir. Eğer önceki lablar yapılmadıysa veya küme kapalıysa, tek komutla her şeyi hazır hale getirin:
+   ```bash
+   bash scripts/setup-kind-cluster.sh
+   ```
+   *Doğrulama:* `kubectl get pods -n novashop` (Podların `Running` olduğu görülür).  
+   *Mağaza Erişimi (Kind NodePort):* `http://localhost:30080` (veya Cockpit üzerinden App Slot).
+
+2. **Gerekli Araçlar:** Docker v24+, `curl`, `jq`.
+
+---
+
 ### Mimari
 
 ```mermaid
 graph TD
-    User([Kullanıcı / Trafik Simülatörü]) -->|HTTP :8888| UI[NovaShop UI]
-    UI -->|REST :8080| Catalog[Catalog Service]
+    User([Kullanıcı / Trafik Simülatörü]) -->|HTTP :30080| UI[NovaShop UI in Kind K8s]
+    UI -->|Spring Boot Actuator| Metrics[Actuator /actuator/prometheus]
 
-    subgraph Prometheus_Grafana_Katmani ["Metrik & Alarm Katmanı (Ana Omurga)"]
-        Prometheus[Prometheus Server :9091] -->|Scrape :8080/actuator/prometheus| UI
-        Prometheus -->|Scrape :8080/metrics| Catalog
+    subgraph Prometheus_Grafana_Katmani ["Metrik & Alarm Katmanı (Docker / Cockpit)"]
+        Prometheus[Prometheus Server :9091 / :19090] -->|Scrape host.docker.internal:30080| Metrics
         Prometheus -->|Scrape :9100| NodeExp[Node Exporter :9100<br/>Host CPU/RAM/Disk]
-        Prometheus -->|Scrape :8080| CAdvisor[cAdvisor :8081<br/>Docker Konteyner Kaynakları]
+        Prometheus -->|Scrape :8081| CAdvisor[cAdvisor :8081<br/>Konteyner Kaynakları]
 
         Prometheus --> Alertmanager[Alertmanager :9093<br/>E-posta, Slack, Telegram]
-        Grafana[Grafana Dashboards :3000<br/>Canlı Panolar & SLO Takibi] -->|PromQL| Prometheus
+        Grafana[Grafana Dashboards :3000 / :13000<br/>Canlı Panolar & SLO Takibi] -->|PromQL| Prometheus
     end
 
-    subgraph Bonus_Tracing_Katmani ["Bonus: Dağıtık İzleme (İleri Seviye)"]
-        UI -.->|OTLP Traces :4318| OTel[OpenTelemetry Collector]
-        Catalog -.->|OTLP Traces :4318| OTel
-        OTel --> Jaeger[Jaeger UI :16686<br/>Waterfall Span Analizi]
+    subgraph Bonus_Tracing_Katmani ["Bonus: Dağıtık İzleme"]
+        OTel[OpenTelemetry Collector :4318] --> Jaeger[Jaeger UI :16686<br/>Waterfall Span Analizi]
         Grafana -.->|Jaeger Veri Kaynağı| Jaeger
     end
 ```
@@ -52,9 +63,10 @@ graph TD
 
 | Servis | Model B: Kurumsal DNS + SSL (1. Seçenek) | Model A: Doğrudan IP:Port (2. Seçenek) | Kullanıcı Adı | Varsayılan Parola |
 | :--- | :--- | :--- | :---: | :---: |
-| **Grafana Panosu** | `https://studentXX-grafana.devopsatolyesi.com` | `http://<UBUNTU_IP>:3000` | `admin` | `.env` içindeki `GRAFANA_ADMIN_PASSWORD` (`DevOps2026!`) |
-| **Prometheus Web UI** | `https://studentXX-prometheus.devopsatolyesi.com` | `http://<UBUNTU_IP>:9091` | - | Kimlik doğrulaması yok (*Cockpit 9090 kullandığı için 9091 ayrılmıştır*) |
+| **Grafana Panosu** | `https://studentXX-grafana.devopsatolyesi.com` | `http://<UBUNTU_IP>:3000` veya `:13000` | `admin` | `.env` içindeki `GRAFANA_ADMIN_PASSWORD` (`DevOps2026!`) |
+| **Prometheus Web UI** | `https://studentXX-prometheus.devopsatolyesi.com` | `http://<UBUNTU_IP>:9091` veya `:19090` | - | Kimlik doğrulaması yok (*Cockpit 9090 kullandığı için 9091/19090 ayrılmıştır*) |
 | **Alertmanager** | - | `http://<UBUNTU_IP>:9093` | - | Kimlik doğrulaması yok |
+| **NovaShop Storefront (Kind)** | `https://studentXX-app1.devopsatolyesi.com` | `http://<UBUNTU_IP>:30080` | - | E-ticaret vitrini |
 | **Jaeger UI (Tracing - Bonus)** | `https://studentXX-jaeger.devopsatolyesi.com` | `http://<UBUNTU_IP>:16686` | - | Kimlik doğrulaması yok |
 
 ---
@@ -165,11 +177,14 @@ $$\text{Data Source (Prometheus)} \longrightarrow \text{Query (PromQL)} \longrig
 
 #### 2. Yapay Hata Yükü Üretme ve Alarm Testi (CLI):
 ```bash
-# Bilerek 404/500 hataları üretecek rastgele trafik gönderin:
-for i in {1..40}; do curl -s http://localhost:8888/api/invalid-endpoint > /dev/null & done
+# Bilerek 404/500 hataları üretecek test trafiği gönderin:
+for i in {1..40}; do curl -s http://localhost:30080/api/invalid-endpoint > /dev/null & done
+
+# veya hazır simülasyon betiği ile:
+bash scripts/simulate-traffic.sh --error-burst
 ```
 *Doğrulama:*
-- `http://localhost:9091/alerts` sayfasında alarmın `Pending` -> `Firing` olduğunu görün.
+- `http://localhost:9091/alerts` (veya `:19090/alerts`) sayfasında alarmın `Pending` -> `Firing` olduğunu görün.
 - Grafana `NovaShop Alerts` panosunda kutunun kırmızı yandığını teyit edin.
 
 ---
@@ -235,7 +250,7 @@ python3 scripts/generate-sample-traces.py
 
 **Otomatik Doğrulama:**
 ```bash
-bash scripts/verify/verify-lab-10.sh 8888 localhost
+bash scripts/verify/verify-lab-10.sh 30080 localhost
 ```
 
 **Temizlik / Rollback:**

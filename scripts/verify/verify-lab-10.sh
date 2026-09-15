@@ -72,8 +72,14 @@ if [ "$PORT" = "--config-only" ]; then
     exit 0
 fi
 
-# 1. Spring Boot Actuator Prometheus Metrik Endpoint'i
-echo "1. Actuator Prometheus metrik endpoint'i test ediliyor..."
+# 1. Spring Boot Actuator Prometheus Metrik Endpoint'i (Kind 30080 veya Docker 8888)
+if ! curl -s --connect-timeout 2 "http://${HOST}:${PORT}/actuator/health" >/dev/null 2>&1; then
+    if curl -s --connect-timeout 2 "http://${HOST}:30080/actuator/health" >/dev/null 2>&1; then
+        PORT=30080
+    fi
+fi
+
+echo "1. Actuator Prometheus metrik endpoint'i test ediliyor (Port ${PORT})..."
 METRICS_BODY=$(curl -s --connect-timeout 5 "http://${HOST}:${PORT}/actuator/prometheus" 2>/dev/null || echo "")
 
 if echo "$METRICS_BODY" | grep -q "jvm_memory_used_bytes"; then
@@ -95,6 +101,11 @@ fi
 
 # 4. Prometheus / Grafana Canlı Port Kontrolü (Opsiyonel)
 PROM_PORT="${3:-9091}"
+if ! curl -s --connect-timeout 2 "http://${HOST}:${PROM_PORT}/-/healthy" >/dev/null 2>&1; then
+    if curl -s --connect-timeout 2 "http://${HOST}:19090/-/healthy" >/dev/null 2>&1; then
+        PROM_PORT=19090
+    fi
+fi
 PROM_HEALTH=$(curl -s --connect-timeout 3 "http://${HOST}:${PROM_PORT}/-/healthy" 2>/dev/null || echo "")
 if [ "$PROM_HEALTH" = "Prometheus Server is Healthy." ]; then
     echo "✅ Prometheus sunucusu sağlıklı çalışıyor (Port $PROM_PORT)."

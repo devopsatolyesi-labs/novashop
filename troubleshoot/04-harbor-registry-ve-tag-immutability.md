@@ -23,6 +23,27 @@ Bu doküman; Harbor v2.10 üzerinde CI/CD robot hesaplarının yönetimi, zafiye
 - **Hata:** `/api/v2.0/ping` çağrısı `Pong` döndürdüğünde katı eşitlik (`[ "$RESP" = "pong" ]`) arayan scriptlerin hata vermesi.
 - **Çözüm:** Case-insensitive arama: `echo "$RESP" | grep -qi "pong"`.
 
+### Senaryo D: Harbor Token Realm Timeout ve Local DNS (/etc/hosts) Çözümü
+- **Hata Çıktısı:**
+  ```text
+  Error response from daemon: Get "http://127.0.0.1:18082/v2/": 
+  Get "http://student01-harbor.devopsatolyesi.com:18082/service/token?...": 
+  net/http: request canceled while waiting for connection (Client.Timeout exceeded while awaiting headers)
+  ```
+- **Kök Neden:**
+  1. `docker login 127.0.0.1:18082` çalıştırıldığında Harbor V2 registry `401 Unauthorized` yanıtı döner ve token almak için istemciyi `harbor.yml` içinde tanımlı olan `hostname` adresine (`student01-harbor.devopsatolyesi.com:18082`) yönlendirir (`Www-Authenticate: Bearer realm=...`).
+  2. Sunucu bu adresi Cloudflare proxy IP'lerine çözümler. Cloudflare web portlarını (80/443) iletirken standart dışı portları (`18082`) sessizce düşürür (DROP).
+  3. Docker daemon token isteğinde zaman aşımına uğrar.
+- **Çözüm:**
+  Sunucunun yerel trafiği dışarıya (Cloudflare'e) göndermesini engellemek için `/etc/hosts` dosyasına loopback eşlemesi eklenmelidir:
+  ```bash
+  echo "127.0.0.1 student01-harbor.devopsatolyesi.com" | sudo tee -a /etc/hosts
+  ```
+  Ardından login tekrar çalıştırılır:
+  ```bash
+  docker login student01-harbor.devopsatolyesi.com:18082 -u admin -p Harbor12345
+  ```
+
 ---
 
 ## 2. Adım Adım Kodla Çözüm

@@ -300,15 +300,26 @@ db_password          = "NovaShopDevOps2026!"
 
 ---
 
-### Adım 2.3: Terraform'u Başlatma (`init`)
+### Adım 2.3: S3 tfstate Bucket'ını Oluşturma ve Terraform'u Başlatma (`init`)
 
-AWS sağlayıcı (provider) eklentisini ve yerel modülleri indirin:
+AWS S3 Remote State için önce hesap numaranıza özel bir bucket oluşturun ve ardından Terraform'u bu bucket ile başlatın:
 
 ```bash
-terraform init
+# 1. AWS Hesap numarasını al ve S3 bucket adını belirle
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+BUCKET_NAME="novashop-tfstate-${ACCOUNT_ID}"
+echo "Kullanılacak S3 Bucket: $BUCKET_NAME"
+
+# 2. S3 bucket'ı oluştur ve versiyonlamayı aç
+aws s3api create-bucket --bucket "$BUCKET_NAME" --region us-east-1
+aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled
+
+# 3. Terraform'u dinamik S3 backend ile başlat
+terraform init -reconfigure -backend-config="bucket=$BUCKET_NAME"
 ```
 
 *Beklenen çıktı:* `Terraform has been successfully initialized!`
+
 
 ---
 

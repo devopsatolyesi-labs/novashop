@@ -7,14 +7,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-: "${AWS_ACCESS_KEY_ID:?HATA: AWS_ACCESS_KEY_ID ortam değişkeni tanımlanmalıdır.}"
-: "${AWS_SECRET_ACCESS_KEY:?HATA: AWS_SECRET_ACCESS_KEY ortam değişkeni tanımlanmalıdır.}"
-export AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION:-us-east-1}"
-
 echo "======================================================================"
 echo "⚠️ NovaShop LAB-02 Terraform Kaynakları Siliniyor (destroy)..."
 echo "======================================================================"
 
-terraform destroy -auto-approve
+# 1. AWS Kimlik Doğrulaması Kontrolü
+if ! aws sts get-caller-identity >/dev/null 2>&1; then
+    echo "❌ HATA: AWS kimlik doğrulaması başarısız!"
+    echo "Lütfen AWS kimlik bilgilerinizi tanımlayın (aws configure veya ortam değişkenleri)."
+    exit 1
+fi
+
+AWS_REGION="${AWS_DEFAULT_REGION:-${AWS_REGION:-$(aws configure get region 2>/dev/null || true)}}"
+AWS_REGION="${AWS_REGION:-us-east-1}"
+export AWS_DEFAULT_REGION="$AWS_REGION"
+export AWS_REGION="$AWS_REGION"
+
+terraform destroy -auto-approve -var="aws_region=$AWS_DEFAULT_REGION"
 
 echo "✅ Tüm AWS kaynakları (VPC, EC2, RDS) başarıyla temizlendi."

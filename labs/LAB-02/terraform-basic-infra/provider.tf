@@ -6,14 +6,6 @@ terraform {
       version = "~> 5.0"
     }
   }
-
-  backend "s3" {
-    # S3 bucket adi hesap bazli dinamik oldugu icin
-    # 'terraform init -backend-config="bucket=..."' veya ./run.sh ile verilir.
-    key     = "lab-02/terraform.tfstate"
-    region  = "us-east-1"
-    encrypt = true
-  }
 }
 
 provider "aws" {

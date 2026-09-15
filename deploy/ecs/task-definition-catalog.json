@@ -10,7 +10,7 @@
   "containerDefinitions": [
     {
       "name": "catalog",
-      "image": "public.ecr.aws/aws-containers/retail-store-sample-catalog:v1.6.2",
+      "image": "public.ecr.aws/aws-containers/retail-store-sample-catalog:1.6.2",
       "essential": true,
       "user": "appuser",
       "portMappings": [

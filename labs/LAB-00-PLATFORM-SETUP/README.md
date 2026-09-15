@@ -116,27 +116,29 @@ terraform -version
 
 ---
 
-### Adım 0.5: Kubernetes Ekosistemi (kubectl, Kind, Helm) Kurulumu
-K8s, GitOps ve Helm laboratuvarları (LAB-06, LAB-08, LAB-09) için gereklidir:
+### Adım 0.5: Kubernetes Ekosistemi (kubectl, Kind, Helm) Kurulumu (En Güncel Stable)
+K8s, GitOps ve Helm laboratuvarları (LAB-06, LAB-08, LAB-09) için en güncel kararlı sürümler kurulur:
 
 ```bash
-# 1. kubectl (v1.30)
-curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg --yes
-echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /' | sudo tee /etc/apt/sources.list.d/kubernetes.list
-sudo apt-get update && sudo apt-get install -y kubectl
+# 1. kubectl (En Güncel Resmi Stable Sürüm)
+K8S_VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
+curl -fsSL "https://dl.k8s.io/release/${K8S_VERSION}/bin/linux/amd64/kubectl" -o /tmp/kubectl
+chmod +x /tmp/kubectl
+sudo mv /tmp/kubectl /usr/local/bin/kubectl
 
-# 2. Kind (Kubernetes in Docker - v0.24.0)
-curl -Lo /tmp/kind https://kind.sigs.k8s.io/dl/v0.24.0/kind-linux-amd64
+# 2. Kind (Kubernetes in Docker - En Güncel GitHub Stable Sürüm)
+KIND_VERSION=$(curl -s https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+curl -fsSL "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-linux-amd64" -o /tmp/kind
 chmod +x /tmp/kind
 sudo mv /tmp/kind /usr/local/bin/kind
 
-# 3. Helm v3
+# 3. Helm v3 (Resmi Otomatik Kurulum - En Güncel Stable)
 curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
 *Doğrulama:*
 ```bash
-kubectl version --client --output=yaml
+kubectl version --client
 kind version
 helm version --short
 ```

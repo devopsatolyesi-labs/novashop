@@ -81,7 +81,7 @@ jobs:
         continue-on-error: true # Lab / Fork ortamlarında AWS hesabı bağlı değilse adımı güvenle geçer
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN || 'arn:aws:iam::123456789012:role/novashop-github-actions-role' }}
-          aws-region: ${{ secrets.AWS_REGION || 'eu-central-1' }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
           role-session-name: GitHubActionsNovaShopSession
 
       - name: Build Multi-stage UI Image

@@ -96,6 +96,12 @@ cat << DOCKER_JSON | sudo tee /etc/docker/daemon.json
 }
 DOCKER_JSON
 
+# Local DNS yönlendirmesi ekle (Harbor token servisinin Cloudflare proxy'sine takılmasını önler)
+if ! grep -q "${HARBOR_HOSTNAME}" /etc/hosts; then
+    echo "127.0.0.1 ${HARBOR_HOSTNAME}" | sudo tee -a /etc/hosts >/dev/null
+    echo "===> /etc/hosts içerisine 127.0.0.1 ${HARBOR_HOSTNAME} kaydı eklendi."
+fi
+
 sudo systemctl restart docker
 
 echo "===> [5/5] Harbor Kurulumu Başlatılıyor (Trivy Dahil)..."

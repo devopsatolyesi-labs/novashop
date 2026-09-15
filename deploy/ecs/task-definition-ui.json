@@ -39,7 +39,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/novashop-ui",
-          "awslogs-region": "eu-central-1",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ui"
         }
       }

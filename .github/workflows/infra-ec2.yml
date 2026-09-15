@@ -10,7 +10,7 @@ on:
       region:
         description: 'AWS Bölgesi'
         required: true
-        default: 'eu-central-1'
+        default: 'us-east-1'
 
 permissions:
   contents: read
@@ -28,12 +28,12 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ github.event.inputs.region || vars.AWS_REGION || 'eu-central-1' }}
+          aws-region: ${{ github.event.inputs.region || vars.AWS_REGION || 'us-east-1' }}
 
       - name: EC2 Güvenlik Grubu ve Anahtar Hazırla
         id: prep
         env:
-          AWS_REGION: ${{ github.event.inputs.region || vars.AWS_REGION || 'eu-central-1' }}
+          AWS_REGION: ${{ github.event.inputs.region || vars.AWS_REGION || 'us-east-1' }}
         run: |
           echo "=== 1. Güvenlik Grubu Kontrolü (novashop-web-sg) ==="
           VPC_ID=$(aws ec2 describe-vpcs --filters "Name=isDefault,Values=true" --query "Vpcs[0].VpcId" --output text)

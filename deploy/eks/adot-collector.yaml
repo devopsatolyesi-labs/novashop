@@ -21,9 +21,9 @@ spec:
 
     exporters:
       awsxray:
-        region: eu-central-1
+        region: us-east-1
       awsemf:
-        region: eu-central-1
+        region: us-east-1
 
     service:
       pipelines:

@@ -23,7 +23,7 @@
       "environment": [
         {
           "name": "DB_ENDPOINT",
-          "value": "novashop-catalog-db.cxxxx.eu-central-1.rds.amazonaws.com:3306"
+          "value": "novashop-catalog-db.cxxxx.us-east-1.rds.amazonaws.com:3306"
         },
         {
           "name": "DB_NAME",
@@ -38,7 +38,7 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/novashop-catalog",
-          "awslogs-region": "eu-central-1",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "catalog"
         }
       }

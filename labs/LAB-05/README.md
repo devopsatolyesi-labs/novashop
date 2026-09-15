@@ -80,7 +80,7 @@ Aynı sayfada **Variables** sekmesine geçin ve `New repository variable` butonu
 
 | Variable Adı | Varsayılan Değer | Açıklama |
 |---|---|---|
-| `AWS_REGION` | `eu-central-1` | Sunucunun kurulacağı AWS bölgesi |
+| `AWS_REGION` | `us-east-1` | Sunucunun kurulacağı AWS bölgesi (N. Virginia) |
 | `EC2_USER` | `ubuntu` | EC2 SSH kullanıcı adı |
 
 ---
@@ -95,7 +95,7 @@ Sunucuyu AWS konsolunda elle kurmak yerine depoda hazır bulunan **`01 - AWS EC2
 2. Sol menüden **`01 - AWS EC2 Altyapı Kurulumu (Infra Provisioning)`** iş akışını seçin.
 3. Sağ üstteki **Run workflow** butonuna tıklayın:
    - **EC2 Instance Tipi:** `t3.small` (veya `t3.micro`)
-   - **AWS Bölgesi:** `eu-central-1`
+   - **AWS Bölgesi:** `us-east-1` (N. Virginia)
 4. **Run workflow** butonuna basarak iş akışını başlatın.
 
 **İş Akışı Arka Planda Neler Yapar?**

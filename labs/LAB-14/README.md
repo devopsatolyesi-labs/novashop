@@ -65,8 +65,8 @@ graph TD
 
 | Placeholder | Anlamı | Örnek Biçim |
 |---|---|---|
-| `<AWS_REGION>` | Dağıtımın yapılacağı AWS bölgesi | `eu-central-1` |
-| `<ALB_DNS_NAME>` | ALB'nin genel etki alanı adı | `novashop-alb-123456.eu-central-1.elb.amazonaws.com` |
+| `<AWS_REGION>` | Dağıtımın yapılacağı AWS bölgesi | `us-east-1` |
+| `<ALB_DNS_NAME>` | ALB'nin genel etki alanı adı | `novashop-alb-123456.us-east-1.elb.amazonaws.com` |
 | `<AWS_ACCOUNT_ID>` | 12 haneli AWS hesap numarası | `123456789012` |
 
 ---
@@ -89,7 +89,7 @@ terraform apply ecsplan
 Apply complete! Resources: 9 added, 0 changed, 0 destroyed.
 
 Outputs:
-alb_dns_name = "novashop-alb-xxxxxx.eu-central-1.elb.amazonaws.com"
+alb_dns_name = "novashop-alb-xxxxxx.us-east-1.elb.amazonaws.com"
 ecs_cluster_name = "novashop-ecs-cluster"
 ecs_service_name = "novashop-ui-service"
 ```

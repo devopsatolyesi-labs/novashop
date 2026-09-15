@@ -32,7 +32,7 @@ AWS üzerindeki 3-katmanlı NovaShop altyapısını (VPC, Subnetler, Security Gr
 graph TD
     Engineer([DevOps Mühendisi]) -->|terraform apply| TF[Terraform Engine & State]
 
-    subgraph AWS Cloud eu-central-1
+    subgraph AWS Cloud us-east-1
         TF -->|Oluşturur| VPC[VPC: 10.0.0.0/16<br/>Public & Private Subnetler]
         TF -->|Oluşturur| SG[Security Groups: Web & RDS]
         TF -->|Oluşturur + Cloud-Init| EC2[EC2 Ubuntu 22.04<br/>Otomatik Docker & Nginx]
@@ -48,7 +48,7 @@ graph TD
 
 | Placeholder | Anlamı | Örnek Biçim |
 |---|---|---|
-| `<AWS_REGION>` | AWS çalışma bölgesi | `eu-central-1` |
+| `<AWS_REGION>` | AWS çalışma bölgesi | `us-east-1` |
 | `<PROJECT_NAME>` | Terraform proje ön eki | `novashop-iac` |
 
 ---
@@ -171,7 +171,7 @@ Apply complete! Resources: 8 added, 0 changed, 0 destroyed.
 
 Outputs:
 ec2_public_ip = "3.120.xx.xx"
-rds_endpoint  = "novashop-catalog-db.cxxxx.eu-central-1.rds.amazonaws.com"
+rds_endpoint  = "novashop-catalog-db.cxxxx.us-east-1.rds.amazonaws.com"
 ```
 
 ---

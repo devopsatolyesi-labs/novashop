@@ -37,7 +37,7 @@ AWS üzerinde yönetilen kurumsal Kubernetes servisi olan Amazon EKS (Elastic Ku
 graph TD
     Client([Kullanıcı / Tarayıcı]) -->|HTTPS :443| ALB[AWS Application Load Balancer]
 
-    subgraph AWS Cloud eu-central-1
+    subgraph AWS Cloud us-east-1
         subgraph Amazon EKS Cluster novashop-eks
             ALB --> IngressController[AWS Load Balancer Controller]
             IngressController --> UI_Service[Service: novashop-ui]
@@ -60,7 +60,7 @@ graph TD
 | Placeholder | Anlamı | Örnek Biçim |
 |---|---|---|
 | `<EKS_CLUSTER_NAME>` | EKS küme adı | `novashop-eks` |
-| `<AWS_REGION>` | AWS çalışma bölgesi | `eu-central-1` |
+| `<AWS_REGION>` | AWS çalışma bölgesi | `us-east-1` |
 | `<AWS_ACCOUNT_ID>` | 12 haneli AWS hesap numarası | `123456789012` |
 
 ---
@@ -77,7 +77,7 @@ kind: ClusterConfig
 
 metadata:
   name: novashop-eks
-  region: eu-central-1
+  region: us-east-1
   version: "1.28"
 
 iam:
@@ -98,7 +98,7 @@ managedNodeGroups:
 eksctl create cluster -f eks-cluster.yaml
 ```
 *Açıklama:* CloudFormation üzerinden VPC, EKS Control-Plane ve 2 adet worker node başlatır (yaklaşık 12-15 dakika).  
-*Beklenen çıktı:* `[✓]  EKS cluster "novashop-eks" in "eu-central-1" region is ready`.
+*Beklenen çıktı:* `[✓]  EKS cluster "novashop-eks" in "us-east-1" region is ready`.
 
 ---
 

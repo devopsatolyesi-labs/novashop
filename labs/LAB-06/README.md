@@ -98,7 +98,13 @@ helm version --short
    mkdir -p ~/kind && cd ~/kind
    ```
 
-2. 1 control-plane ve 2 worker düğümlü hafif küme konfigürasyonunu (`kind-config.yaml`) oluşturun:
+2. Host üzerinde log dizinlerini hazırlayın (LAB-11 Fluent Bit log entegrasyonu için):
+   ```bash
+   sudo mkdir -p /var/log/containers /var/log/pods
+   sudo chmod 777 /var/log/containers /var/log/pods
+   ```
+
+3. 1 control-plane ve 2 worker düğümlü hafif küme konfigürasyonunu (`kind-config.yaml`) oluşturun:
    ```bash
    cat << 'EOF' > kind-config.yaml
    kind: Cluster
@@ -108,15 +114,27 @@ helm version --short
    - role: control-plane
      extraPortMappings:
      - containerPort: 30080
-       hostPort: 8888
+       hostPort: 30080
        listenAddress: "0.0.0.0"
    - role: worker
+     extraMounts:
+     - hostPath: /var/log/containers
+       containerPath: /var/log/containers
+     - hostPath: /var/log/pods
+       containerPath: /var/log/pods
    - role: worker
+     extraMounts:
+     - hostPath: /var/log/containers
+       containerPath: /var/log/containers
+     - hostPath: /var/log/pods
+       containerPath: /var/log/pods
    EOF
    ```
-   *Açıklama:* Host makinenin `8888` portu, Kubernetes içerisindeki `30080` NodePort portuna eşlenir.
+   *Açıklama:*
+   - Host makinenin `30080` portu, Kubernetes içerisindeki `30080` NodePort portuna doğrudan eşlenir. Böylece LAB-03 Docker UI (`:8888`) ile port çakışması yaşanmaz ve her iki ortam aynı anda çalışabilir.
+   - `/var/log/containers` ve `/var/log/pods` dizinleri hosttan worker düğümlerine bağlanarak, LAB-11'deki Fluent Bit log toplayıcısının pod loglarını doğrudan okuyabilmesi sağlanır.
 
-3. Kind kümesini oluşturun:
+4. Kind kümesini oluşturun:
    ```bash
    kind create cluster --config kind-config.yaml
    ```
@@ -253,14 +271,19 @@ kubectl config set-context --current --namespace=novashop
    ```
    *Beklenen çıktı:* `novashop-ui` servisi `NodePort` tipinde ve `8080:30080/TCP` port eşlemesiyle görünmelidir.
 
-3. Dış dünyadan sağlık endpoint'ini test edin (Host 8888 -> NodePort 30080):
+3. Dış dünyadan sağlık endpoint'ini test edin (Host 30080 -> NodePort 30080):
    ```bash
-   curl -s http://localhost:8888/actuator/health
+   curl -s http://localhost:30080/actuator/health
    ```
    *Beklenen çıktı:*
    ```json
    {"status":"UP"}
    ```
+
+   > **Tarayıcıdan İnceleme (Erişim Seçenekleri):**  
+   > * **Model A (Doğrudan IP:Port — Standart & Varsayılan):** `http://<UBUNTU_IP>:30080` (DNS ve SSL gerektirmez)  
+   > * **Model B (Kurumsal DNS + Wildcard SSL):** `https://studentXX-k8s.devopsatolyesi.com` (Nginx Edge Proxy yapılandırıldıysa)  
+   > Web tarayıcınızdan yukarıdaki adreslerden biriyle Kubernetes üzerindeki NovaShop mikroservisini canlı olarak görüntüleyin.
 
 ---
 

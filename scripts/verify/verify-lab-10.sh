@@ -94,7 +94,7 @@ if echo "$METRICS_BODY" | grep -qi "trace"; then
 fi
 
 # 4. Prometheus / Grafana Canlı Port Kontrolü (Opsiyonel)
-PROM_PORT="${3:-9090}"
+PROM_PORT="${3:-9091}"
 PROM_HEALTH=$(curl -s --connect-timeout 3 "http://${HOST}:${PROM_PORT}/-/healthy" 2>/dev/null || echo "")
 if [ "$PROM_HEALTH" = "Prometheus Server is Healthy." ]; then
     echo "✅ Prometheus sunucusu sağlıklı çalışıyor (Port $PROM_PORT)."

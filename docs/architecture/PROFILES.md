@@ -1,6 +1,6 @@
 # NovaShop DevOps Store — Çalıştırma Profilleri ve Kaynak Bütçesi
 
-Bu doküman, öğrencilerin eğitim boyunca kullanacağı **2 vCPU, 16 GB RAM ve 50 GB disk** kapasiteli sanal sunucu (VM) ortamında sistemin stabil çalışmasını sağlamak amacıyla tanımlanmış **çalıştırma profillerini (execution profiles)** ve kaynak yönetim kurallarını açıklar.
+Bu doküman, katılımcıların eğitim boyunca kullanacağı **2 vCPU, 16 GB RAM ve 50 GB disk** kapasiteli sanal sunucu (VM) ortamında sistemin stabil çalışmasını sağlamak amacıyla tanımlanmış **çalıştırma profillerini (execution profiles)** ve kaynak yönetim kurallarını açıklar.
 
 ---
 
@@ -33,7 +33,7 @@ Her lab modülünde **yalnızca o modüle ait profil** aktif edilir. Bir sonraki
 
 ## 3. Profil Yaşam Döngüsü ve Geçiş Kuralları
 
-Öğrenciler bir labdan diğerine geçerken aşağıdaki standart komut sırasını izlemelidir:
+Kullanıcılar bir labdan diğerine geçerken aşağıdaki standart komut sırasını izlemelidir:
 
 ### 1. Mevcut Profili Durdurma ve Kaynakları Serbest Bırakma
 ```bash
@@ -96,7 +96,7 @@ services:
 
 ## 5. Acil Durum: Bellek Tükendiğinde Müdahale
 
-Eğer öğrenci VM'inde terminal yanıt vermemeye başlar veya `docker` komutları `cannot allocate memory` hatası verirse:
+Eğer sanal makinede terminal yanıt vermemeye başlar veya `docker` komutları `cannot allocate memory` hatası verirse:
 
 ```bash
 # 1. Tüm çalışan Docker konteynerlerini acil durdur

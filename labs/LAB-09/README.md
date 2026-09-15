@@ -20,10 +20,13 @@ Kubernetes kümesi üzerinde Argo CD GitOps operatörünü kurarak; Git reposunu
 
 ### Ön koşullar
 
-- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-06](../LAB-06/README.md) tamamlanmış olmalıdır.
 - **Çalışan Kubernetes Kümesi:** Kind veya bulut üzerinde Kubernetes kümesi (`kubectl get nodes` erişilebilir olmalıdır).
-- **Yüklü Araçlar:** `kubectl`, `argocd` CLI veya `curl`, Git.
-- **Kaynak Gereksinimi:** `gitops-argo` profili (en az 2 vCPU, 6.5 GB boş RAM).
+  - *Eğer küme henüz başlatılmadıysa:*
+    ```bash
+    bash scripts/setup-kind-cluster.sh
+    ```
+- **Yüklü Araçlar:** `kubectl`, `helm` v3+, Git, `curl`.
+- **Kaynak Gereksinimi:** En az 2 vCPU, 4 GB boş RAM.
 
 ---
 
@@ -31,12 +34,12 @@ Kubernetes kümesi üzerinde Argo CD GitOps operatörünü kurarak; Git reposunu
 
 ```mermaid
 graph TD
-    Developer([Geliştirici / GitOps Mühendisi]) -->|git push / revert| GitRepo[(GitHub / GitLab Reposu<br/>Tek Doğruluk Kaynağı)]
+    Developer([Geliştirici / GitOps Operatörü]) -->|git push / revert| GitRepo[(GitLab / GitHub Reposu<br/>Tek Doğruluk Kaynağı)]
 
     subgraph Kubernetes Cluster: novashop-cluster
         subgraph Argo CD Control-Plane
             ArgoController[Argo CD Application Controller]
-            ArgoServer[Argo CD API & Web UI :8080]
+            ArgoServer[Argo CD API & Web UI :18082]
             ArgoRepoServer[Argo CD Repo Server]
         end
 
@@ -61,7 +64,7 @@ graph TD
 | Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `<ARGOCD_PASSWORD>` | Argo CD admin arayüzü şifresi | Güvenli parola |
-| `<REPO_URL>` | GitOps manifestolarını barındıran repo adresi | `https://github.com/.../novashop.git` |
+| `<REPO_URL>` | GitOps manifestolarını barındıran repo adresi | `https://gitlab.com/devops-practitioner-labs/novashop.git` |
 | `<TARGET_NAMESPACE>` | Uygulama hedef isim alanı | `novashop` |
 
 ---
@@ -71,7 +74,7 @@ graph TD
 #### 1. Argo CD'yi Kubernetes Kümesine Kurma
 
 **Seçenek 1 (Önerilen — Otomatik Tek Komutla Kurulum):**
-Tüm kurulumu, olası NodePort 30080 çakışma temizliğini ve GitOps Application dağıtımını tek seferde çalıştırmak için:
+Tüm kurulumu, olası NodePort 30080 çakışma temizliğini, port yönlendirmesini ve GitOps Application dağıtımını tek seferde çalıştırmak için:
 ```bash
 bash scripts/deploy-argocd.sh
 ```
@@ -101,16 +104,16 @@ ARGOCD_PASS=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpa
 echo "Argo CD Admin Parolası: $ARGOCD_PASS"
 ```
 
-##### Model A: Doğrudan Port-Forward (Lokal IP)
+##### Model A: Doğrudan Port-Forward (Cockpit & Yerel Port 18082)
 ```bash
-# Sunucunun tüm arayüzlerinde dinlemek için --address 0.0.0.0 ile port yönlendirme:
-kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 > /dev/null 2>&1 &
+# Cockpit Nginx proxy ve doğrudan yerel erişim için port 18082'yi dinleyin:
+kubectl port-forward svc/argocd-server -n argocd 18082:443 --address 0.0.0.0 > /dev/null 2>&1 &
 ```
-Tarayıcınızdan `https://<UBUNTU_IP>:8080` veya `https://localhost:8080` adresine giderek kullanıcı adı `admin` ve yukarıdaki parola ile giriş yapın.
+Tarayıcınızdan `https://localhost:18082` veya `https://<SUNUCU_IP>:18082` adresine giderek kullanıcı adı `admin` ve yukarıdaki parola ile giriş yapın.
 
-##### Model B: Kurumsal DNS ve SSL ile Erişim
-Eğer eğitmen tarafından alan adınız tanımlandıysa:
-`https://studentXX-argocd.devopsatolyesi.com` üzerinden güvenli HTTPS ile erişebilirsiniz.
+##### Model B: Kurumsal DNS ve SSL ile Erişim (Cockpit Ortamı)
+Cockpit ortamında Nginx reverse proxy `18082` portunu otomatik dış dünyaya taşır:
+`https://studentXX-argocd.devopsatolyesi.com` üzerinden güvenli HTTPS ile doğrudan erişebilirsiniz.
 
 ---
 
@@ -180,7 +183,7 @@ Geleneksel `kubectl rollout undo` yerine GitOps standardında geri alma **Git ge
 git revert HEAD --no-edit
 
 # 2. Değişikliği repoya push et
-git push origin main
+git push gitlab main  # veya git push origin main
 
 # 3. Argo CD'nin yeni durumu canlı kümeye otomatik yansıtmasını izle
 kubectl rollout status deployment/novashop-ui -n novashop

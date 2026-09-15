@@ -30,7 +30,7 @@ if [ -n "$APP_MANIFEST" ] && [ -f "$APP_MANIFEST" ]; then
     fi
 else
     echo "ℹ️ Bilgi: Projede yerel ArgoCD Application CRD manifesti aranıyor..."
-    echo "   (Öğrenci uygulamasında deploy/gitops/ altında manifest beklenmektedir)"
+    echo "   (deploy/gitops/ dizini altında manifest beklenmektedir)"
 fi
 
 # 2. Canlı ArgoCD CLI / Sunucu Kontrolü (Varsa)

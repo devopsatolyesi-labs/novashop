@@ -11,7 +11,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/devopsatolyesi-labs/novashop.git
+    repoURL: https://gitlab.com/devops-practitioner-labs/novashop.git
     targetRevision: HEAD
     path: charts/novashop
     helm:

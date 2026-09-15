@@ -31,7 +31,7 @@ NovaShop mikroservis mimarisinde yer alan kullanıcı arayüzü (UI) servisini; 
 
 ```mermaid
 graph TD
-    Developer([Öğrenci / Web Tarayıcısı]) -->|HTTP Host Port :8888| UI_Container[NovaShop UI Konteyneri<br/>Java 21 / Spring Boot 3<br/>Non-Root appuser:1000<br/>Dahili Konteyner Portu: 8080]
+    Developer([Geliştirici / İstemci]) -->|HTTP Host Port :8888| UI_Container[NovaShop UI Konteyneri<br/>Java 21 / Spring Boot 3<br/>Non-Root appuser:1000<br/>Dahili Konteyner Portu: 8080]
 
     subgraph Docker Host
         subgraph Isolated Bridge Network: ui_default

@@ -13,7 +13,7 @@ if [ ! -d "$TARGET_DIR" ] && [ -d "$REPO_ROOT/$TF_DIR" ]; then
 fi
 
 if [ ! -d "$TARGET_DIR" ]; then
-    echo "ℹ️ Bilgi: '$TARGET_DIR' dizini bulunamadı. Öğrenci tarafından terraform modülü oluşturulduğunda doğrulanacak."
+    echo "ℹ️ Bilgi: '$TARGET_DIR' dizini bulunamadı. Kullanıcı tarafından terraform modülü oluşturulduğunda doğrulanacak."
     echo "=== [LAB-12] Terraform Doğrulama Tamamlandı ==="
     exit 0
 fi

@@ -227,7 +227,7 @@ bash scripts/verify/verify-lab-13.sh novashop-eks <AWS_REGION>
 ### Güvenlik Notu
 
 1. **Private API Endpoint:**
-   - EKS API Server erişimi dış internete tamamen açık tutulmamalı; yalnızca şirket içi VPN veya öğrencinin IP'si ile sınırlandırılmalıdır (`publicAccessCIDRs`).
+   - EKS API Server erişimi dış internete tamamen açık tutulmamalı; yalnızca şirket içi VPN veya yetkili istemci IP'si ile sınırlandırılmalıdır (`publicAccessCIDRs`).
 2. **Konteyner İzolasyonu:**
    - Pod'lar AWS metadata servisine (`http://169.254.169.254`) doğrudan erişemez; yetkiler yalnızca IRSA üzerinden sağlanır.
 

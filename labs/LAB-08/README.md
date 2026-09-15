@@ -18,16 +18,32 @@ NovaShop kod tabanında statik kod analizi (SonarQube/SAST), bağımlılık ve k
 
 ---
 
-### Ön koşullar
+### Ön Koşullar ve Hızlı Başlangıç
 
-- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
-- **Altyapı Araçları (SonarQube):** Sunucunuzda SonarQube çalışır durumda olmalıdır. Henüz kurmadıysanız:
-  - [SonarQube Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/03-sonarqube-setup.md) veya `docker compose -f infra/sonarqube/docker-compose.yml up -d`
-- **Erişim Modeli:**
-  - *Model A (Doğrudan IP):* SonarQube `http://<UBUNTU_IP>:19000`
-  - *Model B (Kurumsal DNS + SSL):* SonarQube `https://studentXX-sonarqube.devopsatolyesi.com`
-- **Yüklü Araçlar:** Docker Engine, `trivy` CLI, Java 21 JDK, Git.
-- **Kaynak Gereksinimi:** `security-gates` profili (en az 2 vCPU, 4 GB boş RAM).
+Bu laboratuvar tek başına (standalone) çalıştırılabilir. Gerekli SonarQube altyapısı sunucuda halihazırda çalışmıyorsa aşağıdaki hızlı başlangıç komutlarıyla başlatabilirsiniz.
+
+#### 1. Hızlı Başlangıç (SonarQube Servisini Başlatma)
+
+```bash
+# 1. Linux çekirdek Elasticsearch bellek sınırını ayarlayın:
+sudo sysctl -w vm.max_map_count=524288
+
+# 2. SonarQube ve PostgreSQL servislerini arka planda başlatın:
+docker compose -f infra/sonarqube/docker-compose.yml up -d
+
+# 3. Servisin hazır oluşunu kontrol edin (ilk açılış 45-60 saniye sürebilir):
+curl -s http://127.0.0.1:19000/api/system/status || echo "SonarQube başlatılıyor..."
+```
+
+#### 2. Cockpit ve Erişim Modelleri
+
+| Parametre | Değer / Açıklama |
+|---|---|
+| **Konteyner Portu** | `9000` (PostgreSQL `5432`) |
+| **Cockpit / Nginx Portu** | `19000` |
+| **Model A (Doğrudan IP)** | `http://<SUNUCU_IP>:19000` veya `http://127.0.0.1:19000` |
+| **Model B (Cockpit / Kurumsal DNS)** | `https://${STUDENT_ID}-sonarqube.${DOMAIN_NAME}` |
+| **Varsayılan Giriş** | Kullanıcı: `admin` \| Şifre: `admin` *(İlk girişte şifre güncelleme istenir)* |
 
 ---
 
@@ -35,7 +51,7 @@ NovaShop kod tabanında statik kod analizi (SonarQube/SAST), bağımlılık ve k
 
 ```mermaid
 graph TD
-    Code([NovaShop Kaynak Kodu]) --> Step1[1. Secret Scan: Gitleaks / Trufflehog]
+    Code([NovaShop Kaynak Kodu]) --> Step1[1. Secret Scan: Trivy / Gitleaks]
     Step1 -->|Temiz| Step2[2. SAST: SonarQube Statik Kod Analizi]
     Step1 -.->|Secret Bulundu!| Fail1[Pipeline FAIL: Commit Engellendi]
     
@@ -50,13 +66,28 @@ graph TD
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Parametreler
+### Ortam Değişkenleri ve Parametreler
+
+Çalıştırmadan önce ortam değişkenlerini terminal oturumunuzda tanımlayın:
+
+```bash
+export STUDENT_ID="${STUDENT_ID:-student01}"
+export DOMAIN_NAME="${DOMAIN_NAME:-devopsatolyesi.com}"
+export SUNUCU_IP="${SUNUCU_IP:-127.0.0.1}"
+
+# SonarQube URL belirleme:
+export SONAR_HOST_URL="http://127.0.0.1:19000"
+# Kurumsal HTTPS DNS kullanılıyorsa:
+# export SONAR_HOST_URL="https://${STUDENT_ID}-sonarqube.${DOMAIN_NAME}"
+```
 
 | Parametre | Açıklama | Örnek Değer |
 |---|---|---|
-| `<SONAR_HOST_URL>` | SonarQube sunucu adresi | Model A: `http://127.0.0.1:19000` \| Model B: `https://studentXX-sonarqube.devopsatolyesi.com` |
-| `<SONAR_TOKEN>` | SonarQube kullanıcı / analiz tokeni | `squ_...` (Arayüzden veya API ile üretilir) |
-| `<IMAGE_NAME>` | Taranacak Docker imajı | `127.0.0.1:18082/novashop/ui:v0.1.0` veya `novashop-ui:v0.1.0` |
+| `${STUDENT_ID}` | Oturum / kullanıcı kimliği | `student01` |
+| `${DOMAIN_NAME}` | Ana alan adı | `devopsatolyesi.com` |
+| `${SONAR_HOST_URL}` | SonarQube erişim adresi | `http://127.0.0.1:19000` veya `https://${STUDENT_ID}-sonarqube.${DOMAIN_NAME}` |
+| `${SONAR_TOKEN}` | SonarQube kullanıcı / analiz tokeni | `squ_...` (Arayüzden veya API ile üretilir) |
+| `${IMAGE_NAME}` | Taranacak Docker imajı | `novashop-ui:v0.1.0` |
 
 ---
 
@@ -64,10 +95,10 @@ graph TD
 
 #### 1. Gizli Bilgi Taraması (Secret Scanning)
 
-Repoda unutulmuş API anahtarları, şifreler veya sertifikaları tespit etmek için yerel tarayıcıyı çalıştırın:
+Repoda unutulmuş API anahtarları, şifreler veya sertifikaları tespit etmek için dosya sistemi tarayıcısını çalıştırın:
 
 ```bash
-# Docker üzerinden izole Trivy ile secret taraması
+# Docker üzerinden izole Trivy ile secret taraması (Host üzerinde Trivy CLI gerektirmez):
 docker run --rm -v $(pwd):/src aquasec/trivy:latest fs --security-checks secret /src
 ```
 *Açıklama:* Çalışma dizinindeki dosyaları desen ve entropi kurallarıyla tarayarak açıkta kalan kimlik bilgilerini raporlar.  
@@ -77,33 +108,76 @@ docker run --rm -v $(pwd):/src aquasec/trivy:latest fs --security-checks secret 
 
 #### 2. SonarQube Statik Kod Analizi (SAST)
 
-SonarQube analizcisini Maven eklentisi ile çalıştırın:
+##### A. SonarQube Analiz Tokeni Alma
 
+1. Web tarayıcısından SonarQube arayüzüne gidin:
+   - **Model A:** `http://<SUNUCU_IP>:19000`
+   - **Model B:** `https://${STUDENT_ID}-sonarqube.${DOMAIN_NAME}`
+2. Kullanıcı adı `admin` ve şifre `admin` ile giriş yapın. İlk girişte şifrenizi güncelleyin (örnek: `SonarSecure123!`).
+3. Sağ üstteki kullanıcı ikonuna tıklayın: **My Account > Security > Generate Token**.
+   - **Name:** `novashop-token`
+   - **Type:** `Global Analysis Token`
+   - **Generate** butonuna tıklayın ve üretilen tokeni kopyalayın:
+     ```bash
+     export SONAR_TOKEN="<KOPYALANAN_TOKEN>"
+     ```
+
+> **Hızlı API Yöntemi (Arayüzsüz Token Üretimi):**
+> Yeni şifrenizle doğrudan API üzerinden token oluşturabilirsiniz:
+> ```bash
+> export SONAR_TOKEN=$(curl -u admin:SonarSecure123! -s -X POST "http://127.0.0.1:19000/api/user_tokens/generate?name=novashop-token" | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+> echo "Oluşturulan SonarQube Token: $SONAR_TOKEN"
+> ```
+
+##### B. Maven ile Statik Analizi Çalıştırma
+
+**Yöntem 1: Yerel Maven İle (Java 21 yüklüyse):**
 ```bash
 cd src/ui
 ./mvnw clean verify sonar:sonar \
   -Dsonar.projectKey=novashop-ui \
   -Dsonar.projectName='NovaShop UI' \
-  -Dsonar.host.url=<SONAR_HOST_URL> \
-  -Dsonar.token=<SONAR_TOKEN> \
+  -Dsonar.host.url=${SONAR_HOST_URL} \
+  -Dsonar.token=${SONAR_TOKEN} \
   -Dsonar.qualitygate.wait=true
+cd ../..
 ```
+
+**Yöntem 2: Docker Tabanlı Maven İle (Yerelde Java/Maven kurulu değilse):**
+```bash
+docker run --rm --network host \
+  -v $(pwd):/usr/src/novashop -w /usr/src/novashop/src/ui \
+  maven:3.9-eclipse-temurin-21 \
+  mvn clean verify sonar:sonar \
+    -Dsonar.projectKey=novashop-ui \
+    -Dsonar.projectName='NovaShop UI' \
+    -Dsonar.host.url=${SONAR_HOST_URL} \
+    -Dsonar.token=${SONAR_TOKEN} \
+    -Dsonar.qualitygate.wait=true
+```
+
 *Açıklama:*
-- `-Dsonar.qualitygate.wait=true`: SonarQube sunucusundaki analiz bitene kadar bekler; eğer Kalite Kapısı koşulları (ör. 0 Güvenlik Açığı, %80 Kod Kapsamı) sağlanmazsa derlemeyi derhal başarısız (`BUILD FAILURE`) kılar.
+- `-Dsonar.qualitygate.wait=true`: SonarQube sunucusundaki analiz bitene kadar bekler; Kalite Kapısı koşulları (ör. 0 Güvenlik Açığı, %80 Kod Kapsamı) sağlanmazsa derlemeyi derhal başarısız (`BUILD FAILURE`) kılar.
 
 ---
 
 #### 3. Trivy ile Konteyner İmaj Zafiyet Taraması (SCA)
 
-Derlenen `novashop-ui:v0.1.0` imajını işletim sistemi paketleri ve uygulama bağımlılıkları açısından tarayın:
+1. Henüz derlenmediyse hedef mikroservis imajını derleyin:
+   ```bash
+   docker build -t novashop-ui:v0.1.0 -f src/ui/Dockerfile src/ui
+   ```
 
-```bash
-# Bilgilendirici tam rapor
-trivy image novashop-ui:v0.1.0
+2. İmajı işletim sistemi paketleri ve uygulama bağımlılıkları açısından tarayın:
+   ```bash
+   # Bilgilendirici genel rapor:
+   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+     aquasec/trivy:latest image novashop-ui:v0.1.0
 
-# Kalite Kapısı Modu: CRITICAL seviyeli açık varsa çıkış kodu 1 dönerek pipeline'ı durdur
-trivy image --severity HIGH,CRITICAL --exit-code 1 novashop-ui:v0.1.0
-```
+   # Kalite Kapısı Modu: CRITICAL seviyeli açık varsa çıkış kodu 1 dönerek pipeline'ı durdur:
+   docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+     aquasec/trivy:latest image --severity HIGH,CRITICAL --exit-code 1 novashop-ui:v0.1.0
+   ```
 *Açıklama:* Eğer imajda düzeltilmemiş kritik seviyeli bir CVE açığı varsa komut `1` koduyla sonlanır ve dağıtım engellenir.
 
 ---
@@ -113,10 +187,11 @@ trivy image --severity HIGH,CRITICAL --exit-code 1 novashop-ui:v0.1.0
 Uygulamanın içerdiği tüm açık kaynak kütüphaneleri, sürümleri ve lisansları içeren standart CycloneDX formatında SBOM oluşturun:
 
 ```bash
-# Syft aracı ile JSON ve XML formatında SBOM üretimi
+# Syft aracı ile JSON formatında SBOM üretimi:
 docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $(pwd):/out \
   anchore/syft:latest novashop-ui:v0.1.0 -o cyclonedx-json=/out/sbom.json
 
+# İlk 25 satırı inceleyin:
 head -n 25 sbom.json
 ```
 *Açıklama:* Üretilen `sbom.json` dosyası denetim, uyumluluk (compliance) ve tedarik zinciri güvenliği (Supply Chain Security) kanıtı olarak saklanır.
@@ -126,7 +201,7 @@ head -n 25 sbom.json
 #### 5. Başarılı ve Başarısız Kalite Kapısı Simülasyonu
 
 **1. Başarısız Kapı Senaryosu (Fail Gate):**
-Kasıtlı olarak zafiyetli eski bir kütüphaneyi veya test anahtarını repoya ekleyip tarayıcıyı çalıştırın:
+Kasıtlı olarak test anahtarını repoya ekleyip tarayıcıyı çalıştırın:
 ```bash
 echo "AWS_SECRET_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE123456" > test_secret.env
 docker run --rm -v $(pwd):/src aquasec/trivy:latest fs --security-checks secret --exit-code 1 /src
@@ -169,7 +244,15 @@ bash scripts/verify/verify-lab-08.sh
 - **Belirti:** `trivy image` çalıştırıldığında DB güncellemesinde zaman aşımı veya rate limit hatası alınması.
 - **Güvenli Çözüm:** Yerel veritabanı önbelleğini kullanın veya GitHub token ortam değişkenini tanımlayın: `export GITHUB_TOKEN=<TOKEN>`.
 
-#### Senaryo 2: SonarQube `Quality Gate failed: Coverage on New Code < 80%`
+#### Senaryo 2: SonarQube Konteyneri Başlamıyor (`max virtual memory areas vm.max_map_count [65530] is too low`)
+- **Belirti:** `docker logs sonarqube` çıktısında Elasticsearch çökmesi görünmesi.
+- **Güvenli Çözüm:** Çekirdek sınırını artırın:
+  ```bash
+  sudo sysctl -w vm.max_map_count=524288
+  docker compose -f infra/sonarqube/docker-compose.yml restart sonarqube
+  ```
+
+#### Senaryo 3: SonarQube `Quality Gate failed: Coverage on New Code < 80%`
 - **Belirti:** Kod güvenli olmasına rağmen test kapsamı eşiği aşılamadığı için analiz başarısız oluyor.
 - **Teşhis:** SonarQube panelinde "Measures > Coverage" sekmesini inceleyin.
 - **Güvenli Çözüm:** Yeni eklenen sınıflar veya metodlar için `src/test/java` altında birim test yazarak kapsamı artırın.
@@ -188,11 +271,11 @@ bash scripts/verify/verify-lab-08.sh
 ### Cleanup / Rollback
 
 ```bash
-# Üretilen SBOM ve geçici tarama dosyalarını silin
+# 1. Üretilen SBOM ve geçici tarama dosyalarını silin
 rm -f sbom.json test_secret.env
 
-# SonarQube konteynerini durdurun
-docker compose --profile security-gates down -v 2>/dev/null || true
+# 2. SonarQube servislerini durdurun (veriler sonarqube_data volume'unda saklanır)
+docker compose -f infra/sonarqube/docker-compose.yml down
 ```
 
 ---
@@ -200,4 +283,4 @@ docker compose --profile security-gates down -v 2>/dev/null || true
 ### Pratik Uygulama Görevi
 
 1. Reponun `.gitignore` dosyasına `*.env`, `*.pem` ve `sbom.json` kurallarının eklendiğini teyit edin.
-2. Git hooks (`.git/hooks/pre-commit`) içerisine `trivy fs --security-checks secret` çalıştıran bir komut ekleyerek secret içeren commit'leri yerelde engelleyin.
+2. Git hooks (`.git/hooks/pre-commit`) içerisine `docker run --rm -v $(pwd):/src aquasec/trivy:latest fs --security-checks secret` çalıştıran bir komut ekleyerek secret içeren commit'leri yerelde engelleyin.

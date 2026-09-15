@@ -4,7 +4,7 @@ Ubuntu sunucusu üzerinde çalışan tüm DevOps araçlarını (`NovaShop UI`, `
 
 Bu mimari, **Cloudflare Full SSL** modu ile entegre çalışacak şekilde tasarlanmıştır. Böylece:
 1. **Public Repoda Gizli Anahtar Olmaz:** SSL özel anahtarı (`origin.key`) repoda tutulmaz, sunucuda yerel olarak üretilir (sıfır güvenlik riski).
-2. **Rate-Limit Yoktur:** Her servis veya öğrenci için ayrı ayrı Let's Encrypt üretmek yerine tek bir `*.devopsatolyesi.com` Wildcard Origin sertifikası kullanılır.
+2. **Rate-Limit Yoktur:** Her servis veya kullanıcı ortamı için ayrı ayrı Let's Encrypt üretmek yerine tek bir `*.devopsatolyesi.com` Wildcard Origin sertifikası kullanılır.
 3. **Doğrudan IP:Port Asla Bozulmaz:** Nginx 80/443 portlarını yönetirken, Docker konteynerleri kendi portlarında (`8888`, `8929`, `18082`, `19000`, `18080`) doğrudan açık kalmaya devam eder.
 
 ---
@@ -23,7 +23,7 @@ Bu mimari, **Cloudflare Full SSL** modu ile entegre çalışacak şekilde tasarl
 
 ## ⚡ Yöntem A: Tek Komutla Aktivasyon (Önerilen)
 
-Eğer eğitmeniniz size bir öğrenci kodu (örneğin `student100`) ve DNS kaydı tahsis ettiyse, tüm SSL ve Nginx yapılandırmasını tek bir komutla ayağa kaldırabilirsiniz:
+Eğer bir kullanıcı kimliği (örneğin `student100` veya `student01`) ve DNS kaydı tahsis edildiyse, tüm SSL ve Nginx yapılandırmasını tek bir komutla ayağa kaldırabilirsiniz:
 
 ```bash
 cd ~/novashop
@@ -72,7 +72,7 @@ sudo chmod 0600 /etc/nginx/ssl/devops-training/origin.key
 
 ### Adım 3: Nginx Konfigürasyonunu Tanımlama
 
-Aşağıdaki yapılandırmayı `/etc/nginx/sites-available/student-tools.conf` olarak kaydedin (`student100` yerine kendi öğrenci numaranızı yazabilirsiniz):
+Aşağıdaki yapılandırmayı `/etc/nginx/sites-available/student-tools.conf` olarak kaydedin (`student100` yerine kendi kullanıcı kimliğinizi yazabilirsiniz):
 
 ```bash
 STUDENT_ID="student100"

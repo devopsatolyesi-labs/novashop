@@ -30,7 +30,7 @@ variable "private_subnet_cidrs" {
 
 variable "my_ip" {
   type        = string
-  description = "SSH erişimi için izin verilen IP bloğu (Güvenlik için öğrencinin genel IP'si/32 önerilir)"
+  description = "SSH erişimi için izin verilen IP bloğu (Güvenlik için kullanıcı genel IP'si/32 önerilir)"
   default     = "0.0.0.0/0"
 }
 

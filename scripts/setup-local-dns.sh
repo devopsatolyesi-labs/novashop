@@ -1,30 +1,25 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# NovaShop — Öğrenci Yerel DNS Çözümleme Betiği (/etc/hosts)
+# NovaShop — Yerel DNS Çözümleme Betiği (/etc/hosts)
 # ==============================================================================
-# Cloudflare DNS yayılımı beklenmeden veya eksik kayıtlarda tüm alt alan
-# adlarının öğrenci bilgisayarında doğrudan çalışmasını sağlar.
+# Cloudflare DNS yayılımı beklenmeden veya harici bağlantı gerekmeksizin
+# tüm servis alt alan adlarının yerel makinede doğrudan çalışmasını sağlar.
 #
 # Kullanım:
-#   sudo bash scripts/setup-local-dns.sh <SUNUCU_IP> [student100]
+#   sudo bash scripts/setup-local-dns.sh [SUNUCU_IP] [STUDENT_ID]
+#   Örnek: sudo bash scripts/setup-local-dns.sh 127.0.0.1 student01
 # ==============================================================================
 set -euo pipefail
 
 if [[ $EUID -ne 0 ]]; then
    echo "❌ Bu betik /etc/hosts dosyasını güncellemek için 'sudo' ile çalıştırılmalıdır."
-   echo "Örnek: sudo bash scripts/setup-local-dns.sh 34.77.187.127 student100"
+   echo "Örnek: sudo bash scripts/setup-local-dns.sh 127.0.0.1 student01"
    exit 1
 fi
 
-SERVER_IP="${1:-}"
-STUDENT_ID="${2:-student100}"
-DOMAIN="devopsatolyesi.com"
-
-if [[ -z "${SERVER_IP}" ]]; then
-    echo "❌ HATA: Sunucu IP adresi belirtilmelidir!"
-    echo "Kullanım: sudo $0 <SUNUCU_IP> [student_id]"
-    exit 1
-fi
+SERVER_IP="${1:-127.0.0.1}"
+STUDENT_ID="${2:-${STUDENT_ID:-student01}}"
+DOMAIN="${DOMAIN_NAME:-devopsatolyesi.com}"
 
 SERVICES=(
   cockpit

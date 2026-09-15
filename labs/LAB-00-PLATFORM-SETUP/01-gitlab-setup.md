@@ -42,7 +42,7 @@ cd ~/novashop/infra/gitlab
 
 ### Adım 2: Docker Compose Dosyasını Hazırlama
 
-GitLab CE varsayılan haliyle 4-6 GB RAM tüketebilir. Öğrenci sanal makinesinde kaynakları verimli kullanmak için optimize edilmiş `docker-compose.yml` dosyasını oluşturun:
+GitLab CE varsayılan haliyle 4-6 GB RAM tüketebilir. Sanal makinede kaynakları verimli kullanmak için optimize edilmiş `docker-compose.yml` dosyasını oluşturun:
 
 ```bash
 cat << 'COMPOSE_EOF' > docker-compose.yml

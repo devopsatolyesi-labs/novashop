@@ -162,7 +162,7 @@ helm version --short
 
 ## ⚡ Kurumsal DNS ve SSL Aktivasyonu (Örnek: `student01`)
 
-Eğer eğitim başlangıcında size bir öğrenci kodu (örneğin `student01`) ve alan adı tahsis edildiyse, Nginx Edge ve Wildcard Origin SSL sertifikasını tek komutla aktifleştirebilirsiniz:
+Eğer başlangıçta size bir kullanıcı kodu (örneğin `student01`) ve alan adı tahsis edildiyse, Nginx Edge ve Wildcard Origin SSL sertifikasını tek komutla aktifleştirebilirsiniz:
 
 ```bash
 cd ~/novashop

@@ -4,7 +4,7 @@
 
 ### Amaç
 
-Öğrenci sanal makinesinde bağımsız bir çalışma dizininde Kind (Kubernetes IN Docker) ile çok düğümlü (1 control-plane, 2 worker) yerel bir Kubernetes kümesi kurmak; NovaShop mikroservis imajını Harbor Registry'den (veya yerel küme yüklemesiyle) çekerek Helm paket yöneticisi ile dağıtmak, sağlık problarını doğrulamak ve kesintisiz sürüm güncelleme (`helm upgrade`) ile geri alma (`helm rollback`) adımlarını uygulamak.
+Sanal makinede bağımsız bir çalışma dizininde Kind (Kubernetes IN Docker) ile çok düğümlü (1 control-plane, 2 worker) yerel bir Kubernetes kümesi kurmak; NovaShop mikroservis imajını Harbor Registry'den (veya yerel küme yüklemesiyle) çekerek Helm paket yöneticisi ile dağıtmak, sağlık problarını doğrulamak ve kesintisiz sürüm güncelleme (`helm upgrade`) ile geri alma (`helm rollback`) adımlarını uygulamak.
 
 ---
 
@@ -35,7 +35,7 @@
 
 ```mermaid
 graph TD
-    User([Öğrenci / Web Tarayıcısı]) -->|HTTP :8888| HostPort[Host Port: 8888]
+    User([Web Tarayıcısı / İstemci]) -->|HTTP :8888| HostPort[Host Port: 8888]
     HostPort -->|Port Eşleme| NodePort[Kind NodePort: 30080]
 
     subgraph Kind Cluster: novashop-cluster
@@ -347,7 +347,7 @@ bash scripts/verify/verify-lab-06.sh
 
 ### Temizlik (Cleanup)
 
-Laboratuvar çalışması bittiğinde öğrenci makinesindeki sistem kaynaklarını serbest bırakın:
+Laboratuvar çalışması bittiğinde sanal makinedeki sistem kaynaklarını serbest bırakın:
 
 ```bash
 # 1. Helm dağıtımını kaldırın

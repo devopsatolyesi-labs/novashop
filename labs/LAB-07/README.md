@@ -18,17 +18,32 @@ Kurumsal DevOps standartlarına uygun olarak; yerel veya bulut ortamında barın
 
 ---
 
-### Ön koşullar
+### Ön koşullar ve Hızlı Hazırlık
 
-- **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
-- **Altyapı Araçları (GitLab & Harbor):** Sunucunuzda GitLab CE ve Harbor çalışır durumda olmalıdır. Henüz kurmadıysanız:
-  - [GitLab Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/01-gitlab-setup.md) veya `docker compose -f infra/gitlab/docker-compose.yml up -d`
-  - [Harbor Kurulum Kılavuzu](../LAB-00-PLATFORM-SETUP/02-harbor-setup.md) veya `bash infra/harbor/install_harbor.sh`
-- **Erişim Modeli:**
-  - *Model A (Doğrudan IP):* GitLab `http://<UBUNTU_IP>:8929`, Harbor `http://<UBUNTU_IP>:18082`
-  - *Model B (Kurumsal DNS + SSL):* GitLab `https://studentXX-gitlab.devopsatolyesi.com`, Harbor `https://studentXX-harbor.devopsatolyesi.com`
-- **Kaynak Gereksinimi:** Öğrenci VM'inde `cicd-enterprise` profili çalıştırılacaktır (en az 2 vCPU, 8 GB boş RAM). Diğer ağır profiller (Kind, ELK) durdurulmuş olmalıdır.
-- **Yüklü Araçlar:** Docker Engine, Docker Compose, `curl`, Git.
+1. **Sanal Makine Kimliği ve Alan Adı Parametreleri:**
+   Çalıştığınız sanal makinenin kimliğini tanımlayın (Varsayılan: `student01`):
+   ```bash
+   export STUDENT_ID="${STUDENT_ID:-student01}"
+   export DOMAIN_NAME="${DOMAIN_NAME:-devopsatolyesi.com}"
+   ```
+
+2. **Harbor ve Jenkins Servislerinin Başlatılması:**
+   Eğer sunucunuzda Harbor veya Jenkins henüz başlatılmadıysa:
+   - **Harbor Kurulumu / Başlatma:**
+     ```bash
+     bash infra/harbor/install_harbor.sh ${STUDENT_ID}
+     ```
+   - **Jenkins Başlatma:**
+     ```bash
+     docker compose -f infra/jenkins/docker-compose.yml up -d
+     ```
+   - **Yerel DNS (/etc/hosts) Otomasyonu (Cloudflare Bağımsız Çalışma):**
+     Cloudflare proxy gecikmelerini ve Docker login timeout hatalarını tamamen aşmak için yerel çözümlemeyi uygulayın:
+     ```bash
+     sudo bash scripts/setup-local-dns.sh 127.0.0.1 ${STUDENT_ID}
+     ```
+
+3. **Gerekli Araçlar:** Docker Engine, Docker Compose v2, `curl`, Git.
 
 ---
 
@@ -36,38 +51,37 @@ Kurumsal DevOps standartlarına uygun olarak; yerel veya bulut ortamında barın
 
 ```mermaid
 graph TD
-    Developer([Geliştirici / Öğrenci]) -->|Git Push| Repo[GitLab / Git Deposu]
+    Developer([Geliştirici / CI Operatörü]) -->|Git Push| Repo[GitLab / Git Deposu]
     
-    subgraph Enterprise CI/CD Katmanı cicd-enterprise profili
+    subgraph Enterprise_CI_CD_Katmani ["Kurumsal CI/CD Katmanı (Cockpit / Sanal Makine)"]
         Repo -->|Webhook Tetikleme| CI[Jenkins / GitLab CI Runner]
         
-        subgraph Pipeline Aşamaları
+        subgraph Pipeline_Asamalari ["Pipeline Aşamaları"]
             CI --> Step1[1. Checkout & Java 21 Test]
             Step1 --> Step2[2. Multi-stage Docker Build]
             Step2 --> Step3[3. Harbor Login Robot Account]
             Step3 --> Step4[4. Docker Push Immutable Tag]
         end
 
-        subgraph Harbor Registry
+        subgraph Harbor_Registry ["Harbor OCI Registry (:18082 / :18444)"]
             Step4 --> HarborRepo[(Harbor Project: novashop)]
             HarborRepo --> Trivy[Yerleşik Trivy Zafiyet Taraması]
             HarborRepo --> Policy[Immutable Tag Kuralı: v* ve SHA-*]
         end
     end
 
-    HarborRepo -.->|Güvenli İmaj Çekme| TargetEnv([Kubernetes / EC2 Hedef Ortam])
+    HarborRepo -.->|Güvenli İmaj Çekme| TargetEnv([Kubernetes Kind :30080 / Hedef Ortam])
 ```
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Parametreler
+### 🧭 Erişim Modelleri ve Kimlik Bilgileri (Credentials)
 
-| Parametre | Açıklama | Örnek Değer |
-|---|---|---|
-| `<HARBOR_URL>` | Harbor Registry erişim adresi | Model A: `127.0.0.1:18082` \| Model B: `studentXX-harbor.devopsatolyesi.com` |
-| `<ROBOT_NAME>` | Harbor robot hesap adı | `robot$novashop+novashop-cicd` |
-| `<ROBOT_SECRET>` | Harbor robot hesap gizli belirteci | Token dizesi |
-| `<IMAGE_TAG>` | Üretilen sürüm veya commit SHA etiketi | `v0.1.0` veya `sha-1a2b3c4` |
+| Servis | Model B: Kurumsal DNS (Cockpit / SSL) | Model A: Doğrudan IP:Port | Kullanıcı Adı | Varsayılan Parola |
+| :--- | :--- | :--- | :---: | :---: |
+| **Harbor Registry** | `https://${STUDENT_ID}-harbor.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:18082` | `admin` | `Harbor12345` |
+| **Jenkins CI** | `https://${STUDENT_ID}-jenkins.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:18080` veya `:8081` | `admin` | İlk kurulum parolası (`initialAdminPassword`) |
+| **GitLab CE** | `https://${STUDENT_ID}-gitlab.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:8929` veya `:18929` | `root` | `.env` içindeki parola |
 
 ---
 
@@ -186,7 +200,7 @@ pipeline {
 
 #### 4. Kurumsal GitLab CI Boru Hattı (`.gitlab-ci.yml`) ve Kind K8s Dağıtımı
 
-Self-Hosted GitLab ortamında (`https://student100-gitlab.devopsatolyesi.com/root/novashop`) kod doğrulamadan Harbor Registry push ve Kind Kubernetes kümesine dağıtıma kadar tüm yaşam döngüsü tek bir bildirimsel pipeline ile otomatikleştirilmiştir:
+Self-Hosted GitLab ortamında (`https://${STUDENT_ID}-gitlab.${DOMAIN_NAME}/root/novashop` veya `http://<SUNUCU_IP>:8929/root/novashop`) kod doğrulamadan Harbor Registry push ve Kind Kubernetes kümesine dağıtıma kadar tüm yaşam döngüsü tek bir bildirimsel pipeline ile otomatikleştirilmiştir:
 
 ```yaml
 stages:
@@ -201,7 +215,8 @@ variables:
   IMAGE_NAME: "ui"
   IMAGE_TAG: "v0.1.${CI_PIPELINE_IID}"
   HARBOR_ROBOT_USER: "robot$novashop+novashop-cicd"
-  HARBOR_ROBOT_SECRET: "IDPJHyl1Vr8hGHzoWxrHgWT1gwSRjbCe"
+  # Öneri: HARBOR_ROBOT_SECRET değerini Settings > CI/CD > Variables alanına Masked olarak ekleyin:
+  HARBOR_ROBOT_SECRET: "$HARBOR_ROBOT_TOKEN"
   KIND_CLUSTER_NAME: "novashop-cluster"
   KUBECONFIG: "/root/.kube/config"
 
@@ -242,8 +257,8 @@ deploy-to-kind:
 2. Web arayüzünden **Build > Pipelines** sekmesine gidin:
    - `unit-tests`, `build-and-push-harbor` ve `deploy-to-kind` adımlarının yeşile döndüğünü gözlemleyin.
 3. Dağıtılan servisi test edin:
-   - **Model A (Doğrudan IP:Port):** `http://34.77.187.127:30080`
-   - **Model B (Kurumsal HTTPS):** `https://student100-kind.devopsatolyesi.com`
+   - **Model A (Doğrudan IP:Port):** `http://<SUNUCU_IP>:30080`
+   - **Model B (Kurumsal HTTPS):** `https://${STUDENT_ID}-kind.${DOMAIN_NAME}`
 
 ---
 
@@ -311,7 +326,7 @@ bash scripts/verify/verify-lab-07.sh studentXX-harbor.devopsatolyesi.com
 
 #### Senaryo 2: Pipeline Bellek Yetersizliği Nedeniyle Çöküyor (OOMKilled)
 - **Belirti:** GitLab Runner veya Jenkins Agent Java derleme sırasında aniden duruyor.
-- **Muhtemel Neden:** Öğrenci VM'inde GitLab CE ve Jenkins'in aynı anda çalıştırılması (sistem bellek sınırı ihlali).
+- **Muhtemel Neden:** Sanal makinede GitLab CE ve Jenkins'in aynı anda çalıştırılması (sistem bellek sınırı ihlali).
 - **Güvenli Çözüm:** Yalnızca bir otomasyon motorunu (tercihen hafif Jenkins veya GitLab Runner) aktif tutun; diğer konteynerleri durdurun: `docker compose down`.
 
 ---
@@ -331,13 +346,13 @@ bash scripts/verify/verify-lab-07.sh studentXX-harbor.devopsatolyesi.com
 
 ```bash
 # 1. CI/CD konteynerlerini durdurun
-docker compose --profile cicd-enterprise down -v
+docker compose -f deploy/cicd/docker-compose.cicd.yml down -v
 
-# 2. Yerel Docker imaj önbelleğini temizleyin
-docker system prune -a -f
+# 2. LAB-07 için oluşturulmuş yerel test imajlarını temizleyin (hedefli temizlik)
+docker rmi 127.0.0.1:18082/novashop/ui:v0.1.0 127.0.0.1:18082/novashop/ui:latest 2>/dev/null || true
 
 # 3. Harbor robot hesabı oturumunu sonlandırın
-docker logout <HARBOR_URL> 2>/dev/null || true
+docker logout 127.0.0.1:18082 2>/dev/null || true
 ```
 
 ---

@@ -255,11 +255,15 @@ novashop/labs/LAB-02/terraform-basic-infra/
 
 ---
 
-### Adım 2.1: AWS Kimlik Bilgilerini Ortam Değişkeni Olarak Tanımlama
+### Adım 2.1: AWS Kimlik Bilgilerini Doğrulama
 
 Ubuntu terminalinizde (Cockpit terminali veya yerel makineniz) AWS kimlik bilgilerinizi tanımlayın:
 
 ```bash
+# Seçenek A: aws configure ile (Önerilen)
+aws configure
+
+# Seçenek B: Ortam değişkenleri ile
 export AWS_ACCESS_KEY_ID="AKIAxxxxxxxxxxxxxxxx"
 export AWS_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 export AWS_DEFAULT_REGION="us-east-1"
@@ -300,9 +304,9 @@ db_password          = "NovaShopDevOps2026!"
 
 ---
 
-### Adım 2.3: S3 tfstate Bucket'ını Oluşturma ve Terraform'u Başlatma (`init`)
+### Adım 2.3: S3 tfstate Bucket'ını ve SSH Anahtarını Oluşturma, Terraform'u Başlatma (`init`)
 
-AWS S3 Remote State için önce hesap numaranıza özel bir bucket oluşturun ve ardından Terraform'u bu bucket ile başlatın:
+AWS S3 Remote State için önce hesap numaranıza özel bir bucket oluşturun, EC2 için SSH anahtar çiftini kontrol edin ve ardından Terraform'u başlatın:
 
 ```bash
 # 1. AWS Hesap numarasını al ve S3 bucket adını belirle
@@ -314,7 +318,11 @@ echo "Kullanılacak S3 Bucket: $BUCKET_NAME"
 aws s3api create-bucket --bucket "$BUCKET_NAME" --region us-east-1
 aws s3api put-bucket-versioning --bucket "$BUCKET_NAME" --versioning-configuration Status=Enabled
 
-# 3. Terraform'u dinamik S3 backend ile başlat
+# 3. EC2 SSH Anahtar Çiftini (novashop-key) kontrol et ve yoksa oluştur
+aws ec2 describe-key-pairs --key-names novashop-key --region us-east-1 >/dev/null 2>&1 || \
+aws ec2 create-key-pair --key-name novashop-key --query "KeyMaterial" --output text --region us-east-1 > ~/.ssh/novashop-key.pem && chmod 400 ~/.ssh/novashop-key.pem
+
+# 4. Terraform'u dinamik S3 backend ile başlat
 terraform init -reconfigure -backend-config="bucket=$BUCKET_NAME"
 ```
 
@@ -390,11 +398,11 @@ curl -s $(terraform output -raw storefront_url) | grep "NovaShop DevOps Store"
 
 ### 🎁 BONUS: Tek Komutla Sıfır Dokunuş (Zero-Touch) Otomasyonu
 
-Yukarıdaki Terraform adımlarını tek tek yürütmek yerine, laboratuvar için hazırlanan **`run.sh`** scripti ile altyapıyı tek komutla ayağa kaldırabilirsiniz.
+Yukarıdaki Terraform adımlarını tek tek yürütmek yerine, laboratuvar için hazırlanan dinamik **`run.sh`** scripti ile altyapıyı tek komutla ayağa kaldırabilirsiniz. Script tamamen akıllıdır ve hiçbir şeyi hardcode etmez.
 
 #### `run.sh` Neler Yapar?
-1. **AWS STS ile Hesap Çözme:** `aws sts get-caller-identity` çalıştırarak Hesap ID'nizi çözer.
-2. **S3 tfstate Backend Yönetimi:** AWS hesabınıza özel `novashop-tfstate-<HESAP_ID>` bucket'ını denetler, yoksa oluşturup versiyonlamayı açar.
+1. **AWS STS ile Kimlik Doğrulama:** `aws sts get-caller-identity` ile AWS kimliğinizi ve Hesap ID'nizi çözer (Hem `aws configure` hem ortam değişkenleri ile çalışır).
+2. **S3 tfstate Backend Yönetimi:** AWS hesabınıza özel `novashop-tfstate-<HESAP_ID>` bucket'ını denetler, yoksa otomatik oluşturup versiyonlamayı açar.
 3. **SSH Key Pair Otomasyonu:** AWS üzerinde `novashop-key` anahtar çiftini kontrol eder, yoksa üretip yerel makinenizdeki `~/.ssh/novashop-key.pem` dosyasına kaydeder.
 4. **Terraform Init & Apply:** Backend konfigürasyonunu dinamik bağlayarak tüm VPC, EC2 ve RDS kaynaklarını tek hamlede kurar.
 
@@ -402,11 +410,7 @@ Yukarıdaki Terraform adımlarını tek tek yürütmek yerine, laboratuvar için
 ```bash
 cd ~/novashop/labs/LAB-02/terraform-basic-infra
 
-# Sadece AWS Access Key ve Secret Key tanımlamanız yeterlidir:
-export AWS_ACCESS_KEY_ID="AKIAxxxxxxxxxxxxxxxx"
-export AWS_SECRET_ACCESS_KEY="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-# Scripti çalıştırın:
+# Eğer 'aws configure' yaptıysanız başka hiçbir değişkene gerek yoktur:
 ./run.sh
 ```
 

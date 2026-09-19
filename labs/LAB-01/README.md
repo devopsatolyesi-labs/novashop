@@ -82,7 +82,7 @@ Bu bölümde, NovaShop kod tabanını sunucuda temiz bir Git geçmişiyle başla
 ```bash
 # 1. NovaShop başlangıç reposunu home dizinine klonlayın:
 cd ~
-git clone https://github.com/devopsatolyesi-labs/novashop.git
+git clone https://gitlab.com/devops-practitioner-labs/novashop.git
 
 # 2. Proje dizinine geçin:
 cd ~/novashop
@@ -91,7 +91,8 @@ cd ~/novashop
 rm -rf .git
 git init -b main
 ```
-> **Not:** Mevcut `.git` dizinini silerek orijinal projenin geçmişini temizler ve deponun ilk mimarı olarak `main` dalıyla sıfırdan başlarsınız.
+> [!NOTE]
+> Mevcut `.git` dizinini silerek orijinal projenin geçmişini temizler ve deponun ilk mimarı olarak `main` dalıyla sıfırdan başlarsınız. Eğer mevcut bir `~/novashop` deponuz zaten varsa ve orijinal uzak bağlantısını korumak istiyorsanız, bu adımı geçici bir kopya dizinde (örn: `cp -r ~/novashop ~/novashop-git-practice && cd ~/novashop-git-practice`) uygulayabilirsiniz.
 
 *Beklenen Çıktı:*
 ```text
@@ -156,9 +157,9 @@ Switched to a new branch 'feature/update-mug-product'
 ```
 
 #### 2.2 Ürün Fiyatını Güncelleyin
-`labs/LAB-01/products.json` dosyasındaki ilk ürünün (`Kubernetes Cluster Mug`) fiyatını `45` yerine `55` yapın:
+`labs/LAB-01/products.json` dosyasındaki ilk ürünün (`Kubernetes Cluster Mug`) fiyatını `45` yerine `85` yapın:
 ```bash
-sed -i 's/"price": 35/"price": 85/' labs/LAB-01/products.json
+sed -i 's/"price": 45/"price": 85/' labs/LAB-01/products.json
 ```
 
 #### 2.3 Değişikliği İnceleyin, Commit Edin ve Push Edin

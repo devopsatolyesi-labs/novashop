@@ -1,5 +1,9 @@
 # LAB-07-ENTERPRISE-CICD — Kurumsal CI/CD: GitLab, Jenkins ve Harbor ile Güvenli Dağıtım Hattı
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta - İleri | GitLab CE, Jenkins, Harbor OCI Registry, Docker | 18929 (GitLab), 18080 (Jenkins), 18444 / 18082 (Harbor) |
+
 ---
 
 ### Amaç
@@ -75,11 +79,11 @@ graph TD
 
 ---
 
-### 🧭 Erişim Modelleri ve Kimlik Bilgileri (Credentials)
+### Erişim Modelleri ve Kimlik Bilgileri (Credentials)
 
 | Servis | Model B: Kurumsal DNS (Cockpit / SSL) | Model A: Doğrudan IP:Port | Kullanıcı Adı | Varsayılan Parola |
 | :--- | :--- | :--- | :---: | :---: |
-| **Harbor Registry** | `https://${STUDENT_ID}-harbor.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:18082` | `admin` | `Harbor12345` |
+| **Harbor Registry** | `https://${STUDENT_ID}-harbor.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:18444` veya `:18082` | `admin` | `Harbor12345` |
 | **Jenkins CI** | `https://${STUDENT_ID}-jenkins.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:18080` veya `:8081` | `admin` | İlk kurulum parolası (`initialAdminPassword`) |
 | **GitLab CE** | `https://${STUDENT_ID}-gitlab.${DOMAIN_NAME}` | `http://<SUNUCU_IP>:8929` veya `:18929` | `root` | `.env` içindeki parola |
 

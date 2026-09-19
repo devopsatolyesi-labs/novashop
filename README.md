@@ -12,13 +12,13 @@ NovaShop DevOps Store, tek bir e-ticaret uygulamasının modern DevOps ve Cloud-
 
 ---
 
-## 🏗️ Mimari ve Bileşenler
+## Mimari ve Bileşenler
 
 Uygulama, mikroservis mimarisine sahip çok dilli (polyglot) modern bir e-ticaret platformudur:
 
 ```mermaid
 graph TD
-    Client([Web Tarayıcı / Mobil İstemci]) -->|HTTP :8888 / :8080| UI[NovaShop UI Storefront<br/>Java 21 / Spring Boot / Thymeleaf]
+    Client([Web Tarayıcı / Mobil İstemci]) -->|HTTP :19001 / :8888| UI[NovaShop UI Storefront<br/>Java 21 / Spring Boot / Thymeleaf]
     
     UI -->|REST / API| Catalog[Catalog Service<br/>Go / Gin]
     UI -->|REST / API| Cart[Cart Service<br/>Java / Spring Boot]
@@ -28,7 +28,7 @@ graph TD
     Catalog -->|SQL :3306| CatDB[(Catalog DB<br/>MySQL / MariaDB)]
     Cart -->|NoSQL :8000| CartDB[(Cart DB<br/>DynamoDB / Local)]
     Orders -->|SQL :5432| OrdersDB[(Orders DB<br/>PostgreSQL)]
-    Orders -->|AMQP :5672| RabbitMQ>RabbitMQ Mesaj Kuyruğu]
+    Orders -->|AMQP :5672| RabbitMQ[RabbitMQ Mesaj Kuyruğu]
     Checkout -->|Cache :6379| Redis[(Checkout Cache<br/>Redis)]
 ```
 
@@ -36,7 +36,7 @@ graph TD
 
 | Servis | Teknoloji / Dil | Port | Görev |
 |---|---|---|---|
-| **UI** | Java 21 / Spring Boot / Thymeleaf | 8080 (Host 8888) | Mağaza ön yüzü, ürün vitrini ve API aggregator |
+| **UI** | Java 21 / Spring Boot / Thymeleaf | 8080 (Host 19001 / 8888) | Mağaza ön yüzü, ürün vitrini ve API aggregator |
 | **Catalog** | Go / Gin | 8080 (Host 8081) | Ürün kataloğu ve kategori sorgulama API'si |
 | **Cart** | Java 21 / Spring Boot | 8080 (Host 8082) | Kullanıcı sepeti ve ürün ekleme API'si |
 | **Orders** | Java 21 / Spring Boot | 8080 (Host 8083) | Sipariş oluşturma ve asenkron kuyruk yönetimi |
@@ -44,7 +44,7 @@ graph TD
 
 ---
 
-## 🚀 Nasıl Çalışılır?
+## Nasıl Çalışılır?
 
 Bu depo bir "tek komutla her şeyi kur" projesi değildir. Her laboratuvarın amacı, kullanılan aracı ve komutları katılımcının önce **manuel olarak** öğrenmesidir. Yardımcı betikler ise ancak manuel akış anlaşıldıktan sonra aynı işlemi hızlı, tekrarlanabilir ve güvenli biçimde başlatmak veya doğrulamak için kullanılır.
 
@@ -68,7 +68,7 @@ nano .env
 
 `DB_PASSWORD` ve `GRAFANA_ADMIN_PASSWORD` placeholder değerlerini gerçek yerel değerlerle değiştirin. `.env` Git tarafından yok sayılır; asla commit edilmez. Cloud dağıtımlarında bu değerler yerine ilgili labın anlattığı GitHub/GitLab secret mekanizması veya AWS Secrets Manager kullanılır.
 
-## 🚀 Hızlı Başlangıç (Starter Profil)
+## Hızlı Başlangıç (Starter Profil)
 
 NovaShop UI, arka plan servisleri hazır olmadığında otomatik olarak **in-memory mock** modunda çalışır. Böylece harici veritabanları kurmadan arayüzü hemen test edebilirsiniz.
 
@@ -93,7 +93,7 @@ Bu komut `/actuator/health`, NovaShop marka başlığı ve favicon için fail-fa
 
 ### 3. Tarayıcıda İnceleyin
 
-Tarayıcınızdan `http://localhost:8888` adresini açın.
+Tarayıcınızdan `http://localhost:19001` (veya `:8888`) adresini açın.
 
 ### 4. Durdurun ve Temizleyin
 
@@ -101,7 +101,7 @@ Tarayıcınızdan `http://localhost:8888` adresini açın.
 bash scripts/compose-starter.sh down
 ```
 
-## 🏛️ Mimari, Ağ ve Güvenlik Dokümantasyonu
+## Mimari, Ağ ve Güvenlik Dokümantasyonu
 
 - [Mimari Genel Bakış](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
 - [Ağ Topolojisi ve Port Haritası](docs/architecture/NETWORKING.md) — Port listesi, AWS VPC CIDR planı ve Kubernetes CoreDNS.
@@ -111,9 +111,10 @@ bash scripts/compose-starter.sh down
 
 ---
 
-## 📚 Eğitim Yol Haritası ve Laboratuvarlar
+## Eğitim Yol Haritası ve Laboratuvarlar
 
-> 💡 **Müfredat Kılavuzu:** Yanında **`*`** işareti bulunan laboratuvarlar, eğitimde kesinlikle verilmesi gereken **çekirdek (Core / Zorunlu)** laboratuvarlardır. Diğer laboratuvarlar canlı AWS ortamı veya platform hazırlığı gerektiren tamamlayıcı / ileri modüllerdir.
+> [!NOTE]
+> **Müfredat Kılavuzu:** Yanında **`*`** işareti bulunan laboratuvarlar, eğitimde kesinlikle verilmesi gereken **çekirdek (Core / Zorunlu)** laboratuvarlardır. Diğer laboratuvarlar canlı AWS ortamı veya platform hazırlığı gerektiren tamamlayıcı / ileri modüllerdir.
 
 Her bağlantı, katılımcının izleyeceği eksiksiz manuel kurulum kılavuzudur. Sağdaki komutlar, öğretim adımlarının yerine geçmeyen isteğe bağlı hızlandırma veya doğrulama araçlarıdır.
 
@@ -149,7 +150,7 @@ bash scripts/verify/verify-all-labs.sh --live
 
 ---
 
-## 📜 Lisans ve Kaynak Atfı
+## Lisans ve Kaynak Atfı
 
 - NovaShop DevOps Store, AWS Containers Retail Store Sample App (`https://github.com/aws-containers/retail-store-sample-app`) projesinden eğitim amacıyla uyarlanmıştır.
 - Orijinal kodlar Amazon.com, Inc. or its affiliates mülkiyetinde olup **MIT-0** ([LICENSE](LICENSE)) lisansı altındadır.

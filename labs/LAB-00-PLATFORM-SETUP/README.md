@@ -4,7 +4,7 @@ Bu modül, kurumsal DevOps laboratuvarlarında (Day 1'den Day 5'e) kullanılacak
 
 ---
 
-## 🎯 Temel İlkeler ve Yaklaşım
+## Temel İlkeler ve Yaklaşım
 
 1. **Sıfır Sunucu Varsayımı:** Sunucuda `/opt/harbor` veya benzeri dizinler ya da araçlar önceden kurulu olmak zorunda değildir. Her rehber, sıfır bir Ubuntu sanal makinesinde baştan sona çalışacak şekilde tasarlanmıştır.
 2. **Çift Erişim Modeli (Dual Mode):**
@@ -16,7 +16,7 @@ Bu modül, kurumsal DevOps laboratuvarlarında (Day 1'den Day 5'e) kullanılacak
 
 ---
 
-## ⚡ Hızlı Başlangıç: Tek Komutla Otomatik Kurulum Scripti
+## Hızlı Başlangıç: Tek Komutla Otomatik Kurulum Scripti
 
 Tüm temel sistem paketlerini, Docker ekosistemini, AWS CLI, Terraform ve Kubernetes araçlarını tek seferde kurmak için:
 
@@ -28,7 +28,7 @@ newgrp docker
 
 ---
 
-## 🛠️ Sıfır Sunucu Temel Hazırlığı (Adım Adım Manuel Kurulum)
+## Sıfır Sunucu Temel Hazırlığı (Adım Adım Manuel Kurulum)
 
 ### Adım 0.1: Temel Ubuntu Paketlerini Güncelleme ve Kurma
 ```bash
@@ -145,22 +145,23 @@ helm version --short
 
 ---
 
-## 🧭 DevOps Platform Araçları, Port ve Erişim Haritası (Örnek: `student01`)
+## DevOps Platform Araçları, Port ve Erişim Haritası (Örnek: `student01`)
 
 | Araç | Kurulum Rehberi | Model A: Doğrudan IP:Port | Model B: DNS + SSL (HTTPS) | RAM Tüketimi | Hızlı Başlatma |
-| :--- | :--- | :---: | :---: | :---: | :--- |
-| **NovaShop UI** | [LAB-06](../LAB-06/README.md) | `http://<UBUNTU_IP>:8888` | `https://student01-novashop.devopsatolyesi.com` | ~512 MB | Helm / Kind |
-| **Harbor Registry** | [02-harbor-setup.md](02-harbor-setup.md) | `http://<UBUNTU_IP>:18082` | `https://student01-harbor.devopsatolyesi.com` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
-| **GitLab CE** | [01-gitlab-setup.md](01-gitlab-setup.md) | `http://<UBUNTU_IP>:8929` | `https://student01-gitlab.devopsatolyesi.com` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
+| :--- | :--- | :--- | :--- | :---: | :--- |
+| **NovaShop UI** | [LAB-06](../LAB-06/README.md) | `http://<UBUNTU_IP>:19001` (veya `8888`) | `https://student01-novashop.devopsatolyesi.com` | ~512 MB | Helm / Kind |
+| **Harbor Registry** | [02-harbor-setup.md](02-harbor-setup.md) | `http://<UBUNTU_IP>:18444` (veya `18082`) | `https://student01-harbor.devopsatolyesi.com` | ~1.5 GB | `sudo bash infra/harbor/install_harbor.sh` |
+| **GitLab CE** | [01-gitlab-setup.md](01-gitlab-setup.md) | `http://<UBUNTU_IP>:18929` (veya `8929`) | `https://student01-gitlab.devopsatolyesi.com` | ~3.5 GB | `docker compose -f infra/gitlab/docker-compose.yml up -d` |
 | **SonarQube** | [03-sonarqube-setup.md](03-sonarqube-setup.md) | `http://<UBUNTU_IP>:19000` | `https://student01-sonar.devopsatolyesi.com` | ~2.0 GB | `docker compose -f infra/sonarqube/docker-compose.yml up -d` |
 | **Jenkins** | [04-jenkins-setup.md](04-jenkins-setup.md) | `http://<UBUNTU_IP>:18080` | `https://student01-jenkins.devopsatolyesi.com` | ~1.0 GB | `docker compose -f infra/jenkins/docker-compose.yml up -d` |
-| **Argo CD** | [LAB-08](../LAB-08/README.md) | `http://<UBUNTU_IP>:8080` | `https://student01-argocd.devopsatolyesi.com` | ~512 MB | `bash scripts/deploy-argocd.sh` |
+| **Argo CD** | [LAB-08](../LAB-08/README.md) | `http://<UBUNTU_IP>:18082` (veya `8080`) | `https://student01-argocd.devopsatolyesi.com` | ~512 MB | `bash scripts/deploy-argocd.sh` |
 | **Headlamp K8s**| [LAB-06](../LAB-06/README.md) | `http://<UBUNTU_IP>:18084` | `https://student01-headlamp.devopsatolyesi.com` | ~256 MB | Port-Forward / NodePort |
+| **Kibana (ELK)**| [LAB-11](../LAB-11/README.md) | `http://<UBUNTU_IP>:15601` (veya `5601`) | `https://student01-kibana.devopsatolyesi.com` | ~1.0 GB | `docker compose -f deploy/logging/docker-compose.logging.yml up -d` |
 | **Nginx Proxy** | [05-nginx-ssl-setup.md](05-nginx-ssl-setup.md) | - | `80/443 (Edge TLS)` | ~100 MB | `sudo bash infra/nginx/setup-ssl-edge.sh student01` |
 
 ---
 
-## ⚡ Kurumsal DNS ve SSL Aktivasyonu (Örnek: `student01`)
+## Kurumsal DNS ve SSL Aktivasyonu (Örnek: `student01`)
 
 Eğer başlangıçta size bir kullanıcı kodu (örneğin `student01`) ve alan adı tahsis edildiyse, Nginx Edge ve Wildcard Origin SSL sertifikasını tek komutla aktifleştirebilirsiniz:
 
@@ -173,7 +174,7 @@ Bu komuttan sonra yukarıdaki tabloda yer alan tüm `https://student01-*.devopsa
 
 ---
 
-## 🛑 Kaynak Tasarrufu Pratiği (Start / Stop)
+## Kaynak Tasarrufu Pratiği (Start / Stop)
 
 Laboratuvar sanal makinenizin RAM sınırlarını zorlamamak için işiniz biten araçları durdurun:
 

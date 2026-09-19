@@ -1,5 +1,9 @@
 # LAB-02-AWS-BASICS — AWS Temel Altyapı: AWS Console ve Terraform ile 2-Katmanlı Mimari (Web & Database)
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Başlangıç - Orta | AWS Console, Terraform, AWS VPC, EC2, RDS MySQL | 22 (SSH), 80 (HTTP), 3306 (MySQL Private) |
+
 ---
 
 ### Amaç
@@ -24,6 +28,9 @@ Her iki kurulum aynı AWS hesabında bağımsız ve çakışmadan çalışacak �
 ---
 
 ### Ön koşullar
+
+> [!NOTE]
+> Bu laboratuvar AWS Cloud ortamı kullanır. Yerel Kind veya Docker platformlarımız maliyetsiz çalışırken, bu lab için geçerli bir AWS hesabı ve IAM erişim yetkisi gerekmektedir.
 
 - **Önceki Lab:** [LAB-01](../LAB-01/README.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** VPC, EC2 ve RDS oluşturma yetkisine sahip bir AWS IAM kullanıcısı.

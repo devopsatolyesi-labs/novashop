@@ -1,5 +1,9 @@
 # LAB-10-OBSERVABILITY — İleri Gözlemlenebilirlik: Prometheus, Grafana, Alertmanager ve SRE (SLI/SLA/SLO) Yönetimi
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta - İleri | Prometheus, Grafana, Alertmanager, Jaeger, OTel | 19090 / 9091 (Prometheus), 13000 / 3000 (Grafana), 9093 (Alertmanager), 16686 (Jaeger) |
+
 ---
 
 ### Amaç
@@ -92,7 +96,7 @@ graph TD
 
 ---
 
-### 🧭 Erişim Modelleri ve Kimlik Bilgileri
+### Erişim Modelleri ve Kimlik Bilgileri
 
 | Servis | Model B: Kurumsal DNS + SSL | Model A: Doğrudan IP:Port | Kullanıcı Adı | Parola |
 |---|---|---|:---:|:---:|
@@ -103,7 +107,7 @@ graph TD
 
 ---
 
-## 🛠️ Adım Adım Uygulama Rehberi (CLI & UI)
+## Adım Adım Uygulama Rehberi (CLI & UI)
 
 ---
 

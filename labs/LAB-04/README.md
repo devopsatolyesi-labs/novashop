@@ -1,8 +1,8 @@
 # LAB-04-AWS-3TIER — AWS 3-Tier Mimari: Docker Compose, Private RDS ve TLS Dağıtımı
 
-| Seviye | Tahmini Süre | Profil / Araçlar | Açık Portlar |
-|---|---|---|---|
-| Orta | 45 Dakika | Docker Compose, Nginx, AWS EC2, AWS RDS MySQL | 80 (HTTP), 443 (HTTPS), 8888 (UI Local), 3306 (MySQL Private) |
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta | Docker Compose, Nginx, AWS EC2, AWS RDS MySQL | 80 (HTTP), 443 (HTTPS), 19001 / 8888 (UI), 3306 (MySQL Private) |
 
 ---
 
@@ -58,7 +58,7 @@ graph TD
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Konfigürasyon Dosyası (.env)
+### Ortam Değişkenleri ve Konfigürasyon Dosyası (.env)
 
 Bu laboratuvardaki tüm komutların kopyala-yapıştır ile doğrudan çalışabilmesi için parametreler `.env` dosyasında tanımlanır.
 

@@ -9,19 +9,21 @@ Bu mimari, **Cloudflare Full SSL** modu ile entegre çalışacak şekilde tasarl
 
 ---
 
-## 🧭 Servis ve Port Eşleme Tablosu (Örnek: `student100`)
+## Servis ve Port Eşleme Tablosu (Örnek: `student100`)
 
-| Servis | Dahili Docker Portu (IP:Port) | Kurumsal DNS + SSL (HTTPS) |
+| Servis | Dahili Docker / Platform Portu | Kurumsal DNS + SSL (HTTPS) |
 |---|:---:|---|
-| **NovaShop UI** | `http://<UBUNTU_IP>:8888` | `https://student100-novashop.devopsatolyesi.com` |
-| **GitLab CE** | `http://<UBUNTU_IP>:8929` | `https://student100-gitlab.devopsatolyesi.com` |
-| **Harbor Registry** | `http://<UBUNTU_IP>:18082` | `https://student100-harbor.devopsatolyesi.com` |
-| **SonarQube** | `http://<UBUNTU_IP>:19000` | `https://student100-sonarqube.devopsatolyesi.com` |
-| **Jenkins** | `http://<UBUNTU_IP>:18080` | `https://student100-jenkins.devopsatolyesi.com` |
+| **NovaShop UI** | `19001 / 8888` (NodePort `30080`) | `https://student100-novashop.devopsatolyesi.com` |
+| **GitLab CE** | `18929 / 8929` | `https://student100-gitlab.devopsatolyesi.com` |
+| **Harbor Registry** | `18444 / 18082` | `https://student100-harbor.devopsatolyesi.com` |
+| **Argo CD** | `18082 / 8080` | `https://student100-argocd.devopsatolyesi.com` |
+| **SonarQube** | `19000` | `https://student100-sonarqube.devopsatolyesi.com` |
+| **Jenkins** | `18080` | `https://student100-jenkins.devopsatolyesi.com` |
+| **Kibana (ELK)** | `15601 / 5601` | `https://student100-kibana.devopsatolyesi.com` |
 
 ---
 
-## ⚡ Yöntem A: Tek Komutla Aktivasyon (Önerilen)
+## Yöntem A: Tek Komutla Aktivasyon (Önerilen)
 
 Eğer bir kullanıcı kimliği (örneğin `student100` veya `student01`) ve DNS kaydı tahsis edildiyse, tüm SSL ve Nginx yapılandırmasını tek bir komutla ayağa kaldırabilirsiniz:
 
@@ -38,7 +40,7 @@ sudo bash infra/nginx/setup-ssl-edge.sh student100
 
 ---
 
-## 📋 Yöntem B: Adım Adım Manuel Kurulum
+## Yöntem B: Adım Adım Manuel Kurulum
 
 Otomasyon scriptini kullanmak yerine tüm adımları kendiniz yapılandırmak isterseniz:
 
@@ -189,7 +191,7 @@ sudo systemctl reload nginx
 
 ---
 
-## 🔍 Doğrulama ve Sağlık Testi (`student100`)
+## Doğrulama ve Sağlık Testi (`student100`)
 
 Servislerin HTTPS üzerinden çalıştığını test edin:
 

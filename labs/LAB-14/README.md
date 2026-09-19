@@ -1,5 +1,9 @@
 # LAB-14-ECS-FARGATE — Amazon ECS Fargate: Serverless Konteyner, ALB, Terraform IaC, GitHub Actions ve CloudWatch Monitoring
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| İleri | AWS ECS Fargate, ALB, Terraform, GitHub Actions, CloudWatch | 80/443 (ALB) |
+
 ---
 
 ### Amaç
@@ -21,6 +25,9 @@ NovaShop mikroservislerini sunucusuz (Serverless) konteyner altyapısı olan **A
 ---
 
 ### Ön koşullar
+
+> [!NOTE]
+> Bu laboratuvar AWS Cloud ortamı kullanır. Yerel Kind veya Docker platformlarımız maliyetsiz çalışırken, bu lab için geçerli bir AWS hesabı ve IAM erişim yetkisi gerekmektedir.
 
 - **Önceki Lablar:** [LAB-01](../LAB-01/README.md), [LAB-03](../LAB-03/README.md) ve [LAB-12](../LAB-12/README.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** ECS, ALB, CloudWatch ve ECR izinlerine sahip AWS IAM kimliği.

@@ -6,16 +6,16 @@ Bu rehber, sunucunuzda hiçbir yapılandırma olmasa bile sıfırdan adım adım
 
 ---
 
-## 🧭 Genel Bakış ve Port Yapılandırması
+## Genel Bakış ve Port Yapılandırması
 
 Ubuntu sunucusunda port 80 ve 443 genel Nginx Reverse Proxy'ye ayrılmıştır. Çakışmayı önlemek için:
-* **Web Arayüzü (HTTP):** `8929` portuna eşlenir.
+* **Web Arayüzü (HTTP):** `18929` (veya `8929`) portuna eşlenir.
 * **Git SSH Portu:** `2224` portuna eşlenir (Sunucunun kendi SSH 22 portunu işgal etmez).
 * **Varsayılan Yönetici Kullanıcısı:** `root`
 
 ---
 
-## 🛠️ Ön Koşul: Docker ve Docker Compose Kontrolü
+## Ön Koşul: Docker ve Docker Compose Kontrolü
 
 Sıfır bir makinede Docker Engine ve Compose eklentisini kurun:
 
@@ -27,7 +27,7 @@ sudo usermod -aG docker $USER
 
 ---
 
-## 📋 Ana Yöntem: Adım Adım Manuel Kurulum
+## Ana Yöntem: Adım Adım Manuel Kurulum
 
 ### Adım 1: Çalışma Dizinini Oluşturma
 
@@ -115,7 +115,7 @@ docker exec -it gitlab-ce grep 'Password:' /etc/gitlab/initial_root_password
 
 #### Model A: Doğrudan IP ile Erişim (DNS'siz)
 ```text
-http://<UBUNTU_IP>:8929
+http://<UBUNTU_IP>:18929 (veya 8929)
 ```
 
 #### Model B: Kurumsal DNS ve SSL ile Erişim
@@ -134,7 +134,7 @@ git clone ssh://git@<UBUNTU_IP>:2224/root/novashop.git
 
 ---
 
-## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
+## Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
 
 Repo içindeki hazır compose dosyasını tek komutla çalıştırmak için:
 
@@ -145,7 +145,7 @@ docker compose -f infra/gitlab/docker-compose.yml up -d
 
 ---
 
-## 🛑 Servisi Durdurma ve Başlatma (RAM Tasarrufu)
+## Servisi Durdurma ve Başlatma (RAM Tasarrufu)
 
 GitLab çalışırken ~3.5 GB RAM kullanır. Başka bir laba geçtiğinizde kaynakları serbest bırakmak için:
 

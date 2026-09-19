@@ -9,9 +9,15 @@ Tüm laboratuvarlar **Ubuntu sunucusu** üzerinde koşar ve iki erişim modelini
 
 ---
 
-## 🧭 Laboratuvar Yol Haritası (LAB-00 - LAB-14)
+## Laboratuvar Yol Haritası (LAB-00 - LAB-14)
 
-> 💡 **Müfredat Kılavuzu:** Yanında **`*`** işareti bulunan laboratuvarlar, her DevOps uzmanının kesinlikle tamamlaması gereken **çekirdek (Core / Zorunlu)** müfredatı temsil eder. Diğer laboratuvarlar ise canlı AWS ortamı veya platform hazırlığı gerektiren tamamlayıcı / ileri seviye modüllerdir.
+> [!NOTE]
+> **Müfredat ve Ortam Kılavuzu:**
+> - **Çekirdek Zorunlu Müfredat (`*` işaretli):** Her DevOps uzmanının eksiksiz tamamlaması gereken omurga laboratuvarlardır.
+> - **Sıfır Maliyetli Yerel Ortam Laboratuvarları (`LAB-00`, `LAB-01`, `LAB-03`, `LAB-06`, `LAB-07`, `LAB-08`, `LAB-09`, `LAB-10`, `LAB-11`):** Herhangi bir harici bulut hesabı veya ücretli servis gerektirmez; Ubuntu sanal makinesindeki Docker motoru, Kind Kubernetes kümesi ve yerel araçlar üzerinde koşar.
+> - **AWS Cloud Laboratuvarları (`LAB-02`, `LAB-04`, `LAB-05`, `LAB-12`, `LAB-13`, `LAB-14`):** Canlı AWS hesabı, IAM API anahtarları veya AWS kredisi gerektirir.
+> - **Bellek ve Kaynak Yönetimi:** Sunucu kaynaklarını korumak için bağımlı olmayan profilleri tamamlandığında durdurunuz (`docker compose stop`). `LAB-11` (ELK) öncesinde önceki ağır servisleri kapatmanız önerilir.
+> - **Port Eşleme Standardı:** NovaShop Storefront UI kurumsal platform matrisinde `19001` (App1 slotu) ve `8888` (yerel) portlarından yayınlanır; Kind üzerinde ise NodePort `30080` ile sunulur.
 
 | No | Laboratuvar | Başlık | Kapsam / Ana Konular | Rehber Bağlantısı |
 | :---: | :--- | :--- | :--- | :--- |

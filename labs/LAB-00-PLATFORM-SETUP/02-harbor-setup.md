@@ -3,14 +3,14 @@
 Harbor; kurumsal ölçekte konteyner imajlarını depolamak, güvenlik açıklarını (Trivy ile) taramak ve imaj yaşam döngüsünü yönetmek için kullanılan kurumsal düzeyde bir açık kaynak OCI Registry platformudur.
 
 Bu rehber, sunucunuzda `/opt/harbor` veya Harbor bileşenleri **hiç bulunmasa bile** sıfırdan adım adım kurulum yapmanızı sağlar ve iki farklı erişim modelini destekler:
-1. **Model A (Lokal / Doğrudan IP:Port):** DNS ve SSL olmadan doğrudan `http://<UBUNTU_IP>:18082` ile kullanım.
+1. **Model A (Lokal / Doğrudan IP:Port):** DNS ve SSL olmadan doğrudan `http://<UBUNTU_IP>:18444` (veya `18082`) ile kullanım.
 2. **Model B (Kurumsal DNS + SSL):** Nginx Edge arkasında `https://student100-harbor.devopsatolyesi.com` ile kullanım.
 
 ---
 
-## 🧭 Genel Bakış ve Port Yapılandırması
+## Genel Bakış ve Port Yapılandırması
 
-* **Dahili Harbor HTTP Portu:** `18082` (Nginx 80/443 portlarıyla çakışmaz)
+* **Dahili Harbor HTTP Portu:** `18444` / `18082` (Nginx 80/443 portlarıyla çakışmaz)
 * **Dahili Güvenlik Tarayıcısı:** Trivy Scanner etkin
 * **Varsayılan Giriş Bilgileri:**
   * **Kullanıcı:** `admin`
@@ -18,7 +18,7 @@ Bu rehber, sunucunuzda `/opt/harbor` veya Harbor bileşenleri **hiç bulunmasa b
 
 ---
 
-## 🛠️ Ön Koşul: Docker ve Docker Compose Kontrolü
+## Ön Koşul: Docker ve Docker Compose Kontrolü
 
 Sıfır bir Ubuntu makinesinde Docker Engine ve Docker Compose v2 eklentisinin kurulu olduğundan emin olun:
 
@@ -37,7 +37,7 @@ docker compose version
 
 ---
 
-## 📋 Ana Yöntem: Adım Adım Manuel Kurulum
+## Ana Yöntem: Adım Adım Manuel Kurulum
 
 ### Adım 1: Kurulum Dizinini Oluşturma ve Paketi İndirme
 
@@ -175,7 +175,7 @@ Eğer [05-nginx-ssl-setup.md](05-nginx-ssl-setup.md) adımı ile `student100` i�
 
 ---
 
-## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track Script)
+## Alternatif Yöntem: Hızlı Kurulum (Fast-Track Script)
 
 Tüm dizin açma, indirme, IP tespiti ve Trivy kurulumunu tek komutla tamamlamak için:
 
@@ -186,7 +186,7 @@ sudo bash infra/harbor/install_harbor.sh
 
 ---
 
-## 🛑 Servisi Durdurma ve Başlatma (RAM Tasarrufu)
+## Servisi Durdurma ve Başlatma (RAM Tasarrufu)
 
 Harbor arka planda 8-9 konteyner çalıştırır (~1.5 GB RAM). Başka lablara geçtiğinizde RAM'i serbest bırakmak için:
 

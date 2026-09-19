@@ -1,5 +1,9 @@
 # LAB-06-KUBERNETES-HELM — Kind Üzerinde Kubernetes Core ve Helm ile Mikroservis Dağıtımı
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta | Kind K8s, kubectl, Helm v3, Harbor | 19001 / 30080 (UI NodePort), 18084 (Headlamp), 18444 / 18082 (Harbor) |
+
 ---
 
 ### Amaç
@@ -21,10 +25,10 @@ Sanal makinede bağımsız bir çalışma dizininde Kind (Kubernetes IN Docker) 
 ### Ön Koşullar
 
 1. **Önceki Lablar:** [LAB-01](../LAB-01/README.md) ve [LAB-03](../LAB-03/README.md) tamamlanmış olmalıdır.
-2. **Harbor Registry (Zorunlu Ön Koşul):** [Platform Hazırlık - Harbor Kurulumu](../LAB-00-PLATFORM-SETUP/02-harbor-setup.md) tamamlanmış olmalıdır.
-   - Harbor Web Erişimi: `http://<UBUNTU_IP>:18082`
+2. **Harbor Registry:** [Platform Hazırlık - Harbor Kurulumu](../LAB-00-PLATFORM-SETUP/02-harbor-setup.md) tamamlanmış olmalıdır.
+   - Harbor Web Erişimi: `http://<UBUNTU_IP>:18444` (veya `:18082`)
    - Proje Adı: `novashop` (Public olarak açılmış olmalıdır)
-   - Docker Girişi: `docker login <UBUNTU_IP>:18082 -u admin -p Harbor12345`
+   - Docker Girişi: `docker login <UBUNTU_IP>:18444 -u admin -p Harbor12345` (veya `:18082`)
    - *(Not: Ortamınızda Harbor henüz hazır değilse, Adım 3'teki alternatif `kind load` yöntemiyle devam edebilirsiniz).*
 3. **Yüklü Araçlar:** Docker v24+, `kubectl`, `kind`, `helm` v3+.
 4. **Sistem Kaynağı:** En az 2 vCPU ve 6 GB boş RAM.

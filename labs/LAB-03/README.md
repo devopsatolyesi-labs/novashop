@@ -1,5 +1,9 @@
 # LAB-03-DOCKER-COMPOSE — Docker ve Docker Compose ile Konteynerleştirme
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Başlangıç - Orta | Docker Engine, Docker Compose, Java 21, Spring Boot | 19001 / 8888 (UI) |
+
 ---
 
 ### Amaç

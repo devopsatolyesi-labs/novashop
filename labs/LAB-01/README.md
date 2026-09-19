@@ -1,5 +1,11 @@
 # LAB-01 — Git Temelleri, GitHub ve Kontrollü Merge Conflict Çözümü
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Başlangıç | Git, GitHub, CLI | - |
+
+---
+
 ## Amaç
 
 Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, GitHub üzerinde kişisel bir uzak depo oluşturup projeyi push etmek, bir feature branch açıp Pull Request (PR) süreci işletmek ve `labs/LAB-01/products.json` üzerinde kasıtlı oluşturulmuş bir merge conflict'i hem komut satırında hem de GitHub web arayüzünde gözlemleyip çözmek.
@@ -16,7 +22,7 @@ Ubuntu sunucu ortamında Git sürüm kontrol sistemini sıfırdan başlatmak, Gi
 
 ---
 
-## 🛠️ Ön Koşullar
+## Ön Koşullar
 
 Laboratuvara başlamadan önce aşağıdaki hazırlıkları tamamlayın:
 

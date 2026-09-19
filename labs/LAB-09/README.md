@@ -1,5 +1,9 @@
 # LAB-09-ARGOCD-GITOPS — Argo CD ile GitOps Sürekli Dağıtımı, Drift Düzeltme ve Geri Alma
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta - İleri | Kind K8s, Argo CD, Helm, GitOps | 18082 / 8080 (Argo CD), 19001 / 8888 (UI) |
+
 ---
 
 ### Amaç
@@ -59,7 +63,7 @@ graph TD
 
 ---
 
-### ⚙️ Ortam Değişkenleri ve Parametreler
+### Ortam Değişkenleri ve Parametreler
 
 | Parametre | Açıklama | Örnek Değer |
 |---|---|---|

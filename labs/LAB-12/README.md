@@ -1,5 +1,9 @@
 # LAB-12-TERRAFORM-IAC — Altyapı Kod Olarak (IaC): Terraform ile EC2, RDS ve Cloud-Init Otomasyonu
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta - İleri | HashiCorp Terraform, AWS EC2, RDS MySQL, Cloud-Init | 22 (SSH), 80 (HTTP), 3306 (MySQL Private) |
+
 ---
 
 ### Amaç
@@ -19,6 +23,9 @@ AWS üzerindeki 3-katmanlı NovaShop altyapısını (VPC, Subnetler, Security Gr
 ---
 
 ### Ön koşullar
+
+> [!NOTE]
+> Bu laboratuvar AWS Cloud ortamı kullanır. Yerel Kind veya Docker platformlarımız maliyetsiz çalışırken, bu lab için geçerli bir AWS hesabı ve IAM erişim yetkisi gerekmektedir.
 
 - **Önceki Lab:** [LAB-02](../LAB-02/README.md) tamamlanmış olmalıdır.
 - **AWS Hesabı:** VPC, EC2 ve RDS oluşturma yetkisine sahip AWS kullanıcısı veya ortam değişkenleri (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` veya IAM Rolü).

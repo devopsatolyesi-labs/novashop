@@ -2,14 +2,9 @@
 
 ---
 
-| Seviye | Tahmini Süre | Profil / Araçlar | Açık Portlar |
-| :--- | :--- | :--- | :--- |
-| **Orta - İleri** | **60 Dakika** | **Elasticsearch 8.13, Kibana 8.13, Fluent Bit, Filebeat, Kind K8s, Jenkins** | `9200` (Elasticsearch), `5601` (Kibana), `24224` (Fluent Bit), `18080` (Jenkins) |
-
----
-
-### İndirilebilir Laboratuvar Paketi
-[LAB-11-CENTRALIZED-LOGGING.zip](file:///Users/hakan/devops-workspace/student-novashop/labs/LAB-11/LAB-11-CENTRALIZED-LOGGING.zip)
+| Seviye | Profil / Araçlar | Açık Portlar |
+| :--- | :--- | :--- |
+| **Orta - İleri** | **Elasticsearch 8.13, Kibana 8.13, Fluent Bit, Filebeat, Kind K8s, Jenkins** | `9200` (Elasticsearch), `15601 / 5601` (Kibana), `24224` (Fluent Bit), `18080` (Jenkins) |
 
 ---
 
@@ -32,6 +27,9 @@ Bu laboratuvarda hem terminal komutlarıyla (CLI / curl / bash) hem de web kulla
 ---
 
 ### Ön Koşullar ve Hızlı Hazırlık
+
+> [!NOTE]
+> **Bellek ve Kaynak Yönetimi:** ELK yığını (Elasticsearch ve Kibana) yaklaşık 2.5 GB RAM kullanır. Kaynak kısıtı olan sistemlerde bu laboratuvara başlamadan önce önceki ağır profilleri veya arka planda çalışan gereksiz konteynerleri durdurmanız önerilir.
 
 1. **NovaShop Kubernetes Kümesinin Başlatılması (Önerilen):**
    Mikroservis pod loglarının toplanabilmesi için Kind Kubernetes kümesinin ayakta olması önerilir:
@@ -95,18 +93,18 @@ graph TD
 
 ---
 
-### 🧭 Erişim Bilgileri ve Port Tablosu
+### Erişim Bilgileri ve Port Tablosu
 
 | Servis | URL / Port | Açıklama | Kimlik Doğrulama |
 | :--- | :--- | :--- | :---: |
-| **Kibana Web UI** | `http://<SUNUCU_IP>:5601` | Günlük analizi, Discover, panolar ve alarmlar | Doğrulama yok (Eğitim Modu) |
+| **Kibana Web UI** | `http://<SUNUCU_IP>:15601` (veya `5601`) | Günlük analizi, Discover, panolar ve alarmlar | Doğrulama yok (Eğitim Modu) |
 | **Elasticsearch REST API** | `http://<SUNUCU_IP>:9200` | Doğrudan JSON sorguları ve küme sağlığı | `xpack.security=false` |
 | **Fluent Bit Forwarder** | `<SUNUCU_IP>:24224` | Docker daemon / uygulamalar için TCP/UDP forward | - |
 | **Jenkins Web UI** | `http://<SUNUCU_IP>:18080` | CI/CD boru hattı arayüzü | `admin` / `admin123` |
 
 ---
 
-### 🧠 Üç Gözlemlenebilirlik Sütunu: Log vs. Metric vs. Trace
+### Üç Gözlemlenebilirlik Sütunu: Log vs. Metric vs. Trace
 
 Modern dağıtık mimarilerde sistem sağlığını anlamak için üç temel gözlemlenebilirlik bileşeni birlikte kullanılır:
 
@@ -127,7 +125,7 @@ Bir arıza anında mühendisin izlediği standart adımlar:
 
 ---
 
-### 📊 RED vs. USE Metrik Modelleri
+### RED vs. USE Metrik Modelleri
 
 | Model | Kapsam | Bileşenler | Kullanım Yeri |
 | :--- | :--- | :--- | :--- |
@@ -136,7 +134,7 @@ Bir arıza anında mühendisin izlediği standart adımlar:
 
 ---
 
-### 🎯 SRE Disiplini: SLI, SLA, SLO, Error Budget ve Burn Rate
+### SRE Disiplini: SLI, SLA, SLO, Error Budget ve Burn Rate
 
 ```mermaid
 flowchart LR
@@ -155,7 +153,7 @@ flowchart LR
 
 ---
 
-### 📚 Log Toplayıcı Karşılaştırması: Fluent Bit vs. Filebeat vs. Logstash
+### Log Toplayıcı Karşılaştırması: Fluent Bit vs. Filebeat vs. Logstash
 
 | Kriter | Fluent Bit (CNCF) | Filebeat (Elastic) | Logstash (Elastic) |
 | :--- | :--- | :--- | :--- |
@@ -166,7 +164,7 @@ flowchart LR
 
 ---
 
-## 🛠️ Adım Adım Uygulama Rehberi (CLI & Web UI)
+## Adım Adım Uygulama Rehberi (CLI & Web UI)
 
 ---
 

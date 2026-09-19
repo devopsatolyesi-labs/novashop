@@ -6,7 +6,7 @@ Bu rehber, sunucunuzda hiçbir ön kurulum olmasa dahi sıfırdan adım adım Je
 
 ---
 
-## 🧭 Genel Bakış ve Port Yapılandırması
+## Genel Bakış ve Port Yapılandırması
 
 * **Web Arayüzü Portu (HTTP):** `18080` (Konteyner içindeki 8080 portuna eşlenir)
 * **Jenkins Agent İletişim Portu (JNLP):** `50000`
@@ -14,7 +14,7 @@ Bu rehber, sunucunuzda hiçbir ön kurulum olmasa dahi sıfırdan adım adım Je
 
 ---
 
-## 🛠️ Ön Koşul: Docker ve Docker Compose Kontrolü
+## Ön Koşul: Docker ve Docker Compose Kontrolü
 
 Sıfır bir Ubuntu makinesinde Docker Engine ve Docker Compose v2 eklentisini kurun:
 
@@ -26,7 +26,7 @@ sudo usermod -aG docker $USER
 
 ---
 
-## 📋 Ana Yöntem: Adım Adım Manuel Kurulum
+## Ana Yöntem: Adım Adım Manuel Kurulum
 
 ### Adım 1: Çalışma Dizinini Oluşturma
 
@@ -118,7 +118,7 @@ docker exec -it jenkins docker version
 
 ---
 
-## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
+## Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
 
 Repo içindeki hazır yapılandırmayı tek komutla çalıştırmak için:
 
@@ -129,7 +129,7 @@ docker compose -f infra/jenkins/docker-compose.yml up -d
 
 ---
 
-## 🛑 Servisi Durdurma ve Başlatma (RAM Tasarrufu)
+## Servisi Durdurma ve Başlatma (RAM Tasarrufu)
 
 Jenkins çalışırken ~800 MB - 1.2 GB RAM tüketir. İhtiyaç duymadığınız lablarda RAM'i boşa çıkarmak için:
 

@@ -6,7 +6,7 @@ Bu rehber, sunucunuzda hiçbir ön kurulum olmasa dahi sıfırdan adım adım So
 
 ---
 
-## 🧭 Genel Bakış ve Port Yapılandırması
+## Genel Bakış ve Port Yapılandırması
 
 * **Web Arayüzü Portu (HTTP):** `19000` (Container içindeki 9000 portuna eşlenir)
 * **Veritabanı:** PostgreSQL 15-alpine
@@ -16,7 +16,7 @@ Bu rehber, sunucunuzda hiçbir ön kurulum olmasa dahi sıfırdan adım adım So
 
 ---
 
-## 🛠️ Ön Koşul 1: Docker ve Compose Kontrolü
+## Ön Koşul 1: Docker ve Compose Kontrolü
 
 Sıfır bir makinede Docker ve Compose'un kurulu olduğundan emin olun:
 
@@ -28,7 +28,7 @@ sudo usermod -aG docker $USER
 
 ---
 
-## ⚙️ Ön Koşul 2: Linux Çekirdek (Kernel) Ayarı
+## Ön Koşul 2: Linux Çekirdek (Kernel) Ayarı
 
 > [!IMPORTANT]
 > SonarQube'un arama motoru olan **Elasticsearch**, Linux çekirdeğinde `vm.max_map_count` değerinin en az `262144` olmasını şart koşar. Bu ayar yapılmazsa SonarQube konteyneri anında çöker (`exit code 78`).
@@ -45,7 +45,7 @@ echo "vm.max_map_count=524288" | sudo tee -a /etc/sysctl.conf
 
 ---
 
-## 📋 Ana Yöntem: Adım Adım Manuel Kurulum
+## Ana Yöntem: Adım Adım Manuel Kurulum
 
 ### Adım 1: Çalışma Dizinini Oluşturma
 
@@ -138,7 +138,7 @@ https://student100-sonarqube.devopsatolyesi.com
 
 ---
 
-## ⚡ Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
+## Alternatif Yöntem: Hızlı Kurulum (Fast-Track)
 
 Çekirdek ayarını yaptıktan sonra repo içindeki hazır yapılandırmayı tek komutla başlatabilirsiniz:
 
@@ -150,7 +150,7 @@ docker compose -f infra/sonarqube/docker-compose.yml up -d
 
 ---
 
-## 🛑 Servisi Durdurma ve Başlatma (RAM Tasarrufu)
+## Servisi Durdurma ve Başlatma (RAM Tasarrufu)
 
 SonarQube ve PostgreSQL toplamda ~2 GB RAM tüketir. Çalışmadığınız lablarda RAM'i boşaltmak için:
 

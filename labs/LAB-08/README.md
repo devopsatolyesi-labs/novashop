@@ -1,5 +1,9 @@
 # LAB-08-SECURITY-GATES — DevSecOps: SonarQube, Trivy, Secret Scanning ve SBOM ile Güvenlik Kapıları
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta | SonarQube, Trivy, Gitleaks, Syft/SBOM | 19000 (SonarQube) |
+
 ---
 
 ### Amaç

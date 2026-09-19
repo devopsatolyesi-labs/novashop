@@ -1,5 +1,9 @@
 # LAB-13-EKS-ENTERPRISE — Kurumsal Kubernetes: AWS EKS, RDS, Argo CD, ADOT ve Güvenilirlik Yönetimi
 
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| İleri | AWS EKS, IRSA, eksctl, Argo CD, ADOT | 80/443 (ALB), 3306 (RDS Private) |
+
 ---
 
 ### Amaç

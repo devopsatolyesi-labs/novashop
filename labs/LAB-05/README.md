@@ -1,8 +1,8 @@
 # LAB-05-GITHUB-ACTIONS — GitHub Actions, Docker Hub ve Otomatik EC2 Dağıtımı
 
-| Seviye | Tahmini Süre | Profil / Araçlar | Açık Portlar |
-|---|---|---|---|
-| Orta | 45 Dakika | GitHub Actions, Docker Hub, AWS EC2, Docker Compose | 22 (SSH), 80 (HTTP), 8888 (Storefront UI) |
+| Seviye | Profil / Araçlar | Açık Portlar |
+|---|---|---|
+| Orta | GitHub Actions, Docker Hub, AWS EC2, Docker Compose | 22 (SSH), 80 (HTTP), 19001 / 8888 (Storefront UI) |
 
 ---
 
@@ -27,6 +27,9 @@ Süreç iki temel iş akışından (workflow) oluşur:
 ---
 
 ### Ön koşullar
+
+> [!NOTE]
+> Bu laboratuvar AWS Cloud ortamı kullanır. Yerel Kind veya Docker platformlarımız maliyetsiz çalışırken, bu lab için geçerli bir AWS hesabı ve IAM erişim yetkisi gerekmektedir.
 
 1. **GitHub Hesabı ve Reposu:** Kendi GitHub hesabınız altında forkladığınız veya klonladığınız `novashop` reposu.
 2. **Docker Hub Hesabı:** [hub.docker.com](https://hub.docker.com/) üzerinde ücretsiz bir hesap.
@@ -58,7 +61,7 @@ flowchart TD
 
 ---
 
-### 🔑 GitHub Secrets ve Variables Tanımlama (Eksiksiz Rehber)
+### GitHub Secrets ve Variables Tanımlama
 
 GitHub reponuzda **Settings > Secrets and variables > Actions** sayfasına gidin.
 

@@ -206,4 +206,4 @@ curl -kI https://student100-harbor.devopsatolyesi.com
 curl -kI https://student100-jenkins.devopsatolyesi.com
 ```
 
-*Açıklama:* Tarayıcı üzerinden Cloudflare aracılığıyla girdiğinizde Cloudflare'in geçerli yeşil kilitli genel SSL sertifikası görünür. `curl -k` ise sunucu içerisinden yerel origin sertifikasını doğrulamadan hızlıca test etmek içindir.
+*Açıklama:* Tarayıcı üzerinden Cloudflare aracılığıyla bağlanıldığında Cloudflare'in geçerli genel SSL sertifikası doğrulanır. `curl -k` ise sunucu içerisinden yerel origin sertifikasını doğrulamadan hızlıca test etmek içindir.

@@ -286,7 +286,7 @@ kubectl config set-context --current --namespace=novashop
 
    > **Tarayıcıdan İnceleme (Erişim Seçenekleri):**  
    > * **Model A (Doğrudan IP:Port — Standart & Varsayılan):** `http://<UBUNTU_IP>:30080` (DNS ve SSL gerektirmez)  
-   > * **Model B (Kurumsal DNS + Wildcard SSL):** `https://studentXX-k8s.devopsatolyesi.com` (Nginx Edge Proxy yapılandırıldıysa)  
+   > * **Model B (DNS + Wildcard SSL):** `https://<SUBDOMAIN>-k8s.<DOMAIN_NAME>` (Nginx Edge Proxy yapılandırıldıysa)  
    > Web tarayıcınızdan yukarıdaki adreslerden biriyle Kubernetes üzerindeki NovaShop mikroservisini canlı olarak görüntüleyin.
 
 ---

@@ -112,7 +112,7 @@ def simulate_elasticsearch_logs(es_url, count, inject_errors=False):
         ("INFO", "[Pipeline] { (Stage: Trivy Container Security Scan)", "novashop-pipeline", "Trivy-Scan"),
         ("INFO", "Trivy: Total: 0 (CRITICAL: 0, HIGH: 0, MEDIUM: 2, LOW: 5). Security Gate PASSED.", "novashop-pipeline", "Trivy-Scan"),
         ("INFO", "[Pipeline] { (Stage: Docker Image Push)", "novashop-pipeline", "Docker-Push"),
-        ("INFO", "Pushed image: registry.devopsatolyesi.com/novashop/checkout:v1.2.4 (digest: sha256:8f2a...)", "novashop-pipeline", "Docker-Push"),
+        ("INFO", "Pushed image: registry.novashop.local/novashop/checkout:v1.2.4 (digest: sha256:8f2a...)", "novashop-pipeline", "Docker-Push"),
         ("INFO", "[Pipeline] { (Stage: Helm GitOps Sync)", "novashop-pipeline", "GitOps-Deploy"),
         ("INFO", "ArgoCD sync completed successfully: Application 'novashop' is Synced & Healthy.", "novashop-pipeline", "GitOps-Deploy"),
         ("WARN", "Node.js npm audit found 1 low severity dependency warning", "novashop-pipeline", "Unit-Tests"),

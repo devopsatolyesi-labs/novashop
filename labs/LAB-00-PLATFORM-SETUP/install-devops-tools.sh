@@ -61,7 +61,7 @@ $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plu
 # Docker servisini başlat ve aktif et
 $SUDO systemctl enable --now docker
 
-# Mevcut kullanıcıyı ve eğitim kullanıcılarını docker grubuna ekle
+# Mevcut kullanıcıyı docker grubuna ekle
 $SUDO usermod -aG docker "${SUDO_USER:-$USER}" 2>/dev/null || true
 id -u devopsadmin >/dev/null 2>&1 && $SUDO usermod -aG docker devopsadmin || true
 id -u student01 >/dev/null 2>&1 && $SUDO usermod -aG docker student01 || true

@@ -97,7 +97,7 @@ graph TD
 
 | Servis | URL / Port | Açıklama | Kimlik Doğrulama |
 | :--- | :--- | :--- | :---: |
-| **Kibana Web UI** | `http://<SUNUCU_IP>:15601` (veya `5601`) | Günlük analizi, Discover, panolar ve alarmlar | Doğrulama yok (Eğitim Modu) |
+| **Kibana Web UI** | `http://<SUNUCU_IP>:15601` (veya `5601`) | Günlük analizi, Discover, panolar ve alarmlar | Doğrulama yok (Geliştirme / Test Modu) |
 | **Elasticsearch REST API** | `http://<SUNUCU_IP>:9200` | Doğrudan JSON sorguları ve küme sağlığı | `xpack.security=false` |
 | **Fluent Bit Forwarder** | `<SUNUCU_IP>:24224` | Docker daemon / uygulamalar için TCP/UDP forward | - |
 | **Jenkins Web UI** | `http://<SUNUCU_IP>:18080` | CI/CD boru hattı arayüzü | `admin` / `admin123` |

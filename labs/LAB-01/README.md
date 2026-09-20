@@ -66,8 +66,8 @@ git config --global credential.helper store
 | Placeholder | Anlamı | Örnek Değer |
 |---|---|---|
 | `<GITHUB_USERNAME>` | GitHub kullanıcı adınız | `johndoe` |
-| `<STUDENT_NAME>` | Git commit yazar adı | `Ahmet Yilmaz` |
-| `<STUDENT_EMAIL>` | Git commit yazar e-postası | `ahmet@example.com` |
+| `<YOUR_NAME>` | Git commit yazar adı | `Ahmet Yilmaz` |
+| `<YOUR_EMAIL>` | Git commit yazar e-postası | `ahmet@example.com` |
 | `<GITHUB_PAT_TOKEN>` | GitHub Personal Access Token | `ghp_1234567890abcdef...` |
 
 ---
@@ -101,8 +101,8 @@ Initialized empty Git repository in /home/.../novashop/.git/
 
 #### 1.2 Depoya Özel (Local) Git Kimlik Bilgilerini Tanımlayın
 ```bash
-git config --local user.name "<STUDENT_NAME>"
-git config --local user.email "<STUDENT_EMAIL>"
+git config --local user.name "<YOUR_NAME>"
+git config --local user.email "<YOUR_EMAIL>"
 ```
 
 *Doğrulama:*

@@ -51,7 +51,7 @@ services:
     image: gitlab/gitlab-ce:latest
     container_name: gitlab-ce
     restart: always
-    hostname: 'gitlab.devopsatolyesi.local'
+    hostname: 'gitlab.novashop.local'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'http://localhost:8929'

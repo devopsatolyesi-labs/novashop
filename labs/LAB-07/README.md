@@ -28,7 +28,7 @@ Kurumsal DevOps standartlarına uygun olarak; yerel veya bulut ortamında barın
    Çalıştığınız sanal makinenin kimliğini tanımlayın (Varsayılan: `student01`):
    ```bash
    export STUDENT_ID="${STUDENT_ID:-student01}"
-   export DOMAIN_NAME="${DOMAIN_NAME:-devopsatolyesi.com}"
+   export DOMAIN_NAME="${DOMAIN_NAME:-example.com}"
    ```
 
 2. **Harbor ve Jenkins Servislerinin Başlatılması:**
@@ -129,7 +129,7 @@ pipeline {
     agent any
 
     environment {
-        // Model A: '127.0.0.1:18082' veya Model B: 'studentXX-harbor.devopsatolyesi.com'
+        // Model A: '127.0.0.1:18082' veya Model B: '<SUBDOMAIN>-harbor.<DOMAIN_NAME>'
         HARBOR_REGISTRY = "${env.HARBOR_HOST ?: '127.0.0.1:18082'}"
         HARBOR_PROJECT  = 'novashop'
         IMAGE_NAME      = 'novashop-ui'
@@ -304,7 +304,7 @@ CI/CD pipeline dosyalarını ve Harbor Registry erişilebilirliğini otomatik te
 bash scripts/verify/verify-lab-07.sh
 
 # Model B: Kurumsal Domain ile Kontrol
-bash scripts/verify/verify-lab-07.sh studentXX-harbor.devopsatolyesi.com
+bash scripts/verify/verify-lab-07.sh <SUBDOMAIN>-harbor.<DOMAIN_NAME>
 ```
 *Beklenen çıktı:*
 ```text

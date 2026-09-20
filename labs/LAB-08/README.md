@@ -76,7 +76,7 @@ graph TD
 
 ```bash
 export STUDENT_ID="${STUDENT_ID:-student01}"
-export DOMAIN_NAME="${DOMAIN_NAME:-devopsatolyesi.com}"
+export DOMAIN_NAME="${DOMAIN_NAME:-example.com}"
 export SUNUCU_IP="${SUNUCU_IP:-127.0.0.1}"
 
 # SonarQube URL belirleme:
@@ -88,7 +88,7 @@ export SONAR_HOST_URL="http://127.0.0.1:19000"
 | Parametre | Açıklama | Örnek Değer |
 |---|---|---|
 | `${STUDENT_ID}` | Oturum / kullanıcı kimliği | `student01` |
-| `${DOMAIN_NAME}` | Ana alan adı | `devopsatolyesi.com` |
+| `${DOMAIN_NAME}` | Ana alan adı | `example.com` |
 | `${SONAR_HOST_URL}` | SonarQube erişim adresi | `http://127.0.0.1:19000` veya `https://${STUDENT_ID}-sonarqube.${DOMAIN_NAME}` |
 | `${SONAR_TOKEN}` | SonarQube kullanıcı / analiz tokeni | `squ_...` (Arayüzden veya API ile üretilir) |
 | `${IMAGE_NAME}` | Taranacak Docker imajı | `novashop-ui:v0.1.0` |

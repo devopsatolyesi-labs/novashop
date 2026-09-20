@@ -45,3 +45,5 @@ screenshots
 docs/
 troubleshoot/
 troubleshot
+scripts/instructor/
+.github/workflows/cloudflare-dns.yml

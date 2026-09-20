@@ -37,7 +37,7 @@ echo "======================================================================"
 echo "🎉 Argo CD GitOps Başarıyla Kuruldu!"
 echo "======================================================================"
 ARGOCD_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || echo "")
-echo "Web UI Adresi: https://studentXX-argocd.devopsatolyesi.com veya https://localhost:18082"
+echo "Web UI Adresi: https://localhost:18082 (veya ters vekil alan adınız)"
 echo "Kullanıcı Adı: admin"
 echo "Admin Parola : ${ARGOCD_PASSWORD}"
 echo "======================================================================"

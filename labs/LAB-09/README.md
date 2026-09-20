@@ -115,9 +115,9 @@ kubectl port-forward svc/argocd-server -n argocd 18082:443 --address 0.0.0.0 > /
 ```
 Tarayıcınızdan `https://localhost:18082` veya `https://<SUNUCU_IP>:18082` adresine giderek kullanıcı adı `admin` ve yukarıdaki parola ile giriş yapın.
 
-##### Model B: Kurumsal DNS ve SSL ile Erişim (Cockpit Ortamı)
-Cockpit ortamında Nginx reverse proxy `18082` portunu otomatik dış dünyaya taşır:
-`https://studentXX-argocd.devopsatolyesi.com` üzerinden güvenli HTTPS ile doğrudan erişebilirsiniz.
+##### Model B: DNS ve SSL ile Erişim
+Nginx ters vekili `18082` portunu dış dünyaya taşır:
+`https://<SUBDOMAIN>-argocd.<DOMAIN_NAME>` üzerinden güvenli HTTPS ile doğrudan erişebilirsiniz.
 
 ---
 

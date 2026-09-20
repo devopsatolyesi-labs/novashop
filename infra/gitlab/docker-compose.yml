@@ -3,7 +3,7 @@ services:
     image: gitlab/gitlab-ce:latest
     container_name: gitlab-ce
     restart: always
-    hostname: 'gitlab.devopsatolyesi.local'
+    hostname: 'gitlab.novashop.local'
     environment:
       GITLAB_OMNIBUS_CONFIG: |
         # Port 80 ve 443 Nginx'e bırakıldığı için dahili 80 dinlenir, host 8929'a eşlenir

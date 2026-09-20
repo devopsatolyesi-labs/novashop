@@ -46,7 +46,7 @@ graph TD
 
 ## Nasıl Çalışılır?
 
-Bu depo bir "tek komutla her şeyi kur" projesi değildir. Her laboratuvarın amacı, kullanılan aracı ve komutları katılımcının önce **manuel olarak** öğrenmesidir. Yardımcı betikler ise ancak manuel akış anlaşıldıktan sonra aynı işlemi hızlı, tekrarlanabilir ve güvenli biçimde başlatmak veya doğrulamak için kullanılır.
+Her laboratuvarda kullanılan araç ve komutlar adım adım doğrudan terminalden uygulanır. Yardımcı betikler ise işlem adımları anlaşıldıktan sonra otomasyon, test ve hızlı doğrulama amacıyla kullanılır.
 
 İzlenecek sıra:
 
@@ -103,14 +103,14 @@ bash scripts/compose-starter.sh down
 
 ---
 
-## Eğitim Yol Haritası ve Laboratuvarlar
+## Uygulama Modülleri ve Laboratuvarlar
 
 > [!NOTE]
-> **Müfredat Kılavuzu:** Yanında **`*`** işareti bulunan laboratuvarlar, eğitimde kesinlikle verilmesi gereken **çekirdek (Core / Zorunlu)** laboratuvarlardır. Diğer laboratuvarlar canlı AWS ortamı veya platform hazırlığı gerektiren tamamlayıcı / ileri modüllerdir.
+> **Modül Kapsamı:** Yanında **`*`** işareti bulunan laboratuvarlar **çekirdek (Core)** modüllerdir; yerel Docker ve Kind ortamlarında harici bulut gereksinimi olmadan çalışır. Diğer laboratuvarlar AWS ortamı gerektiren modüllerdir.
 
-Her bağlantı, katılımcının izleyeceği eksiksiz manuel kurulum kılavuzudur. Sağdaki komutlar, öğretim adımlarının yerine geçmeyen isteğe bağlı hızlandırma veya doğrulama araçlarıdır.
+Tablodaki her bağlantı adım adım kurulum ve uygulama kılavuzunu içerir. Sağdaki komutlar yapılandırma ve çalışma durumunu doğrulamak için kullanılır.
 
-| Lab | Manuel olarak öğrenilecek ana konu | Hızlandırma / doğrulama |
+| Lab | Kapsanan Konu | Doğrulama Komutu |
 |---|---|---|
 | [LAB-00](labs/LAB-00-PLATFORM-SETUP/README.md) | Platform kurulumu: GitLab CE, Harbor, SonarQube, Jenkins ve Nginx SSL | Manuel kurulum rehberleri |
 | **[LAB-01*](labs/LAB-01/README.md)** | Git, branch, PR ve conflict çözümü | `bash scripts/verify/verify-lab-01.sh` |

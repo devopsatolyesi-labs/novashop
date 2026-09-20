@@ -1,6 +1,6 @@
   ── NOVASHOP DEVOPS STORE ─────────────────────── 2026-09-09 ──
 
-  FROM : DevOps Atölyesi
+  FROM : NovaShop Engineering
   RE   : From Code to Cloud
 
   ───────────────────────────────────────────────────────────────

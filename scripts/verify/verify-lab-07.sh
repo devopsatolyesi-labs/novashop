@@ -33,7 +33,7 @@ fi
 HARBOR_TARGET="${HARBOR_HOST:-127.0.0.1:18082}"
 if [[ "$HARBOR_TARGET" =~ ^https?:// ]]; then
     HARBOR_BASE="$HARBOR_TARGET"
-elif [[ "$HARBOR_TARGET" =~ \.devopsatolyesi\.com ]]; then
+elif [[ "$HARBOR_TARGET" =~ \.[a-zA-Z]{2,} ]]; then
     HARBOR_BASE="https://${HARBOR_TARGET}"
 else
     HARBOR_BASE="http://${HARBOR_TARGET}"

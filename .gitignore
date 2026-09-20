@@ -40,3 +40,8 @@ screenshots
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Internal docs & troubleshooting (private)
+docs/
+troubleshoot/
+troubleshot

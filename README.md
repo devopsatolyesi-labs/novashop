@@ -1,6 +1,6 @@
 # NovaShop DevOps Store
 
-> **From Code to Cloud** — DevOps Atölyesi Uygulamalı Eğitim Projesi
+> **From Code to Cloud** — Uygulamalı DevOps Eğitim Projesi
 
 > [!IMPORTANT]
 > **Eğitim ve Laboratuvar Amaçlı Kullanım Bildirimi:**  
@@ -100,14 +100,6 @@ Tarayıcınızdan `http://localhost:19001` (veya `:8888`) adresini açın.
 ```bash
 bash scripts/compose-starter.sh down
 ```
-
-## Mimari, Ağ ve Güvenlik Dokümantasyonu
-
-- [Mimari Genel Bakış](docs/architecture/OVERVIEW.md) — Mikroservis envanteri, kullanıcı akışları ve port izolasyonu.
-- [Ağ Topolojisi ve Port Haritası](docs/architecture/NETWORKING.md) — Port listesi, AWS VPC CIDR planı ve Kubernetes CoreDNS.
-- [Güvenlik Temel İlkeleri (Security Baseline)](docs/architecture/SECURITY_BASELINE.md) — Secret yönetimi, non-root container ve anti-pattern yasakları.
-- [Çalıştırma Profilleri ve Kaynak Bütçesi](docs/architecture/PROFILES.md) — Sistem kaynak limitleri, profil izolasyonu ve bellek yönetimi.
-- [Merkezi Sorun Giderme Kılavuzu](docs/troubleshooting/MASTER_TROUBLESHOOTING_GUIDE.md) — Git, AWS, Docker, Kubernetes ve CI/CD için arıza teşhis ve çözüm matrisi.
 
 ---
 

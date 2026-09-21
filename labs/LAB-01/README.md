@@ -266,9 +266,14 @@ git push origin main
 git log --graph --oneline --decorate -n 6
 ```
 
-#### 3.8 GitHub PR Ekranını Yenileyin
-GitHub'daki PR sayfasını yenileyin (**F5**).  
-Çakışma uyarısının kalktığını, PR durumunun yeşile döndüğünü ve artık **`Merge pull request`** butonunun kullanılabilir olduğunu gözlemleyin.
+#### 3.8 GitHub PR Ekranını Yenileyin ve Sonucu Gözlemleyin
+GitHub'daki açık Pull Request sayfasına dönüp sayfayı yenileyin (**F5**).
+
+> **💡 GitHub Ne Yaptı ve Neden Otomatik Kapanıp Merged Oldu?**  
+> Çakışmayı terminalde `main` dalı üzerinde çözüp merge commit'ini doğrudan `origin main` dalına push ettiğiniz için; GitHub, `feature/update-mug-product` dalındaki commit'lerin artık `main` dalına dahil edildiğini algılar.  
+> Bu sebeple PR manuel bir "Merge pull request" butonuna dönmez; GitHub PR'ı otomatik olarak **Merged (Mor)** statüsüne geçirir ve kapatır:  
+> - **`Pull request successfully merged and closed`** mesajı görüntülenir.  
+> - Dalın artık güvenle silinebileceğini belirten **`You're all set — the feature/update-mug-product branch can be safely deleted.`** uyarısı ve **Delete branch** butonu aktifleşir.
 
 ---
 

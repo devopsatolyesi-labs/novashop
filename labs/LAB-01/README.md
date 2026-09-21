@@ -41,7 +41,9 @@ GitHub, terminalden parola ile push işlemlerini engellediği için bir erişim 
 3. **Generate new token** -> **Generate new token (classic)** seçin.
 4. **Note:** `novashop-lab` yazın.
 5. **Expiration:** `30 days` seçin.
-6. **Scopes:** En üstteki **`repo`** kutucuğunu işaretleyin (Tüm repository yönetim izinleri).
+6. **Scopes:**
+   - **`repo`** kutucuğunu işaretleyin (Tüm repository yönetim izinleri).
+   - **`workflow`** kutucuğunu işaretleyin (⚠️ Depodaki `.github/workflows/` altındaki GitHub Actions iş akışlarını push edebilmek için zorunludur).
 7. **Generate token** butonuna tıklayın.
 8. Üretilen `ghp_xxxxxxxxxxxxxxxxxxxx` token'ını güvenli bir yere kopyalayın.
 
@@ -136,6 +138,10 @@ git push -u origin main
 > **Kimlik Doğrulama:**  
 > - **Username:** `<GITHUB_USERNAME>`  
 > - **Password:** Oluşturduğunuz `<GITHUB_PAT_TOKEN>` değerini girin.
+
+> [!TIP]
+> **Olası Hata: `refusing to allow a Personal Access Token to create or update workflow... without workflow scope`**  
+> Eğer bu hatayı alırsanız, token'ınızda `workflow` yetkisi eksiktir. GitHub'da **Settings -> Developer Settings -> Personal access tokens -> Tokens (classic)** sayfasına gidip token'ınızı düzenleyin, **`workflow`** kutucuğunu işaretleyip kaydedin. Ardından terminalde kayıtlı eski token'ı temizleyip (`rm -f ~/.git-credentials`) komutu tekrar çalıştırın.
 
 **Web Arayüzü Kontrolü:**  
 Tarayıcınızda `https://github.com/<GITHUB_USERNAME>/novashop` sayfasını açın. Dosyaların, `main` branch'inin ve commit geçmişinin listelendiğini doğrulayın.
